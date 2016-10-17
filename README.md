@@ -1,1 +1,1 @@
-# VASP-post-processing-code
+Edox is a collection of source code that I use for molecular dynamics (by LAMMPS) and DFT (by VASP and QE) simulations.
