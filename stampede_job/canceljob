@@ -1,0 +1,5 @@
+scancel $1
+yearlog=$HOME/worklog/index$(date +%Y)
+path=`grep $1 $yearlog|awk '{print $6}'`
+cd $path
+sendjobnote 1

@@ -1,0 +1,30 @@
+#This file will automatically send out long description of the work after the job finished/failed
+
+id=`tail -n 1 runscript.log|awk '{print $4}'`
+yearlog=$HOME/worklog/index$(date +%Y)
+quickline="grep $id $yearlog"
+
+logdir=$HOME/worklog/$(date +%Y/%m)
+logfile=$HOME/worklog/$(date +%Y/%m/%d)
+if [ ! -d $logdir ]; then
+  mkdir -p $logdir
+fi
+
+printf "**">>$logfile
+grep $id $yearlog >>$logfile 
+printf "Content: " >>$logfile
+cat note >>$logfile
+if [ -f myMPI.o$id ]; then
+  echo "begin=" $(head -n 1 myMPI.o$id)  >>$logfile
+  echo "end="$(tail -n 1 myMPI.o$id) >>$logfile
+fi 
+
+if [ $1 == 1 ]; then
+  echo "job cancelled" $(date) >>$logfile
+elif [ $1 == 0 ]; then
+  echo "job end" $(date) >>$logfile
+else 
+  echo "job abort due to time limit" $(date) >>$logfile
+fi
+
+printf "\n" >>$logfile

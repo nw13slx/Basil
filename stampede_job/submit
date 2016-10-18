@@ -1,0 +1,49 @@
+## submit arguments (1-7)
+## This is a script to submit a normal job at Stampede
+## each argument should be a single word without spaces
+
+## This script will:
+## submit the job and run job.sh at the submit folder
+## write a line to the index logfile
+## write a long note to the logfile if there's a 'note' file in the submit folder
+
+quickexpl=$1     #quick explanation of the job
+jobname=$2       #submit name
+queue=$3         #normal or development
+core=$4          #number of cores requested
+HH=$5            #hours
+MM=$6            #minutes
+project=$7       #project name
+time=$(echo $HH $MM|awk '{print $1*60*60+$2*60-10}')
+
+#default parameters
+EMAIL="lixinsun@mit.edu"
+logfilePATH=$HOME/worklog/
+
+cat > run.script <<EOF
+#!/bin/bash
+#SBATCH -J $jobname           # job name
+#SBATCH -o out.o%j       # output and error file name (%j expands to jobID)
+#SBATCH -n $core           # total number of mpi tasks requested
+#SBATCH -p $queue     # queue (partition) -- normal, development, etc.
+#SBATCH -t $HH:$MM:00        # run time (hh:mm:ss) - 1.5 hours
+#SBATCH --mail-user=$EMAIL
+#SBATCH --mail-type=begin  # email me when the job starts
+#SBATCH --mail-type=end    # email me when the job finishes
+
+echo "sleep $time; sendjobnote 2 " >endjob.sh
+sh endjob.sh &
+sh job.sh
+sendjobnote 0
+EOF
+
+date >>runscript.log
+sbatch run.script >>runscript.log
+id=`tail -n 1 runscript.log|awk '{print $4}'`
+
+#write a line to the index logfile
+logfile=$logfilePATH/index$(date +%Y)
+if [ ! -f $logfile ]; then
+  echo "#YY-MM-DD-HH-mm id jobname quick-explaination directory" > $logfile
+fi
+echo $project $(date +%Y-%m-%d-%H:%M) $id $jobname $quickexpl $(pwd)>>$logfile
