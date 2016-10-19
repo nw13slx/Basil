@@ -17,7 +17,7 @@ project=$7       #project name
 time=$(echo $HH $MM|awk '{print $1*60*60+$2*60-10}')
 
 #default parameters
-EMAIL="lixinsun@mit.edu"
+EMAIL=$MYEMAIL
 logfilePATH=$HOME/worklog/
 
 cat > run.script <<EOF
