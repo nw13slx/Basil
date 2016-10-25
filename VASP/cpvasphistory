@@ -1,0 +1,7 @@
+origin=$1
+destination=$2
+
+for i in DOSCAR    IBZKPT  KPOINTS  OSZICAR  out.out  POSCAR  PROCAR  run.batch          vasprun.xml  XDATCAR CONTCAR  EIGENVAL  INCAR   OUTCAR   PCDAT 
+do
+  cp ${origin}/$i ${destination}
+done

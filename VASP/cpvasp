@@ -1,0 +1,26 @@
+#this code is used to copy the input file of vasp from folder 1 to folder 2
+
+origin=$1
+destination=$2
+
+if [ $# -lt 2 ]; then
+  echo "need two arguments"
+  echo "cpvasp origin destination"
+  exit 0
+fi
+for i in INCAR POSCAR 
+do
+  if [ ! -f ${origin}/$i ]; then
+    echo "need "$i
+    exit 0
+  fi
+done
+
+for i in INCAR POSCAR POTCAR KPOINTS CONTCAR note job.sh
+do
+  if [ ! -f ${origin}/$i ]; then
+    echo "WARNING: "$i" doesn't exist"
+  else
+    cp ${origin}/$i ${destination}
+  fi
+done

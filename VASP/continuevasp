@@ -1,0 +1,18 @@
+if [ $# -eq 0 ]
+then
+  echo "input the path to store current calculation"
+  exit 1
+fi
+mkdir $1
+cd $1
+for i in DOSCAR    IBZKPT  KPOINTS  OSZICAR  out.out  POSCAR  PROCAR  run.batch          vasprun.xml  XDATCAR CONTCAR      EIGENVAL  INCAR   OUTCAR   PCDAT
+do
+      cp ../$i .
+done
+cd ../
+mv CONTCAR POSCAR
+sed --in-place "/ISTART/d" INCAR
+sed --in-place "/ICHARG/d" INCAR
+sed -i '1s/^/ISTART = 1\n/' INCAR
+sed -i '1s/^/ICHARG = 0\n/' INCAR
+#sbatch $2
