@@ -2,6 +2,7 @@
 ## This is a script to submit a normal job at Stampede
 ## each argument should be a single word without spaces
 
+
 ## This script will:
 ## submit the job and run job.sh at the submit folder
 ## write a line to the index logfile
@@ -16,10 +17,6 @@ MM=$6            #minutes
 project=$7       #project name
 time=$(echo $HH $MM|awk '{print $1*60*60+$2*60-10}')
 
-#default parameters
-EMAIL=$MYEMAIL
-logfilePATH=$HOME/worklog/
-
 cat > run.script <<EOF
 #!/bin/bash
 #SBATCH -J $jobname           # job name
@@ -27,7 +24,7 @@ cat > run.script <<EOF
 #SBATCH -n $core           # total number of mpi tasks requested
 #SBATCH -p $queue     # queue (partition) -- normal, development, etc.
 #SBATCH -t $HH:$MM:00        # run time (hh:mm:ss) - 1.5 hours
-#SBATCH --mail-user=$EMAIL
+#SBATCH --mail-user=$MYEMAIL
 #SBATCH --mail-type=begin  # email me when the job starts
 #SBATCH --mail-type=end    # email me when the job finishes
 

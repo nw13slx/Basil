@@ -1,4 +1,3 @@
-logfilePATH=$HOME/worklog
 
 scancel $1
 yearlog=$logfilePATH/index$(date +%Y)

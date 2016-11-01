@@ -1,0 +1,6 @@
+This group of scripts can automatically take record of your compute tasks
+
+To run the script, you need to add the following line to your ~/.bashrc file
+    export MYEMAIL="yourname@email.com"
+    export logfilePATH=$HOME/worklog/
+and source the ~/.bashrc file (or log in your account again)

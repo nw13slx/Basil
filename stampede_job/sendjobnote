@@ -4,8 +4,6 @@
 #     1 - job cancelled manually
 #     2 or any other numbers - job aborted
 
-logfilePATH=$HOME/worklog/
-
 id=`tail -n 1 runscript.log|awk '{print $4}'`
 yearlog=$logfilePATH/index$(date +%Y)
 quickline="grep $id $yearlog"
