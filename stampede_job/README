@@ -1,6 +1,15 @@
 This group of scripts can automatically take record of your compute tasks
 
-To run the script, you need to add the following line to your ~/.bashrc file
+before you run the script, you need to add the following lines to your ~/.bashrc file
     export MYEMAIL="yourname@email.com"
     export logfilePATH=$HOME/worklog/
+    source PATH/myalias.sh
 and source the ~/.bashrc file (or log in your account again)
+then "ln -s" these files to your ~/bin/ folder.
+
+To submit a job, enter the work directory, put the commands you want to run into "job.sh" and leave some comments of the job in "note" file. Then execute
+    submit quick-explanation jobname queue #ofcores hours minutes project-name
+To cancel a job,
+    canceljob jobID
+
+A brief logfile locates at $logfilePATH/index[year] and more detailed logfiles are stored in the folder in a daily basis.
