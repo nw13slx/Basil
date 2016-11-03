@@ -5,7 +5,7 @@ then
 fi
 mkdir $1
 cd $1
-for i in DOSCAR    IBZKPT  KPOINTS  OSZICAR  out.out  POSCAR  PROCAR  run.batch          vasprun.xml  XDATCAR CONTCAR      EIGENVAL  INCAR   OUTCAR   PCDAT
+for i in DOSCAR    IBZKPT  KPOINTS  OSZICAR  out.out  POSCAR  PROCAR  run.batch          vasprun.xml  XDATCAR CONTCAR      EIGENVAL  INCAR   OUTCAR   PCDAT note job.sh
 do
       cp ../$i .
 done
@@ -15,4 +15,5 @@ sed --in-place "/ISTART/d" INCAR
 sed --in-place "/ICHARG/d" INCAR
 sed -i '1s/^/ISTART = 1\n/' INCAR
 sed -i '1s/^/ICHARG = 0\n/' INCAR
+cat continuevasp >>note
 #sbatch $2

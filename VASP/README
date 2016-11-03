@@ -1,0 +1,6 @@
+continuevasp: continue the current vasp calculation in the same folder while copying the original data to another folder
+cpvasp: copy INCAR, KPOINTS, POSCAR, POTCAR, job.sh, note, CONTCAR from folder 1 to folder 2
+cpvasphistory: copy all the important data file
+quicksummary: quickly summarize all the calculations store under the current folder
+
+ceria/ : all manipulations of fluorite structure

@@ -1,0 +1,49 @@
+home=`pwd`
+
+echo netcharge directory E dE mag vol Ef conv pressure >sum
+
+for path in `find ./ -name vasprun.xml|sed "s/\.\///g"|sed "s/\/vasprun.xml//g"`
+do
+  if [ $path = "vasprun.xml" ]; then
+    i="./"
+  elif [ -d $path ]; then
+    i=$path
+  else
+    i="nothing"
+  fi
+
+  if [ ! $i = "nothing" ]; then
+    if [ -f CONTCAR ]; then
+      position=CONTCAR
+    else
+      position=POSCAR
+    fi
+
+    E=$(grep e_fr_energy $i/vasprun.xml |tail -n 1|awk '{print $3}')
+    dE=$(grep e_0_energy $i/vasprun.xml|tail -n 1|awk '{print $3}')
+    mag=$(grep mag $i/OUTCAR|grep electron|tail -n 1|awk '{print $6}')
+    conv=`grep stop $i/out.out|awk '{print $1}'`        #converge?
+    Ef=$(awk "NR==6" $i/DOSCAR|awk '{print $4}') #fermi level
+    vol=$(grep volume $i/OUTCAR |tail -n 1|awk '{print $5}') #volume
+    pressure=$(grep Pullay $i/OUTCAR|tail -n 1|awk '{print $4}')
+    echo $i $(grep Pull $i/OUTCAR|tail -n 1) >>pressure
+
+    #net charge
+    if [ -f $i/POTCAR ]; then
+      each_element=$(awk "NR==7" $i/$position)
+      valence_e=`grep -A1 PBE $i/POTCAR|awk "NR%3 ==2"|grep -v F|awk '{printf "%s ",$1}END{printf "\n" }'`
+      atomtype=`grep PBE $i/POTCAR|wc -l |awk '{print $1/2.}'`
+      origin_e=`echo $each_element $valence_e|awk -v t=$atomtype '{sum=0}{for (i=1;i<=t;i++) {sum+=$(i)*$(i+t)}}{print sum}'`
+      NELECT=`grep NELECT $i/OUTCAR|awk '{print $3}'`
+      netcharge=`echo $NELECT $origin_e|awk '{print $2-$1}'`
+    else
+      netcharge="NA"
+    fi
+
+    #print all the information
+    echo $netcharge $i $E $dE $mag $vol $Ef $conv $pressure >>sum
+
+    pwd
+  fi
+done
+cat sum
