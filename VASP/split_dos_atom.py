@@ -7,6 +7,7 @@
 #  this setting overrides the one in poscar/contcar
 # write_DOS0 yes/no
 # write_PDOS yes/no
+# centerEf yes/no
 
 #this file is adapted from vtst tool
 #the original source code is buggy and kind of slow (especially when you have >100 atoms!)
@@ -23,6 +24,7 @@ import os
 write_DOS0=True
 write_PDOS=True
 peratom=False
+centerEf=True
 
 #initialization
 ntype=0
@@ -63,7 +65,7 @@ def main():
 def preprocess(argv):
   if ( os.path.exists("DOSCAR") !=True):
     return "DOSCAR does not exist"
-  global ntype, atomSpe, position,par_element
+  global ntype, atomSpe, position,par_element,centerEf,peratom,write_PDOS,write_DOS0
   #if there is poscar
   pos = None
   if ( os.path.exists("POSCAR") == True ):
@@ -87,23 +89,33 @@ def preprocess(argv):
         for j in range(ntype):
           atomSpe += ([j]*int(argv[j+i]))
         i+=ntype
-    elif (argv[i]=="energyshift"):
+    elif (argv[i].lower()=="energyshift"):
       i+=1
       energyshift=float(argv[i])
       i+=1
-    elif (argv[i]=="write_DOS0"):
+    elif (argv[i].lower()=="peratom"):
       i+=1
-      if (argv[i]=="no"):
+      if (argv[i].lower()=="yes"):
+        peratom=True
+      i+=1
+    elif (argv[i].lower()=="write_dos0"):
+      i+=1
+      if (argv[i].lower()=="no"):
         write_DOS0=False
       i+=1
-    elif (argv[i]=="write_PDOS"):
+    elif (argv[i].lower()=="centeref"):
       i+=1
-      if (argv[i]=="no"):
+      if (argv[i].lower()=="no"):
+        centerEf=False
+      i+=1
+    elif (argv[i].lower()=="write_pdos"):
+      i+=1
+      if (argv[i].lower()=="no"):
         write_PDOS=False
     else:
       j=0
       while(i<len(argv) and j <4):
-        if argv[i] == par_symbol[j]:
+        if argv[i].lower() == par_symbol[j]:
           i+=1
           par_element[j]=int(argv[i])
           i+=1
@@ -177,7 +189,10 @@ def write_dos0(f,nedos, efermi):
       chunck.append(f.readline())
   data = np.loadtxt(chunck)
   e = data[:,0]
-  ef = (e-efermi)
+  if (centerEf==True):
+    ef = (e-efermi)
+  else:
+    ef=e
   Current[:,:] = data[:,1:2]
   matrix = np.hstack([ef.reshape([len(e),1]),data[:,1:]])
   if write_DOS0:
@@ -186,11 +201,14 @@ def write_dos0(f,nedos, efermi):
   #plot the DOS0 file
   plt.figure(0)
   plt.plot(ef,data[:,1],'r-',ef,-data[:,2],'b-')
-  plt.xlim(-7,7)
-  loc_down = np.argmin(abs(ef+7))
-  loc_up = np.argmin(abs(ef-7))
-  plt.ylim(-np.amax(data[loc_down:loc_up,2]), np.amax(data[loc_down:loc_up,1]))
-  fermiN = np.argmin(abs(ef))
+  if (centerEf==True):
+    plt.xlim(-7,7)
+    loc_down = np.argmin(abs(ef+7))
+    loc_up = np.argmin(abs(ef-7))
+    plt.ylim(-np.amax(data[loc_down:loc_up,2]), np.amax(data[loc_down:loc_up,1]))
+    fermiN = np.argmin(abs(ef))
+  else:
+    fermiN = np.argmin(abs(ef-efermi))
   if (energyshift !=0):
     delta = efermi-energyshift
   else:
@@ -242,11 +260,13 @@ def write_dos0(f,nedos, efermi):
   return ef
 
 def write_spin(f, positions, atomSpe, nedos, natoms, ncols, efermi,ef):
-  if  (np.sum(par_element)==-4):
+  print "hello"
+  if  ((np.sum(par_element)==-4) and (peratom==False)):
     return None,None,None,None
 
-  loc_down = np.argmin(abs(ef+7))
-  loc_up = np.argmin(abs(ef-7))
+  if (centerEf==True):
+    loc_down = np.argmin(abs(ef+7))
+    loc_up = np.argmin(abs(ef-7))
   nsites = (ncols -1)/2
 
   if (par_element[2]>=0):
@@ -296,17 +316,20 @@ def write_spin(f, positions, atomSpe, nedos, natoms, ncols, efermi,ef):
     All[:,atomSpe[atomi]] += Current[:,0] + Current[:,1]
 
     #print data and png per atom
-    global peratom
     if (peratom==True):
-      matrix = np.hstack([ef,element[:,1:]])
-      np.savetxt('DOS'+str(i)+".dat",matrix,fmt='%15.8f')
+      matrix = np.hstack([ef.reshape([len(ef),1]),element[:,1:]])
+      np.savetxt('DOS'+str(atomi)+".dat",matrix,fmt='%15.8f')
       plt.figure(i)
       plt.plot(ef,Current[:,0],'r-',ef,Current[:,1],'b-')
-      plt.xlim(-7,7)
-      plt.ylim(-np.amax(data[loc_down:loc_up,2]), np.amax(data[loc_down:loc_up,1]))
+      if (centerEf==True):
+        plt.xlim(-7,7)
+        #plt.ylim(-np.amax(data[loc_down:loc_up,2]), np.amax(data[loc_down:loc_up,1]))
       pl.show()
-      pl.savefig(str(i)+"DOS.png")
+      pl.savefig("DOS"+str(atomi)+".png")
       plt.close()
+
+  if  (np.sum(par_element)==-4):
+    return par_orbital,d_t2g,d_eg,All
 
   par_symbol=['s','p','d','f']
   if (symbol!=None):
@@ -317,16 +340,20 @@ def write_spin(f, positions, atomSpe, nedos, natoms, ncols, efermi,ef):
       par_symbol[i]="atomtype="+str(par_element[i])+" "+par_symbol[i]+"_orbital"
   par_color=['y','r','b','k']
   par_lim=np.zeros(8)
+
+
   plt.figure(0)
   for i in range(4):
     if (par_element[i] >=0):
       plt.plot(ef,par_orbital[i][:,0],par_color[i]+'-',label=par_symbol[i])
       plt.plot(ef,par_orbital[i][:,1],par_color[i]+'-')
-      par_lim[i]=np.amin(par_orbital[i][loc_down:loc_up,:])
-      par_lim[i+3]=np.amax(par_orbital[i][loc_down:loc_up,:])
+      if (centerEf==True):
+        par_lim[i]=np.amin(par_orbital[i][loc_down:loc_up,1])
+        par_lim[i+3]=np.amax(par_orbital[i][loc_down:loc_up,0])
   plt.legend()
-  plt.xlim(-7,7)
-  plt.ylim(np.amin(par_lim[0:3]), np.amax(par_lim[3:]))
+  if (centerEf==True):
+    plt.xlim(-7,7)
+    plt.ylim(np.amin(par_lim[0:3]), np.amax(par_lim[3:]))
   pl.show()
   pl.savefig("pdf_orbital.png")
   plt.close()
@@ -338,8 +365,9 @@ def write_spin(f, positions, atomSpe, nedos, natoms, ncols, efermi,ef):
     plt.plot(ef,d_eg[:,0],'b-',label='_eg')
     plt.plot(ef,d_eg[:,1],'b-')
     data = np.hstack([d_t2g[:,0],d_eg[:,0],d_t2g[:,1],d_eg[:,1]]).reshape([4,nedos]).T
-    plt.ylim(np.amin(data[loc_down:loc_up,2:]), np.amax(data[loc_down:loc_up,0:2]))
-    plt.xlim(-7,7)
+    if (centerEf==True):
+      plt.ylim(np.amin(data[loc_down:loc_up,2:]), np.amax(data[loc_down:loc_up,0:2]))
+      plt.xlim(-7,7)
     plt.legend()
     pl.show()
     pl.savefig("d_decompose.png")
