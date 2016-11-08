@@ -42,8 +42,8 @@ do
 
     #print all the information
     echo $netcharge $i $E $dE $mag $vol $Ef $conv $pressure >>sum
+    echo $i
 
-    pwd
   fi
 done
 cat sum
