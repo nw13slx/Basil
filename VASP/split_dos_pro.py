@@ -49,7 +49,7 @@ def main():
   if end:
     print "end condition: ",end
     return
-  print zoomIn,zoomEmin,zoomEmax,zoomEmax-zoomEmin
+  print atomDOS,zoomIn,zoomEmin,zoomEmax,zoomEmax-zoomEmin
 
   if (atomDOS == False):
     f = open("DOSCAR", 'r')
@@ -75,9 +75,11 @@ def main():
     f.close()
     plt.figure(0)
     cm = pl.get_cmap('winter')
+    ef=None
     for atomi in range(natoms):
       f=open("DOS"+str(atomi)+".dat")
       data=np.loadtxt(f)
+      ef=data[:,0]
       color = cm(1.*atomi/float(natoms))
       plt.plot(data[:,0],data[:,1],c=color)
       plt.plot(data[:,0],-data[:,2],c=color)
@@ -85,31 +87,18 @@ def main():
       del data
     if (centerEf==True):
       plt.xlim(-7,7)
-      loc_down = np.argmin(abs(ef+7))
-      loc_up = np.argmin(abs(ef-7))
-      plt.ylim(-np.amax(data[loc_down:loc_up,2]), np.amax(data[loc_down:loc_up,1]))
-      fermiN = np.argmin(abs(ef))
-    else:
-      fermiN = np.argmin(abs(ef-efermi))
     if (zoomIn==True):
       plt.xlim(zoomEmin,zoomEmax)
-      loc_down = np.argmin(abs(ef-zoomEmin))
-      loc_up = np.argmin(abs(ef-zoomEmax))
-      plt.ylim(-np.amax(data[loc_down:loc_up,2]), np.amax(data[loc_down:loc_up,1]))
-    if (energyshift !=0):
-      delta = efermi-energyshift
-    else:
-      delta = 0
-    plt.fill_between((ef+delta)[:fermiN], 0, data[:fermiN,1],facecolor='red')
-    plt.fill_between((ef+delta)[:fermiN], 0, -data[:fermiN,2],facecolor='blue')
     pl.show()
-    pl.savefig(name)
+    pl.savefig("corestate.png")
     plt.close()
 
 def parseInput(argv):
   if (os.path.exists("DOSCAR") !=True):
     return "DOSCAR does not exist"
-  global ntype, atomSpe, position,par_element,centerEf,peratom,write_PDOS,write_DOS0,zoomIn,zoomEmax,zoomEmin,natoms
+  global ntype, atomSpe, position,par_element,natoms,zoomEmax,zoomEmin
+  global centerEf,peratom,write_PDOS,write_DOS0,zoomIn
+  global atomDOS
   #if there is poscar
   pos = None
   if ( os.path.exists("POSCAR") == True ):
@@ -229,7 +218,7 @@ def read_POSCAR(pos):
   position = atoms.get_positions()
   return position
 
-def plot1(ef,data,name):
+def plot1(ef,efermi,data,name):
   #plot the DOS0 file
   plt.figure(0)
   plt.plot(ef,data[:,1],'r-',ef,-data[:,2],'b-')
@@ -281,11 +270,12 @@ def write_dos0(f,nedos, efermi):
   else:
     ef=e
   Current[:,:] = data[:,1:2]
-  plot1(ef,data,"DOS0.png")
+  plot1(ef,efermi,data,"DOS0.png")
   if write_DOS0:
     matrix = np.hstack([ef.reshape([len(e),1]),data[:,1:]])
     np.savetxt('DOS-all.dat',matrix,fmt='%15.8f')
   #try to calculate the band gap
+  fermiN = np.argmin(abs(ef-efermi))
   EGMIN_u=30
   EGMIN_d=30
   EGMAX_u=-30
@@ -324,8 +314,6 @@ def write_dos0(f,nedos, efermi):
   finfo.write('Eg %15.8f %15.8f %15.8f\n' % (EGMIN,EGMAX,EGMAX-EGMIN))
   finfo.close()
   return ef
-
-def read_atomDOS(f,positions,atomSpe):
 
 def write_spin(f, positions, atomSpe, nedos, natoms, ncols, efermi,ef):
   print "hello"
