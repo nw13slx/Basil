@@ -1,5 +1,5 @@
-a=True
-if a:
-    print "a True"
-if not a:
-    print "a False"
+a=open("a")
+for i in range(34):
+    b=a.readline()
+    if b:
+      print i,b

@@ -1,54 +1,3 @@
-#!/usr/bin/env python
-
-#usage: split_dos_atom argument-name argument
-#argument name, parameter
-# partial orbital: "s, p, d, f", # of element; i.e. p 1 f 0
-# input element species: ntype, [# of types, type 0 #, type 1 #, ...]
-#  this setting overrides the one in poscar/contcar
-# write_DOS0 yes/no
-# write_PDOS yes/no
-# centerEf yes/no
-# zoomin emin emax
-
-#this file is adapted from vtst tool
-#the original source code is buggy and kind of slow (especially when you have >100 atoms!)
-
-#default setting
-PATH="../"
-write_DOS0=True
-write_PDOS=True
-peratom=False
-centerEf=True
-zoomIn=False
-
-#initialization
-ntype=0
-energyshift=0
-par_element=[-1,-1,-1,-1] #partial orbital
-atomSpe=None
-position=None
-symbol=None
-name=""
-zoomEmax=-1
-zoomEmin=-1
-loc_down=None
-loc_up=None
-ferminN=None
-
-#main function
-def main():
-
-  f = open(PATH+"DOSCAR", 'r')
-  #read the header of DOSCAR
-  natoms, nedos, efermi = read_dosfile(f)
-
-  ef = write_dos0(f, nedos, efermi)
-
-  start = f.tell()
-  line = f.readline()
-  line = f.readline().strip().split()
-  ncols = int(len(line))
-  if ncols==7 or ncols==19 or ncols==9 or ncols==33:
     f.seek(start)
     par_orbital, d_t2g, d_eg, All = write_spin(f,position,atomSpe,nedos, natoms, ncols, efermi,ef)
     is_spin=True
@@ -166,64 +115,9 @@ def simple_line_plot(name,x,y,l_d,l_u,line_color,line_label):
   return ef
 
 def write_spin(f, positions,atomSpe, nedos, natoms, ncols, efermi,ef):
-  print "hello"
-  if  ((np.sum(par_element)==-4) and (peratom==False)):
-    return None,None,None,None
-
-  if (centerEf==True):
-    loc_down = np.argmin(abs(ef+7))
-    loc_up = np.argmin(abs(ef-7))
-  if (zoomIn==True):
-    loc_down = np.argmin(abs(ef-zoomEmin))
-    loc_up = np.argmin(abs(ef-zoomEmax))
-  nsites = (ncols -1)/2
-
-  if (par_element[2]>=0):
-    d_t2g=np.zeros((nedos,2))
-    d_eg=np.zeros((nedos,2))
-  else:
-    d_t2g=None
-    d_eg=None
-  par_orbital=[] #store the partial s, p, d, f orbital
-  for i in range(4):
-    if par_element[i]>=0:
-      par_orbital+=[np.zeros((nedos,2))]
-    else:
-      par_orbital+=[None]
-  All=np.zeros((nedos,ntype))
 
   for atomi in xrange(natoms):
     #skip the first line, and loop over nedos
-    print "atom",atomi
-    line = f.readline()
-    chunck=[]
-    for n in xrange(nedos):
-      chunck.append(f.readline())
-    element = np.loadtxt(chunck)
-    #ef = element[:,0] - efermi
-
-    Current=np.zeros((nedos,2))
-    for site in range(nsites):
-      Current[:,0] += element[:,site*2+1]
-      Current[:,1] += element[:,site*2+2]
-      #collection
-    if (atomSpe[atomi] == par_element[0]):
-      par_orbital[0][:,0]+=element[:,1]
-      par_orbital[0][:,1]-=element[:,2]
-    if (atomSpe[atomi] == par_element[1]):
-      par_orbital[1][:,0]+=element[:,3] + element[:,5] + element[:,7]
-      par_orbital[1][:,1]-=(element[:,4] + element[:,6] + element[:,8])
-    if (atomSpe[atomi] == par_element[2]):
-      par_orbital[2][:,0]+=element[:,9] + element[:,11] + element[:,13] + element[:,15] + element[:,17]
-      par_orbital[2][:,1]-=(element[:,10] + element[:,12] + element[:,14] + element[:,16] + element[:,18])
-      d_t2g[:,0]+=element[:,9] + element[:,11] + element[:,15]
-      d_t2g[:,1]-=(element[:,10] + element[:,12] + element[:,16])
-      d_eg[:,0]+=element[:,13] + element[:,17]
-      d_eg[:,1]-=(element[:,14] + element[:,18])
-    if (atomSpe[atomi] == par_element[3]):
-      par_orbital[3][:,0]+=element[:,19] + element[:,21] + element[:,23] + element[:,25] + element[:,27]+element[:,29]+element[:,31]
-      par_orbital[3][:,1]-=(element[:,20] + element[:,22] + element[:,24] + element[:,26] + element[:,28]+element[:,30]+element[:,32])
-    All[:,atomSpe[atomi]] += Current[:,0] + Current[:,1]
 
     #print data and png per atom
     if (peratom==True):

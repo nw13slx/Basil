@@ -1,22 +1,22 @@
 from control import control_knob
-from io import iodos
+from iodos import iodos
 
 import sys
 
 def main():
 
   cont=control_knob(sys.argv)
-  if cont.end:
-    print "end condition: ",cont.end
-    return
-  cont.dumpclean()
 
   io=iodos(cont)
-  if io.end:
-    print "end condition: ",io.end
-    return
   io.read_poscar()
+
   io.read_tot_dosfile()
+  if cont.write_DOS0:
+      io.write_tot_dosfile()
+  io.delete_tot_dosfile()
+  io.read_pdos()
+
+  cont.dumpclean()
   io.dumpclean()
 
 if __name__ == '__main__':

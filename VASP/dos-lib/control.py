@@ -12,7 +12,7 @@
 
 class control_knob:
 
-  _par_symbol=['s','p','d','f']
+  par_symbol=['s','p','d','f']
 
   def __init__(self,argv):
     if not argv:
@@ -28,7 +28,7 @@ class control_knob:
     self.zoomEmax=None
     self.zoomEmin=None
     self.energyshift=None
-    self.par_element=[None,None,None,None] 
+    self.par_element=[-1,-1,-1,-1]
     self.ntype=None
     self.atomSpe=None
     self.end=None
@@ -150,8 +150,6 @@ class control_knob:
         if (i<narg):
           self.par_element[j]=int(argv[i])
           i+=1
-          if (self.par_element[j]>=ntype):
-            self.end="END, the partial orbital "+str(par_element[j])+"is higher than ntype "+str(ntype)
         else:
           self.end="there are not enough arguments for partial orbital"
       else:
@@ -159,6 +157,9 @@ class control_knob:
         i+=1
 
   def dumpclean(self,obj0=None):
+    if self.end:
+        print "END:", self.end
+        return 1
     '''this source code comes from http://stackoverflow.com/questions/15785719/how-to-print-a-dictionary-line-by-line-in-python'''
     if not obj0:
       obj=self.__dict__
