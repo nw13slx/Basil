@@ -1,0 +1,50 @@
+#data storage
+
+#!/usr/bin/env python
+import numpy as np
+import os
+
+class iodos:
+  def __init__(self,control):
+    self._posf=None
+    self._dosf=None
+    self._positions=None
+    self._ntype=None
+    self._atomSpe=None
+    self._natoms=None
+    self._end=None
+    if control._ntype:
+      self._atomSpe=control._atomSpe
+      self._natoms=len(self._atomSpe)
+    elif (os.path.isfile(control._path+control._poscar) and control._poscar):
+      self._posf=open(control._path+control._poscar)
+    elif os.path.isfile(control._path+"CONTCAR"):
+      self._posf =open(control._path+ "CONTCAR")
+    elif os.path.isfile(control._path+"POSCAR") :
+      self._posf =control._path+"POSCAR"
+    else:
+      self._end="cannot find poscar"
+
+    if os.path.isfile(control._path+control._doscar) and control._doscar:
+      self._dosf=open(control._path+control._doscar)
+    elif os.path.isfile(control._path+"DOSCAR"):
+      self._dosf =control._path+"DOSCAR"
+    else:
+      self._end="cannot find doscar"
+  def read_poscar(self):
+    self._positions=None
+    self._constraint=None
+    lines=self._posf.readlines()
+    if not self._atomSpe:
+      symbol=lines[5].strip().split()
+      number=map(int,lines[6].strip().split())
+      self._ntype=len(number)
+      self._atomSpe=[]
+      for i in range(len(number)):
+        self._atomSpe += ([i]*number[i])
+      self._natoms=len(atomSpe)
+    if ('S' in lines[7]) or ('s' in lines[7]):
+        starting=9
+    else:
+        starting=8
+    self._positions = np.loadtxt(lines[starting:starting+self._natoms]
