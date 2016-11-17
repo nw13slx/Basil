@@ -110,17 +110,17 @@ class iodos:
     dos.Xenergy = data[:,0]
     dos.dos0 = data[:,1:3]
 
-    if (control.centerEf==True):
+    if (control.center_ef==True):
       dos.Xenergy -= dos.efermi
       dos.loc_down = np.argmin(abs(dos.Xenergy+7))
       dos.loc_up = np.argmin(abs(dos.Xenergy-7))
       dos.fermiN = np.argmin(abs(dos.Xenergy))
     else:
       dos.fermiN = np.argmin(abs(dos.Xenergy-efermi))
-    if (control.zoomIn==True):
-      dos.loc_down = np.argmin(abs(dos.Xenergy-zoomEmin))
-      dos.loc_up = np.argmin(abs(dos.Xenergy-zoomEmax))
-    if (control.wholerange==True):
+    if (control.zoom_in==True):
+      dos.loc_down = np.argmin(abs(dos.Xenergy-zoom_emin))
+      dos.loc_up = np.argmin(abs(dos.Xenergy-zoom_emax))
+    if (control.whole_range==True):
       dos.loc_down = 0
       dos.loc_up = dos.nedos
 
@@ -158,9 +158,6 @@ class iodos:
   def read_pdos(self):
     if not self._cont.run_pdos:
        return 0
-    if  ((np.sum(par_element)==-4) and (peratom==False)):
-      self.end="No partial orbital is needed"
-    self._auto_terminate()
 
     dosf=self._dosf
     dos=self.dos
@@ -232,10 +229,11 @@ class iodos:
       if (species[atomi] == par_element[2]):
         d_t2g+=partial[:,nspin*4:nspin*4+nspin]
         d_eg+=partial[:,nspin*5:nspin*5+nspin]
-      if dos.spin:
-        dos.perspecies[:,species[atomi]] += tot[:,0] - tot[:,1]
-      else:
-        dos.perspecies[:,species[atomi]] += tot
+      if perspecies:
+        if dos.spin:
+          dos.perspecies[:,species[atomi]] += tot[:,0] - tot[:,1]
+        else:
+          dos.perspecies[:,species[atomi]] += tot
       if peratom:
         self.plot.plot_atom(atomi)
       del tot,partial

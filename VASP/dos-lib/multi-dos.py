@@ -24,7 +24,7 @@ def main():
 
     del atoms,dos,cont,io,plt,ana
     ##write
-    #if cont.write_DOS0:
+    #if cont.write_dos0:
     #    io.write_tot_dosfile()
     #io.delete_tot_dosfile()
 
@@ -32,7 +32,7 @@ def main():
     #if cont.run_pdos:
     #  io.read_pdos()
     #  plt.pdos()
-    #  if cont.write_PDOS:
+    #  if cont.write_pdos:
     #      io.write_pdosfile()
     #  io.delete_pdosfile()
 
