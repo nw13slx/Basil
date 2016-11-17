@@ -118,8 +118,8 @@ class iodos:
     else:
       dos.fermiN = np.argmin(abs(dos.Xenergy-efermi))
     if (control.zoom_in==True):
-      dos.loc_down = np.argmin(abs(dos.Xenergy-zoom_emin))
-      dos.loc_up = np.argmin(abs(dos.Xenergy-zoom_emax))
+      dos.loc_down = np.argmin(abs(dos.Xenergy-control.zoom_emin))
+      dos.loc_up = np.argmin(abs(dos.Xenergy-control.zoom_emax))
     if (control.whole_range==True):
       dos.loc_down = 0
       dos.loc_up = dos.nedos
@@ -212,7 +212,7 @@ class iodos:
         dos.par_orbital+=[np.zeros((dos.nedos,nspin))]
       else:
         dos.par_orbital+=[None]
-  
+
     if perspecies:
       dos.perspecies=np.zeros((dos.nedos,atom.ntype))
     if peratom:
@@ -244,7 +244,7 @@ class iodos:
 #      #  np.savetxt(name+'DOS'+str(atomi)+".dat",matrix,fmt='%15.8f',header=header_line)
     if peratom:
       self.plot.plot_atom_end()
-#  
+#
   def read_atomDOS(self):
       dos=self.dos
       atom=self.atom
@@ -277,7 +277,7 @@ class iodos:
       if (ncols>16): #f
         partial[:,5]=element[:,10] + element[:,11] + element[:,12] + element[:,13] + element[:,14]+element[:,15]+element[:,16]
       return tot,partial
-  
+
   def tally_spin(self,element):
       dos=self.dos
       atom=self.atom

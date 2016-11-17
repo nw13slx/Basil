@@ -217,5 +217,6 @@ def read_POSCAR(pos):
   position = atoms.get_positions()
   return position
 
+def
 if __name__ == '__main__':
   main()

@@ -49,7 +49,7 @@ class analysis:
     finfo.write('Eg_d %15.8f %15.8f %15.8f\n' % (EGMIN_d,EGMAX_d,Eg_d))
     finfo.write('Eg %15.8f %15.8f %15.8f\n' % (EGMIN,EGMAX,EGMAX-EGMIN))
     finfo.close()
-  
+
 
   def peak_finder(self,center,span):
     #try to calculate the band gap
@@ -72,15 +72,19 @@ class analysis:
     sigma=np.square(sigma)
     sigma=sigma.dot(dos0[win_down:win_up,0])/np.sum(ana_dos)
     sigma=np.sqrt(sigma)
-    print sigma
 
-#    def locater(array): 
+    x0=dos.Xenergy[0]
+    dx=dos.Xenergy[1]-x0
+    print avg*dx+x0,sigma*dx
+    return avg*dx+x0,sigma*dx
+
+#    def locater(array):
 #      length=len(array)
 #      middle=length/2
 #      if array[middle] < a[middle - 1]:
-#          #only look at the left 1 ... n/2 - 1 
+#          #only look at the left 1 ... n/2 - 1
 #      elif array[middle] < a[middle + 1]:
-#          #then only look at the right n/2 +1 ... n 
+#          #then only look at the right n/2 +1 ... n
 #      else:
-#          #n/2 is a peak 
+#          #n/2 is a peak
 #
