@@ -30,17 +30,18 @@ class plot:
           par_symbol[i]="atomtype="+str(dos.par_element[i])+" "+par_symbol[i]+"_orbital"
     
     #plot each orbital
-      y=[]
-      line_label=[]
-      line_color=['y','y','r','r','b','b','k','k']
-      for i in range(4):
-        if (dos.par_orbital[i]!=None):
-          y+=[dos.par_orbital[i][:,0],dos.par_orbital[i][:,1]]
-        else:
-          y+=[None,None]
-        line_label+=[par_symbol[i],None]
-      simple_line_plot("pdf_orbital",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
-      del y, line_label, line_color
+      if all(x!=-1 for x in dos.par_element):
+        y=[]
+        line_label=[]
+        line_color=['y','y','r','r','b','b','k','k']
+        for i in range(4):
+          if (dos.par_orbital[i]!=None):
+            y+=[dos.par_orbital[i][:,0],dos.par_orbital[i][:,1]]
+          else:
+            y+=[None,None]
+          line_label+=[par_symbol[i],None]
+        simple_line_plot("pdf_orbital",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
+        del y, line_label, line_color
     
       if (dos.par_element[2] >=0):
         y=[]
@@ -62,6 +63,13 @@ class plot:
       simple_line_plot("perspecies",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
       del y, line_label, line_color
     
+  def plot_tot_dos(self):
+      y=[self.dos.dos0[:,0],self.dos.dos0[:,1]]
+      line_label=[None,None]
+      line_color=['red','blue']
+      simple_line_plot("DOS-tot",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
+      del y, line_label, line_color
+
   def simple_line_plot(self,name,x,y,l_d,l_u,line_color,line_label):
     a=plt.figure(0)
     for i in range(len(y)):
@@ -75,64 +83,22 @@ class plot:
         else:
           plt.plot(x[l_d:l_u],y[i][l_d:l_u])
     plt.legend()
+    if (name=="DOS-tot"):
+        dos0_extra()
     pl.savefig(self.control.name+name+".png")
     plt.close()
   
   def plot_atom_start(self):
-    rad=12
-    scale=1/23.*2.
-    atom=self.atom
-    zmin=np.amin(atom.positions[:,2])
-    zmax=np.amax(atom.positions[:,2])
-    lz=zmax-zmin
-    zcenter=(zmin+zmax)*0.5
-    Oplot=200
-    Ceplot=300
-    for i in ('zmin', 'zmax', 'lz','zcenter','Oplot','Ceplot','scale'):
-       self.plot_atom_dict[i] = locals()[i]
-
+      pass
   def plot_atom(self,atomi):
-    Oplot=self.plot_atom_dict['Oplot']
-    Ceplot=self.plot_atom_dict['Ceplot']
-    zcenter=self.plot_atom_dict['zcenter']
-    zmin=self.plot_atom_dict['zmin']
-    scale=self.plot_atom_dict['scale']
-    lz=self.plot_atom_dict['lz']
-
-    atom=self.atom
-    dos=self.dos
-
-    y=dos.tot[dos.loc_down:dos.loc_up,0]+dos.tot[dos.loc_down:dos.loc_up,1]
-    color =self.cm(2.*abs(atom.positions[atomi,2]-zcenter)/lz)  # color will now be an RGBA tuple
-    y_off=(atom.positions[atomi,2]-zmin)/lz
-    if (atom.species[atomi]==dos.par_element[1]):
-      plt.figure(Oplot)
-      ymax=np.amax(y)
-      pl.plot(dos.Xenergy[dos.loc_down:dos.loc_up],y_off+y/ymax*scale,c=color)
-    if (atom.species[atomi]==dos.par_element[3]):
-      plt.figure(Ceplot)
-      ymax=np.amax(y)
-      pl.plot(dos.Xenergy[dos.loc_down:dos.loc_up],y_off+y/ymax*scale,c=color)
+      pass
 
   def plot_atom_end(self):
-    Oplot=self.plot_atom_dict['Oplot']
-    Ceplot=self.plot_atom_dict['Ceplot']
-    zcenter=self.plot_atom_dict['zcenter']
-    zmin=self.plot_atom_dict['zmin']
-    scale=self.plot_atom_dict['scale']
-
-    plt.figure(Oplot)
-    plt.ylim(0,1+scale)
-    plt.show()
-    plt.savefig("DOS_O_INSIDE.png")
-    plt.close()
-
-    plt.figure(Ceplot)
-    plt.ylim(0,1+scale)
-    plt.savefig("DOS_Ce_INSIDE.png")
-    plt.close()
-
+      pass
   def dos0_extra(self):
-    plt.fill_between((ef+delta)[:fermiN], 0, data[:fermiN,1],facecolor='red')
-    plt.fill_between((ef+delta)[:fermiN], 0, -data[:fermiN,2],facecolor='blue')
+    dos0=self.dos.dos0
+    ef=self.dos.Xenergy
+    fermiN=self.dos.fermiN
+    plt.fill_between(ef[:fermiN], 0, dos0[:fermiN,0],facecolor='red')
+    plt.fill_between(ef[:fermiN], 0, dos0[:fermiN,1],facecolor='blue')
 

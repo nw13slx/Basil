@@ -167,6 +167,7 @@ class iodos:
     atom=self.atom
     par_element=dos.par_element
     peratom=self._cont.peratom
+    perspecies=self._cont.perspecies
 
     start = dosf.tell()
     line = dosf.readline()
@@ -214,8 +215,9 @@ class iodos:
         dos.par_orbital+=[np.zeros((dos.nedos,nspin))]
       else:
         dos.par_orbital+=[None]
-    dos.perspecies=np.zeros((dos.nedos,atom.ntype))
   
+    if perspecies:
+      dos.perspecies=np.zeros((dos.nedos,atom.ntype))
     if peratom:
       self.plot.plot_atom_start()
     for atomi in xrange(atom.natom):

@@ -24,6 +24,7 @@ class control_knob:
     self.write_DOS0=True
     self.write_PDOS=True
     self.peratom=False
+    self.perspecies=True
     self.wholerange=False
     self.centerEf=True
     self.zoomIn=False
