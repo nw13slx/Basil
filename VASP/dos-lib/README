@@ -20,3 +20,4 @@ arguments:
                  set other values as zero
    peratom       yes/no, analyse each atom's DOS
 
+More examples in the "example" directory

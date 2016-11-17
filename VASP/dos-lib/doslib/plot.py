@@ -14,6 +14,9 @@ class plot:
       self.dos=control.dos
       self.par_symbol=['s','p','d','f']
   def pdos(self):
+      if not self.control.run_pdos:
+         return 0
+
       dos=self.dos
       atom=self.atom
       loc_up=dos.loc_up
@@ -21,16 +24,9 @@ class plot:
       control=self.control
       simple_line_plot=self.simple_line_plot
 
-      par_symbol=self.par_symbol
-      if atom.symbol:
-        for i in range(4):
-          par_symbol[i]=atom.symbol[dos.par_element[i]]+"_"+par_symbol[i]
-      else:
-        for i in range(4):
-          par_symbol[i]="atomtype="+str(dos.par_element[i])+" "+par_symbol[i]+"_orbital"
-    
     #plot each orbital
-      if all(x!=-1 for x in dos.par_element):
+      if any(x!=-1 for x in dos.par_element):
+        par_symbol=self.par_symbol
         y=[]
         line_label=[]
         line_color=['y','y','r','r','b','b','k','k']
@@ -39,7 +35,10 @@ class plot:
             y+=[dos.par_orbital[i][:,0],dos.par_orbital[i][:,1]]
           else:
             y+=[None,None]
-          line_label+=[par_symbol[i],None]
+          if atom.symbol:
+            line_label+=[atom.symbol[dos.par_element[i]]+"_"+par_symbol[i],None]
+          else:
+            line_label+=["atomtype="+str(dos.par_element[i])+" "+par_symbol[i]+"_orbital",None]
         simple_line_plot("pdf_orbital",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
         del y, line_label, line_color
     
@@ -51,17 +50,18 @@ class plot:
         simple_line_plot("d_decompose",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
         del y, line_label, line_color
     
-      y=[]
-      line_label=[]
-      line_color=[]
-      for i in range(atom.ntype):
-        y+=[dos.perspecies[:,i]]
-        line_label+=["species "+str(i)]
-        line_color+=[None]
-      if atom.symbol:
-        line_label+=[atom.symbol[i]]
-      simple_line_plot("perspecies",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
-      del y, line_label, line_color
+      if self.control.perspecies:
+        y=[]
+        line_label=[]
+        line_color=[]
+        for i in range(atom.ntype):
+          y+=[dos.perspecies[:,i]]
+          line_label+=["species "+str(i)]
+          line_color+=[None]
+        if atom.symbol:
+          line_label+=[atom.symbol[i]]
+        simple_line_plot("perspecies",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
+        del y, line_label, line_color
     
   def plot_tot_dos(self):
       y=[self.dos.dos0[:,0],self.dos.dos0[:,1]]
