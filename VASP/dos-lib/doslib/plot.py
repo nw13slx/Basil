@@ -16,13 +16,12 @@ class plot:
   def pdos(self):
       if not self.control.run_pdos:
          return 0
-
       dos=self.dos
       atom=self.atom
       loc_up=dos.loc_up
       loc_down=dos.loc_down
       control=self.control
-      simple_line_plot=self.simple_line_plot
+      simple=self.simple
 
     #plot each orbital
       if any(x!=-1 for x in dos.par_element):
@@ -39,7 +38,7 @@ class plot:
             line_label+=[atom.symbol[dos.par_element[i]]+"_"+par_symbol[i],None]
           else:
             line_label+=["atomtype="+str(dos.par_element[i])+" "+par_symbol[i]+"_orbital",None]
-        simple_line_plot("pdf_orbital",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
+        simple("pdf_orbital",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
         del y, line_label, line_color
     
       if (dos.par_element[2] >=0):
@@ -47,7 +46,7 @@ class plot:
         line_label=['_t2g',None,'_eg',None]
         line_color=['r','r','b','b']
         y=[d_t2g[:,0],d_t2g[:,1],d_eg[:,0],d_eg[:,1]]
-        simple_line_plot("d_decompose",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
+        simple("d_decompose",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
         del y, line_label, line_color
     
       if self.control.perspecies:
@@ -60,40 +59,38 @@ class plot:
           line_color+=[None]
         if atom.symbol:
           line_label+=[atom.symbol[i]]
-        simple_line_plot("perspecies",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
+        simple("perspecies",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
         del y, line_label, line_color
     
-  def plot_tot_dos(self):
+  def tot_dos(self):
       y=[self.dos.dos0[:,0],self.dos.dos0[:,1]]
       line_label=[None,None]
-      line_color=['red','blue']
-      simple_line_plot("DOS-tot",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
+      line_color=['r','b']
+      self.simple("DOS-tot",self.dos.Xenergy,y,self.dos.loc_down,self.dos.loc_up,line_color,line_label)
       del y, line_label, line_color
 
-  def simple_line_plot(self,name,x,y,l_d,l_u,line_color,line_label):
+  def simple(self,name,x,y,l_d,l_u,line_color,line_label):
     a=plt.figure(0)
     for i in range(len(y)):
       if (y[i]!=None):
-        if ((line_color[i]!=None) and line_label[i]!=None):
-          plt.plot(x[l_d:l_u],y[i][l_d:l_u],c=line_color[i],label=line_label[i])
-        elif ((line_color[i]==None) and line_label[i]!=None):
-          plt.plot(x[l_d:l_u],y[i][l_d:l_u],label=line_label[i])
-        elif ((line_color[i]!=None) and line_label[i]==None):
-          plt.plot(x[l_d:l_u],y[i][l_d:l_u],c=line_color[i])
-        else:
-          plt.plot(x[l_d:l_u],y[i][l_d:l_u])
-    plt.legend()
+        line=plt.plot(x[l_d:l_u],y[i][l_d:l_u])
+        if (line_color[i]!=None):
+          plt.setp(line,color=line_color[i])
+        if (line_label[i]!=None):
+          plt.setp(line,label=line_label[i])
+    if any(x for x in line_label):
+      plt.legend()
     if (name=="DOS-tot"):
-        dos0_extra()
+        self.dos0_extra()
     pl.savefig(self.control.name+name+".png")
     plt.close()
   
-  def plot_atom_start(self):
+  def atom_start(self):
       pass
-  def plot_atom(self,atomi):
+  def atom(self,atomi):
       pass
 
-  def plot_atom_end(self):
+  def atom_end(self):
       pass
   def dos0_extra(self):
     dos0=self.dos.dos0

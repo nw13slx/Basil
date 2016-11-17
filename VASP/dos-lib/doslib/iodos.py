@@ -109,6 +109,7 @@ class iodos:
     data = np.loadtxt(chunck)
     dos.Xenergy = data[:,0]
     dos.dos0 = data[:,1:3]
+    dos.dos0[:,1]=-dos.dos0[:,1]
 
     if (control.center_ef==True):
       dos.Xenergy -= dos.efermi
@@ -216,7 +217,7 @@ class iodos:
     if perspecies:
       dos.perspecies=np.zeros((dos.nedos,atom.ntype))
     if peratom:
-      self.plot.plot_atom_start()
+      self.plot.atom_start()
     for atomi in xrange(atom.natom):
       #skip the first line, and loop over dos.nedos
       tot,partial=self.read_atomDOS()
@@ -235,7 +236,7 @@ class iodos:
         else:
           dos.perspecies[:,species[atomi]] += tot
       if peratom:
-        self.plot.plot_atom(atomi)
+        self.plot.atom(atomi)
       del tot,partial
       #print data and png per atom
 #      #if (peratom==True):
@@ -243,7 +244,7 @@ class iodos:
 #      #  header_line="#"+name+"atom"+str(atomi)+"\n#E su sd pu pd du dd fu fd dt2gu dt2gd degu degd"
 #      #  np.savetxt(name+'DOS'+str(atomi)+".dat",matrix,fmt='%15.8f',header=header_line)
     if peratom:
-      self.plot.plot_atom_end()
+      self.plot.atom_end()
 #  
   def read_atomDOS(self):
       dos=self.dos

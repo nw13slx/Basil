@@ -8,9 +8,9 @@ import sys
 
 #here, define your own per-atom plot function, as in slab-plot.py
 import slab_plot as sp
-plot.plot_atom_start=sp.plot_atom_start
-plot.plot_atom=sp.plot_atom
-plot.plot_atom_end=sp.plot_atom_end
+plot.atom_start=sp.plot_atom_start
+plot.atom=sp.plot_atom
+plot.atom_end=sp.plot_atom_end
 
 def main():
   #initialization
