@@ -17,7 +17,7 @@ def main():
   io=iodos(cont,plt)
   io.read_poscar()
   io.read_tot_dosfile()
-  ana.bandgap()
+  plt.tot_dos()
 
   #write
   if cont.write_dos0:
@@ -25,11 +25,12 @@ def main():
   io.delete_tot_dosfile()
 
   #read in partial dos
-  io.read_pdos()
-  plt.pdos()
-  if cont.write_pdos:
-      io.write_pdosfile()
-  io.delete_pdosfile()
+  if cont.run_pdos:
+    io.read_pdos()
+    plt.pdos()
+    if cont.write_pdos:
+        io.write_pdosfile()
+    io.delete_pdosfile()
 
   #debug
   #dumpclean(cont.__dict__)
