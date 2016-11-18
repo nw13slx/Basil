@@ -142,7 +142,7 @@ class iodos:
     del matrix
     matrix = dos.Xenergy.reshape([dos.nedos,1])
     for orbital in range(4):
-      if (dos.par_orbital[orbital]!=None):
+      if (dos.par_orbital[orbital] is not None):
           matrix = np.hstack([matrix,dos.par_orbital[orbital]])
     np.savetxt(control.name+'DOS-parorbital.gz',matrix,fmt='%15.8f')
     del matrix

@@ -30,7 +30,7 @@ class plot:
         line_label=[]
         line_color=['y','y','r','r','b','b','k','k']
         for i in range(4):
-          if (dos.par_orbital[i]!=None):
+          if dos.par_orbital[i] is not None:
             y+=[dos.par_orbital[i][:,0],dos.par_orbital[i][:,1]]
           else:
             y+=[None,None]
@@ -73,11 +73,11 @@ class plot:
     a=plt.figure(0)
     print len(y)
     for i in range(len(y)):
-      if (y[i]!=None):
+      if y[i] is not None:
         line=plt.plot(x[l_d:l_u],y[i][l_d:l_u])
-        if (line_color[i]!=None):
+        if (line_color[i] is not None):
           plt.setp(line,color=line_color[i])
-        if (line_label[i]!=None):
+        if line_label[i] is not None:
           plt.setp(line,label=line_label[i])
     if any(x for x in line_label):
       plt.legend()
