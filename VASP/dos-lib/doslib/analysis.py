@@ -64,18 +64,16 @@ class analysis:
     win_down= np.argmin(abs(dos.Xenergy-window_d))
     win_up= np.argmin(abs(dos.Xenergy-window_u))
     win_span=(win_up-win_down)
-    ana_dos=dos0[win_down:win_up,0]+dos0[win_down:win_up,1]
+    ana_dos=dos0[win_down:win_up,0]-dos0[win_down:win_up,1]
 
     #assuming there is only one gaussian peak
     avg=(np.arange(win_span).dot(ana_dos))/np.sum(ana_dos)
-    sigma=(np.arange(win_span)-avg)
-    sigma=np.square(sigma)
-    sigma=sigma.dot(dos0[win_down:win_up,0])/np.sum(ana_dos)
+    sigma=(np.square(np.arange(win_span)-avg)).dot(ana_dos)/np.sum(ana_dos)
     sigma=np.sqrt(sigma)
 
     x0=dos.Xenergy[0]
     dx=dos.Xenergy[1]-x0
-    print avg*dx+x0,sigma*dx
+    #print avg*dx+x0,sigma*dx
     return avg*dx+x0,sigma*dx
 
 #    def locater(array):

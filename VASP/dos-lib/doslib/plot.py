@@ -40,7 +40,7 @@ class plot:
             line_label+=["atomtype="+str(dos.par_element[i])+" "+par_symbol[i]+"_orbital",None]
         simple("pdf_orbital",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
         del y, line_label, line_color
-    
+
       if (dos.par_element[2] >=0):
         y=[]
         line_label=['_t2g',None,'_eg',None]
@@ -48,7 +48,7 @@ class plot:
         y=[d_t2g[:,0],d_t2g[:,1],d_eg[:,0],d_eg[:,1]]
         simple("d_decompose",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
         del y, line_label, line_color
-    
+
       if self.control.perspecies:
         y=[]
         line_label=[]
@@ -61,7 +61,7 @@ class plot:
           line_label+=[atom.symbol[i]]
         simple("perspecies",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
         del y, line_label, line_color
-    
+
   def tot_dos(self):
       y=[self.dos.dos0[:,0],self.dos.dos0[:,1]]
       line_label=[None,None]
@@ -71,6 +71,7 @@ class plot:
 
   def simple(self,name,x,y,l_d,l_u,line_color,line_label):
     a=plt.figure(0)
+    print len(y)
     for i in range(len(y)):
       if (y[i]!=None):
         line=plt.plot(x[l_d:l_u],y[i][l_d:l_u])
@@ -84,7 +85,7 @@ class plot:
         self.dos0_extra()
     pl.savefig(self.control.name+name+".png")
     plt.close()
-  
+
   def atom_start(self):
       pass
   def atom(self,atomi):
