@@ -77,6 +77,7 @@ def main():
     cm = pl.get_cmap('winter')
     ef=None
     for atomi in range(natoms):
+      print "atom", atomi
       f=open("DOS"+str(atomi)+".dat")
       data=np.loadtxt(f)
       ef=data[:,0]
