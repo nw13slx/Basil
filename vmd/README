@@ -1,0 +1,3 @@
+addbond { A B R }
+  - this function is used to add bonds to the A-B atom pairs that have is closer than R. A, B should be a type name and R is the cut-off radius. If the bond already exist, it will delete the bond and re-add it.
+    it shouldn't be too hard to change A and B into random selection defined by "atomselect", and also change the add bond behavior.
