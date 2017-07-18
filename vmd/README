@@ -1,3 +1,13 @@
-addbond { A B R }
-  - this function is used to add bonds to the A-B atom pairs that have is closer than R. A, B should be a type name and R is the cut-off radius. If the bond already exist, it will delete the bond and re-add it.
-    it shouldn't be too hard to change A and B into random selection defined by "atomselect", and also change the add bond behavior.
+This folder contains some VMD scripts...
+
+addbond.tcl
+
+    addbond (type1, type2, R1, R2) function is  used to add bonds to the A-B atom 
+    pairs that have is in the range of (R1,R2). A, B should be a type name and 
+    (R1,R2) is the minimum/maximum cut-off radius. If the bond already exist, it 
+    will delete the bond and re-add it. It shouldn't be too hard to change A and B 
+    into random selection defined by "atomselect"
+   
+    deletebond (type1, type2, R1, R2) function is to undo the above function.
+   
+    no periodic boundary condition is counted. see more notes in the code.
