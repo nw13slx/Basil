@@ -60,7 +60,7 @@ proc addbond {type1 type2 radius1 radius2} {
           set x$k $dk
         }
         set dx [ expr sqrt($x1*$x1+$x2*$x2+$x0*$x0)] 
-        if { {$dx < $radius2} && {$dx > $radius1} } {
+        if { ( $dx < $radius2 ) && ( $dx > $radius1 ) } {
           topo delbond $i1 $i2
           topo addbond $i1 $i2
           #puts $dx
