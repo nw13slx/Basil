@@ -1,0 +1,8 @@
+these codes are ORCA post-analysis code
+
+MO.cpp:
+  analyse the "Print[ P_MOs ] 1" output of ORCA. 
+    The density of state will be decomposed
+    to different element and different angular momentum , s p d f
+    this is called PDOS in the solid state dft community
+  usage: MO <inputfile name> <outputfile name> 
