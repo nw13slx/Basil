@@ -54,6 +54,14 @@ void gaussian(int grid, double *x, double *y, double x0, double sigma2){
     for (int i=0;i<grid;i++) y[i]=exp(-(x[i]-x0)*(x[i]-x0)/2./sigma2);
 }
 
+bool contain_alphabet(char * c){
+    for (int i=0;i<strlen(c);i++){
+        if (((c[i]>='a')&&(c[i]<='z'))||((c[i]>='A')&&(c[i]<='Z')))
+            return true;
+    }
+    return false;
+}
+
 int main(int argc, char **argv){
 
     char temp[MAX_CHARACTER], * pch,content[MAX_COLUMN][MAX_CHARACTER];
@@ -112,8 +120,6 @@ int main(int argc, char **argv){
           line++;
           In1.getline(temp,MAX_CHARACTER); 
 
-          // four lines that state the energy and occupation
-          if (temp[0]==' ') energy_line+=1;
 
           column=0;
           pch = strtok (temp," ");
@@ -124,8 +130,12 @@ int main(int argc, char **argv){
           }
           pch= NULL;
 
+          if (contain_alphabet(content[0])==false) energy_line+=1;
+          //debug cout<<line<<" "<<column<<" "<<energy_line<<endl;
+
           //the second line is for orbital energy
           if (energy_line == 2){
+            //debug cout<<"second line"<<endl;
             p_energy=&energy[energy_id];
             p_tally=&tally[spin*MAX_ELEMENT*MAX_M*MAX_ENERGYLINE+energy_id];
             for (int columni=0;columni<column;columni++){
@@ -134,7 +144,8 @@ int main(int argc, char **argv){
             if (spin==0) n_energy+=column;
             energy_id+=column;
           //it starts with non-space character
-          } else if ((energy_line ==0)  && (temp[0]!=' ')){
+          } else if ((energy_line ==0)  && (contain_alphabet(content[0])==true)){
+            //debug cout<<"meat line"<<endl;
 
             //remove non aphebatic character in atom name
             string s(content[0]);
@@ -147,6 +158,8 @@ int main(int argc, char **argv){
             s1.erase(remove_if(s1.begin(), s1.end(), isxyz ), s1.end());
             strcpy(content[1],s1.c_str());
 
+            //debug cout<<"   "<<content[0]<<" "<<content[1]<<endl;
+
             //recognize the element name
             int elementid=-1;
             for (int eid=0;eid<n_element;eid++){
@@ -154,8 +167,8 @@ int main(int argc, char **argv){
             }
             if (elementid==-1){
                 strcpy(element[n_element],content[0]);
-                n_element++;
                 elementid=n_element;
+                n_element++;
             }
 
             //recognize the orbital component
@@ -167,6 +180,8 @@ int main(int argc, char **argv){
                 cout<<" unknown orbital species "<<content[1]<<endl;
                 return(1);
             }
+
+            //debug cout<<"   "<<elementid<<" "<<spdf_id<<endl;
 
             //sum over 
             int es=elementid*MAX_M*MAX_ENERGYLINE+spdf_id*MAX_ENERGYLINE;
