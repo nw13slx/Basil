@@ -103,11 +103,12 @@ int main(int argc, char **argv){
 
     double *tally=new double [2*MAX_ELEMENT*MAX_M*MAX_ENERGYLINE];
     fill(tally, tally+ 2*MAX_ELEMENT*MAX_M*MAX_ENERGYLINE, 0);
-    double energy[MAX_ENERGYLINE];
+    double energy[2*MAX_ENERGYLINE];
+    double occupancy[2*MAX_ENERGYLINE];
     char element[MAX_ELEMENT][10];
     int n_element=0;
     char spdf[MAX_M]={'s','p','d','f','g','h'};
-    int n_energy=0;
+    int n_energy[2]={0,0};
     double efermi=-100000;
     
     //spin up and down
@@ -115,6 +116,7 @@ int main(int argc, char **argv){
       int energy_id=0;
       int energy_line=0;
       double *p_energy;
+      double *p_occupancy;
       double *p_tally;
       do{
           line++;
@@ -136,12 +138,13 @@ int main(int argc, char **argv){
           //the second line is for orbital energy
           if (energy_line == 2){
             //debug cout<<"second line"<<endl;
-            p_energy=&energy[energy_id];
-            p_tally=&tally[spin*MAX_ELEMENT*MAX_M*MAX_ENERGYLINE+energy_id];
+            p_energy=energy+spin*MAX_ENERGYLINE+energy_id;
+            p_occupancy=occupancy+spin*MAX_ENERGYLINE+energy_id;
+            p_tally=tally+spin*MAX_ELEMENT*MAX_M*MAX_ENERGYLINE+energy_id;
             for (int columni=0;columni<column;columni++){
                p_energy[columni]=atof(content[columni])*27.2113834; 
             }
-            if (spin==0) n_energy+=column;
+            n_energy[spin]+=column;
             energy_id+=column;
           //it starts with non-space character
           } else if ((energy_line ==0)  && (contain_alphabet(content[0])==true)){
@@ -191,7 +194,8 @@ int main(int argc, char **argv){
           }else if (energy_line == 4 ) energy_line=0;
           else if (energy_line == 3){
             for (int columni=0;columni<column;columni++){
-                if ((atoi(content[columni])>0) && (p_energy[columni] > efermi)){
+                p_occupancy[columni]=atof(content[columni]);
+                if ((p_occupancy[columni]>0) && (p_energy[columni] > efermi)){
                         efermi=p_energy[columni];
                 }
             }
@@ -216,7 +220,7 @@ int main(int argc, char **argv){
 
     /*
     //output the raw pdos without smearing
-    for (int i=0;i<n_energy;i++){
+    for (int i=0;i<n_energy[0];i++){
         if ((energy[i]-efermi)>=-6 && (energy[i]-efermi) <=10){
             out<<energy[i]-efermi<<" ";
             for (int spin=0; spin<2; spin++){
@@ -248,16 +252,17 @@ int main(int argc, char **argv){
     double x[grid];
     for (int i=0;i<grid;i++) x[i]=base+i*dE;
 
-    for (int i=0;i<n_energy;i++){
-      if ((energy[i]-efermi)>=EMIN && (energy[i]-efermi) <=EMAX){
-        double *tally_energy=&tally[i];
-        gaussian(grid, x, spreadE,energy[i],sigma2);
-        for (int spin=0; spin<2; spin++){
-          double *smearing_spin=&smearing[spin*n_element*MAX_M*grid];
-          double *tally_spin=tally_energy+spin*MAX_ELEMENT*MAX_M*MAX_ENERGYLINE;
+    for (int spin=0; spin<2; spin++){
+      double *smearing_spin=smearing+spin*n_element*MAX_M*grid;
+      double *tally_spin=tally+spin*MAX_ELEMENT*MAX_M*MAX_ENERGYLINE;
+      double *p_energy=energy+spin*MAX_ENERGYLINE;
+      for (int i=0;i<n_energy[spin];i++){
+        if ((p_energy[i]-efermi)>=EMIN && (p_energy[i]-efermi) <=EMAX){
+          double *tally_energy=tally_spin+i;
+          gaussian(grid, x, spreadE,p_energy[i],sigma2);
           for (int j=0;j<n_element;j++){
             double *smearing_element=smearing_spin+j*MAX_M*grid;
-            double *tally_element=tally_spin+j*MAX_M*MAX_ENERGYLINE;
+            double *tally_element=tally_energy+j*MAX_M*MAX_ENERGYLINE;
             for (int k=0;k<MAX_M;k++){
                 double *smearing_m=smearing_element+k*grid;
                 double *tally_m=tally_element+k*MAX_ENERGYLINE;

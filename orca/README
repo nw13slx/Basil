@@ -7,3 +7,12 @@ PDOS.cpp:
     this is called PDOS in the solid state dft community
   usage: g++ PDOS.cpp -o PDOS
          PDOS <inputfile name> <outputfile name> 
+
+convert_poscar
+   read the orca output and convert the atomic 
+   configuration to POSCAR format.
+   Q+ will be label as F and Q- will be label as N
+   embedding potential is labeled as La
+   
+   usage: g++ convert_poscar.cpp -o conv_pos
+          conv_pos <inputfile name> <outputfile name> 
