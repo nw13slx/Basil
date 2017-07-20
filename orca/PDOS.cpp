@@ -189,7 +189,7 @@ int main(int argc, char **argv){
             //sum over 
             int es=elementid*MAX_M*MAX_ENERGYLINE+spdf_id*MAX_ENERGYLINE;
             for (int columni = 2; columni < column; columni++){
-                p_tally[es+columni-2]+=abs(atof(content[columni]));
+                p_tally[es+columni-2]+=abs(atof(content[columni])*atof(content[columni]));
             }
           }else if (energy_line == 4 ) energy_line=0;
           else if (energy_line == 3){
