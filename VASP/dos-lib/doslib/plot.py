@@ -8,6 +8,8 @@ class plot:
   cm = pl.get_cmap('winter')
   plot_atom_dict={}
 
+  plot=plt.plot
+
   def __init__(self,control):
       self.control=control
       self.atom=control.atom

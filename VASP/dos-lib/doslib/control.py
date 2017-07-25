@@ -45,6 +45,7 @@ class control_knob:
     for k, v in self.__dict__.items():
       if type(v) == bool:  #I changed it
           yes_and_no_list +=[k]
+    print "yes_and_no_list",yes_and_no_list
 
     narg=len(argv)
     i=1
@@ -80,8 +81,8 @@ class control_knob:
         else:
           self.end="there are not enough arguments for energy shift"
       elif (argv[i].lower() in yes_and_no_list):
-        i+=1
         argv_name=argv[i].lower()
+        i+=1
         if (i<narg):
           if ((argv[i].lower()=="yes") or (argv[i].lower()=="y")):
             self.__dict__[argv_name]=True
