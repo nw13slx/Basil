@@ -1,4 +1,4 @@
-#!/share/apps/gnuplot/5.0.6/bin/gnuplot -p
+#!env gnuplot -p
 set title "pc QQQ" font ",15"
 set style line 1 dt 2 lw 1
 set term png
