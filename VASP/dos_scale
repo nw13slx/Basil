@@ -1,0 +1,11 @@
+#!/bin/env bash
+#dos_scale: sometimes the number in DOSCAR does not reflect the number of electrons... this bash script can calculate the scale up factor to resume original number
+if [ -f OUTCAR ] && [ -f DOSCAR ]; then
+nbnd=$(grep NBANDS -i OUTCAR|awk '{print $15}')
+lines=$(awk 'NR==6{print $3}' DOSCAR)
+total_int=$(awk -v l=$lines 'NR==6+l{if (NF==5) print $4+$5; else print $3}' DOSCAR)
+scale_up=$(echo $total_int $nbnd|awk '{print $2*2/$1}')
+echo $scale_up
+else
+echo -1
+fi
