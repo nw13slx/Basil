@@ -2,5 +2,6 @@ continuevasp: continue the current vasp calculation in the same folder while cop
 cpvasp: copy INCAR, KPOINTS, POSCAR, POTCAR, job.sh, note, CONTCAR from folder 1 to folder 2
 cpvasphistory: copy all the important data file
 quicksummary: quickly summarize all the calculations store under the current folder
+dos_scale: sometimes the number in DOSCAR does not reflect the number of electrons... this bash script can calculate the scale up factor to resume original number
 
 ceria/ : all manipulations of fluorite structure
