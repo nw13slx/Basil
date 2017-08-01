@@ -1,0 +1,34 @@
+#!/bin/env bash
+file=$1
+out=$2
+tmp=$(date +%Y-%m-%d-%H-%M-%S)
+
+natom=$(grep "block = coordinates records" $file|awk '{print $6}')
+grep -A$natom "block = coordinates records" $file|tail -n $natom >  ${tmp}_coord
+grep -A$natom "block = atom_charges records" $file|tail -n $natom >  ${tmp}_q
+
+sort -nk2 ${tmp}_coord >x
+xmin=$(head -n 1 x|awk '{print $2-10}' )
+xmax=$(tail -n 1 x|awk '{print $2+10}' )
+sort -nk3 ${tmp}_coord >x
+ymin=$(head -n 1 x|awk '{print $3-10}' )
+ymax=$(tail -n 1 x|awk '{print $3+10}' )
+sort -nk4 ${tmp}_coord >x
+zmin=$(head -n 1 x|awk '{print $4-10}' )
+zmax=$(tail -n 1 x|awk '{print $4+10}' )
+
+cat > $out <<EOF
+ITEM: TIMESTEP
+0
+ITEM: NUMBER OF ATOMS
+$natom
+ITEM: BOX BOUNDS pp pp pp
+$xmin $xmax
+$ymin $ymax
+$zmin $zmax
+ITEM: ATOMS id type q x y z 
+EOF
+
+paste ${tmp}_q ${tmp}_coord |awk -v ang=0.52917721092 '{print $1, $2, $3*ang,$4*ang,$5*ang}'|cat -n>> $out
+
+rm ${tmp}_q ${tmp_coord}
