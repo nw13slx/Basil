@@ -23,20 +23,13 @@ do
   if [ -d $i ]; then
     filename=$WORK/pack/$relative/$i.tar.gz
     path=$(echo $(echo $i|sed "s/\// /g"|awk '{for (i=0;++i<NF;) print $i"/"}')|sed "s/ //g")
-      echo "filename " $filename
-      echo "path" $path
-      echo "i" $i
 
-    if [ ! -f ${filename} ]; then
+    if [ $i/vasp.out -nt ${filename} ]; then
       cd $i
-      tar cvfz temp.tar.gz INCAR POSCAR KPOINTS OUTCAR out.out *.dat *.png VLINE CONTCAR mag elec vasprun.xml DOS0 *.sh *.py *.cpp
-      echo "cd WORK/pack/relative"
+      tar cvfz temp.tar.gz INCAR POSCAR KPOINTS OUTCAR out.out *.dat *.png VLINE CONTCAR mag elec vasprun.xml DOS0 *.sh *.py *.cpp OSZICAR vasp.out
       cd $WORK/pack/$relative
-      echo "pwd"
       pwd
       if [ ! -d $path ]; then
-        echo "PATH do not exist"
-        echo "make path"
         mkdir -p $path
         #cd $path
         #echo "I'm in a new path"
@@ -46,6 +39,7 @@ do
       pwd
       ##mv ${filename}.tar.gz $WORK/pack/$relative
       mv temp.tar.gz ${filename}
+      echo cp $(pwd) to ${filename}
       cd $home
     fi
   fi
@@ -65,21 +59,21 @@ do
 done
 
 
-for i in `find ./ -name "*.sh"`
+for i in `find ./ -name "*.sh"|grep -v job.sh|grep -v b.sh`
 do
-    filename=`echo $i|sed "s/\//_/g"`
+    filename=`echo $i|sed "s/\//_/g"|sed "s|._||g"`
     echo $filename
     cp $i $WORK/pack/$relative/$filename
 done
 for i in `find ./ -name "*.py"`
 do
-    filename=`echo $i|sed "s/\//_/g"`
+    filename=`echo $i|sed "s/\//_/g"|sed "s|._||g"`
     echo $filename
     cp $i $WORK/pack/$relative/$filename
 done
 for i in `find ./ -name "*.cpp"`
 do
-    filename=`echo $i|sed "s/\//_/g"`
+    filename=`echo $i|sed "s/\//_/g"|sed "s|._||g"`
     echo $filename
     cp $i $WORK/pack/$relative/$filename
 done
