@@ -16,3 +16,9 @@ convert_poscar
    
    usage: g++ convert_poscar.cpp -o conv_pos
           conv_pos <inputfile name> <outputfile name> 
+
+dos.cpp:
+  analyse the orbital energy
+
+initial_guess.cpp:
+  analyse the initial guess and its major components for each orbital

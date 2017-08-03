@@ -29,7 +29,7 @@ using namespace std;
 //set up the size of array used for storage
 #define MAX_ELEMENT 10
 #define MAX_M   6
-#define MAX_ENERGYLINE 1000
+#define MAX_ENERGYLINE 4000
 #define TEMP_ENERGYLINE 10
 
 //set up the final plotting region
@@ -71,6 +71,10 @@ int main(int argc, char **argv){
     
     //locate the beginning of the print_MO
     ifstream In1(argv[1]);
+    if ( !In1.good()){
+        cout<< " the input file does not exist or is corrupted..."<<endl;
+        return 1;
+    }
     while (In1.good()){
         line++;
         In1.getline(temp,MAX_CHARACTER); 
@@ -236,8 +240,8 @@ int main(int argc, char **argv){
                 cout<<" "<<norm[columni]<<"_"<<unorm_tally[3*TEMP_ENERGYLINE]<<" ";
             }
             cout<<endl;
-            start_sum=false;
             */
+            start_sum=false;
           }
         }
 
@@ -261,14 +265,19 @@ int main(int argc, char **argv){
 
     ofstream out(argv[2]);
     // output the raw pdos without smearing
+    int line_pdos=2;
     out<<"# efermi:"<<efermi;
     for (int spin=0; spin<2; spin++){
       for (int j=0;j<n_element;j++){
         for (int k=0;k<MAX_M;k++){
             out<<" "<<element[j]<<"_"<<spdf[k]<<"_"<<spin;
+            cout<<" "<<line_pdos<<" "<<element[j]<<"_"<<spdf[k]<<"_"<<spin<<endl;
+            line_pdos++;
         }
       }
       out<<" total";
+      cout<<" "<<line_pdos<<" total"<<endl;
+      line_pdos++;
     }
     out<<endl;
 
