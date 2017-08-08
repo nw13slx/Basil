@@ -1,0 +1,28 @@
+# usage: xyz_embeddingECP configuration_file ECP_file
+# create an xyz input for orca, with all ">" elements specify with a separate ecp
+
+#!/bin/env bash
+name=$1
+ecp=$2
+line=$(head -n 1 $ecp)
+if [[ $line == *"NewECP"* ]]; then
+    stamp=$(date +%N)
+    tail -n +2 $ecp > temp.$(stamp)
+    ecp=temp.$(stamp)
+
+fi
+atom=$(wc -l $name.xyz|awk '{print $1}')
+for i in `seq $atom`
+do
+    line="$(awk -v l=$i 'NR==l{printf "%s ",$1; for (i=2;i<=NF;i++) printf "%s ",$i; printf "\n"}' $name.xyz)"
+    ele=$(echo $line |awk '{print $1}')
+    if [[ $ele == *">"* ]]; then
+      echo $line "NewECP " 
+      cat $ecp
+    else
+      echo $line 
+    fi
+done
+if [[ $ecp == "temp."* ]]; then
+    rm $ecp
+fi

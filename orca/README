@@ -1,6 +1,6 @@
 ORCA post-analysis code
 
-PDOS.cpp:
+xx_PDOS.cpp:
   analyse the "Print[ P_MOs ] 1" output of ORCA. 
     The density of state will be decomposed to 
     different element and different angular momentum , s p d f
@@ -20,5 +20,5 @@ convert_poscar
 dos.cpp:
   analyse the orbital energy
 
-initial_guess.cpp:
+xx_vector.cpp:
   analyse the initial guess and its major components for each orbital
