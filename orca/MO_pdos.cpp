@@ -41,6 +41,8 @@ using namespace std;
 #define MAX_CHARACTER 1000
 #define MAX_COLUMN 20
 
+const double Eh2eV=27.2113834;
+
 bool isxyz(char c){
     if ((c=='x')||(c=='y')||(c=='z')) return true;
     else return false;
@@ -152,7 +154,7 @@ int main(int argc, char **argv){
           p_occupancy=occupancy+spin*MAX_ENERGYLINE+energy_id;
           p_tally=tally+spin*MAX_ELEMENT*MAX_M*MAX_ENERGYLINE+energy_id;
           for (int columni=0;columni<column;columni++){
-             p_energy[columni]=atof(content[columni])*27.2113834; 
+             p_energy[columni]=atof(content[columni])*Eh2eV; 
           }
 
           //clear the temporary sum container. because this sum is not normalized.

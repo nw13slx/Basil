@@ -1,7 +1,18 @@
+#! /bin/env bash
+
 origin=$1
 destination=$2
 
-for i in DOSCAR    IBZKPT  KPOINTS  OSZICAR  out.out  POSCAR  PROCAR  run.batch          vasprun.xml  XDATCAR CONTCAR  EIGENVAL  INCAR   OUTCAR   PCDAT 
+if [ ! -d $origin ]; then
+  echo "$origin folder doesn't exist"
+  exit
+fi
+if [ ! -d $destination ]; then
+  echo "$destination folder doesn't exist"
+  exit
+fi
+
+for i in DOSCAR IBZKPT KPOINTS OSZICAR out.out POSCAR PROCAR run.batch vasprun.xml XDATCAR CONTCAR EIGENVAL INCAR OUTCAR PCDAT 
 do
   cp ${origin}/$i ${destination}
 done
