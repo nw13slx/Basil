@@ -1,0 +1,78 @@
+#!/bin/env python
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import pylab as pl
+from scipy import signal
+
+def running_mean(x, N):
+      cumsum = np.cumsum(np.insert(x, 0, 0))
+      return (cumsum[N:] - cumsum[:-N]) / N
+
+chunck=60
+BUFFER=chunck
+
+line=np.loadtxt("VLINE",skiprows=1)
+X=line[:,0]
+Y=line[:,1]
+Ndata=len(Y)
+chunckh=int(chunck/2.)
+
+min_var=np.std(Y)
+Yave=np.zeros(Ndata)
+LEFT=0
+RIGHT=Ndata
+for i in range(Ndata):
+  left=i-chunckh
+  right=left+chunckh
+  if (left<0):
+    period=(np.hstack((Y[Ndata+left:],Y[0:right]))).ravel()
+  elif (right>=len(Y)):
+    period=(np.hstack((Y[left:],Y[0:right-Ndata]))).ravel()
+  else:
+    period=Y[left:right]
+  var=np.std(period)
+  Yave[i]=np.average(period)
+  if (var<1e-2):
+    if (i<(Ndata/2.)):
+      if (i>LEFT):
+        LEFT=i
+    else:
+      if (RIGHT>i):
+        RIGHT=i
+  if (min_var>var):
+    min_var=var
+    ref=np.average(period)
+shift=int((Ndata-RIGHT-LEFT)/2.)
+LEFT+=shift+BUFFER
+RIGHT+=shift-BUFFER
+
+Ynew=np.zeros(Ndata)
+Ynewave=np.zeros(Ndata)
+for i in range(Ndata):
+  Yid=i+shift
+  if (Yid>=Ndata):
+      Yid-=Ndata
+  if (Yid<0):
+      Yid+=Ndata
+  Ynew[Yid]=Y[i]
+  Ynewave[Yid]=Yave[i]
+
+rft = np.fft.rfft(Ynew[LEFT:RIGHT])
+rft[1:] = 0   # Note, rft.shape = 21
+y_smooth = np.fft.irfft(rft)
+if (y_smooth.shape[0]!=X[LEFT:RIGHT].shape[0]):
+  ri=RIGHT-1
+else:
+  ri=RIGHT
+drop=y_smooth[1]-ref
+
+plt.figure(0)
+plt.plot(X,Ynew-ref,'r-',X[LEFT:ri],y_smooth-ref,'g-')
+plt.title('drop %lf ref %lf'%(drop,ref))
+pl.show()
+pl.savefig("LOC.png")
+plt.close()
+
+print "drop ",drop,ref
