@@ -1,3 +1,8 @@
+#plot the local potential that is already average along x-y plane.
+#usage: 
+#   average_locpot LOCPOT VLINE 3
+#   plot_locpot VLINE LOC.png
+
 #!/bin/env python
 
 #plot the local potential that is already average along x-y plane.
