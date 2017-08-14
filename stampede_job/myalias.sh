@@ -33,23 +33,3 @@ alias lst='ls -Srtnlh'
 #VASP Related
 alias dos='~/bin/split_dos.py $(awk "NR==7" CONTCAR |wc -w) $(awk "NR==7" CONTCAR)'
 alias split='~/bin/spin_density CHGCAR'
-baderana () {
-    ~/bin/spin_density CHGCAR
-    mkdir elec mag
-    cd elec
-    ~/bin/bader ../CHGCAR
-    cd ../mag
-    ~/bin/bader ../CHGCAR-u-d -ref ../CHGCAR
-    cd ../
-    rm CHGCAR-u-d
-}
-baderanavac () {
-    ~/bin/spin_density CHGCAR
-    mkdir elec mag
-    cd elec
-    ~/bin/bader -vac auto ../CHGCAR
-    cd ../mag
-    ~/bin/bader -vac auto ../CHGCAR-u-d -ref ../CHGCAR
-    cd ../
-    rm CHGCAR-u-d
-}

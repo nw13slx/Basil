@@ -1,78 +1,94 @@
 #!/bin/env python
+
+#plot the local potential that is already average along x-y plane.
+#usage: 
+#   average_locpot LOCPOT VLINE 3
+#   plot_locpot VLINE LOC.png
+
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pylab as pl
-from scipy import signal
+import sys
 
-def running_mean(x, N):
-      cumsum = np.cumsum(np.insert(x, 0, 0))
-      return (cumsum[N:] - cumsum[:-N]) / N
+chunk=60
+window=150
+BUFFER=80 
+filename=sys.argv[1]
+output=sys.argv[2]
 
-chunck=60
-BUFFER=chunck
-
-line=np.loadtxt("VLINE",skiprows=1)
-X=line[:,0]
-Y=line[:,1]
-Ndata=len(Y)
-chunckh=int(chunck/2.)
-
-min_var=np.std(Y)
-Yave=np.zeros(Ndata)
-LEFT=0
-RIGHT=Ndata
-for i in range(Ndata):
-  left=i-chunckh
-  right=left+chunckh
-  if (left<0):
-    period=(np.hstack((Y[Ndata+left:],Y[0:right]))).ravel()
-  elif (right>=len(Y)):
-    period=(np.hstack((Y[left:],Y[0:right-Ndata]))).ravel()
+def smooth(x,window_len=11,window='hanning'):
+  if x.size < window_len:
+    raise ValueError, "Input vector needs to be bigger than window size."
+  if window_len<3:
+    return x
+  if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+    raise ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
+  s=np.r_[x[window_len-1:0:-1],x,x[-2:-window_len-1:-1]]
+  if window == 'flat': #moving average
+    w=np.ones(window_len,'d')
   else:
-    period=Y[left:right]
-  var=np.std(period)
-  Yave[i]=np.average(period)
-  if (var<1e-2):
-    if (i<(Ndata/2.)):
-      if (i>LEFT):
-        LEFT=i
+    w=eval('np.'+window+'(window_len)')
+  y=np.convolve(w/w.sum(),s,mode='valid')
+  return y
+
+if __name__=='__main__':
+  #read data
+  line=np.loadtxt(filename,skiprows=1)
+  X=line[:,0]
+  Y=line[:,1]
+  Ndata=len(Y)
+  chunkh=int(chunk/2.)
+  print "read data"
+  
+  #find the flatt region and get it's boundary
+  #and use the average of the flattest region (lenth is chunk) as the vacuum ground
+  min_var=np.std(Y)
+  LEFT=0
+  RIGHT=Ndata
+  for i in range(Ndata):
+    left=i-chunkh
+    right=left+chunkh
+    if (left<0):
+      period=(np.hstack((Y[Ndata+left:],Y[0:right]))).ravel()
+    elif (right>=len(Y)):
+      period=(np.hstack((Y[left:],Y[0:right-Ndata]))).ravel()
     else:
-      if (RIGHT>i):
-        RIGHT=i
-  if (min_var>var):
-    min_var=var
-    ref=np.average(period)
-shift=int((Ndata-RIGHT-LEFT)/2.)
-LEFT+=shift+BUFFER
-RIGHT+=shift-BUFFER
-
-Ynew=np.zeros(Ndata)
-Ynewave=np.zeros(Ndata)
-for i in range(Ndata):
-  Yid=i+shift
-  if (Yid>=Ndata):
-      Yid-=Ndata
-  if (Yid<0):
-      Yid+=Ndata
-  Ynew[Yid]=Y[i]
-  Ynewave[Yid]=Yave[i]
-
-rft = np.fft.rfft(Ynew[LEFT:RIGHT])
-rft[1:] = 0   # Note, rft.shape = 21
-y_smooth = np.fft.irfft(rft)
-if (y_smooth.shape[0]!=X[LEFT:RIGHT].shape[0]):
-  ri=RIGHT-1
-else:
-  ri=RIGHT
-drop=y_smooth[1]-ref
-
-plt.figure(0)
-plt.plot(X,Ynew-ref,'r-',X[LEFT:ri],y_smooth-ref,'g-')
-plt.title('drop %lf ref %lf'%(drop,ref))
-pl.show()
-pl.savefig("LOC.png")
-plt.close()
-
-print "drop ",drop,ref
+      period=Y[left:right]
+    var=np.std(period)
+    if (var<1e-2):
+      if (i<(Ndata/2.)):
+        if (i>LEFT):
+          LEFT=i
+      else:
+        if (RIGHT>i):
+          RIGHT=i
+    if (min_var>var):
+      min_var=var
+      ref=np.average(period)
+  shift=int((Ndata-RIGHT-LEFT)/2.)
+  print "find the center", shift
+  
+  #shift the periodic boundary such that the slab is at the center.
+  Ynew=np.zeros(Ndata)
+  Ynewave=np.zeros(Ndata)
+  for i in range(Ndata):
+    Yid=i+shift
+    if (Yid>=Ndata):
+        Yid-=Ndata
+    if (Yid<0):
+        Yid+=Ndata
+    Ynew[Yid]=Y[i]
+  
+  smoothY=smooth(Ynew,window)[(window/2):window/2+Ndata]
+  drop=smoothY[Ndata/2]-ref
+  
+  print len(Y)
+  plt.figure(0)
+  plt.plot(X,Ynew-ref,'k-',X,smoothY-ref,'g-')
+  plt.title('drop %lf ref %lf'%(drop,ref))
+  pl.show()
+  pl.savefig(output)
+  plt.close()
+  
+  print "drop ",drop,ref
