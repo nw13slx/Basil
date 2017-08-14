@@ -31,7 +31,6 @@ alias sls='ls -t -n|sort -k 5 -n'
 alias lst='ls -Srtnlh'
 
 #VASP Related
-alias cleanvasp='rm LOCPOT CHG* EIGENVAL OSZICAR WAVECAR DOSCAR IBZKPT PCDAT REPORT vasprun.xml XDATCAR PROCAR'
 alias dos='~/bin/split_dos.py $(awk "NR==7" CONTCAR |wc -w) $(awk "NR==7" CONTCAR)'
 alias split='~/bin/spin_density CHGCAR'
 baderana () {

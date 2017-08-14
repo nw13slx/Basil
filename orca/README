@@ -22,3 +22,7 @@ dos.cpp:
 
 xx_vector.cpp:
   analyse the initial guess and its major components for each orbital
+
+orca_nbo:
+  automatically remove the embedding potential atoms from the FILE.47
+  and run nbo

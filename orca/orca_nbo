@@ -1,0 +1,15 @@
+#/bin/env bash
+
+natom=$(head -n 1 FILE.47|awk '{print $2}'|sed 's/NATOMS=//g')
+n_ep=$(awk -v n=$natom 'NR>4 && NR<(5+n){print $1}' FILE.47|grep 113|wc -l |awk '{print $1}')
+n=$(echo $natom $n_ep|awk '{print $1-$2}')
+start=5
+end=$(echo 4 $natom|awk '{print $1+$2}')
+
+sed -i "${start},${end}!b;/^\s*113\s/d" FILE.47
+sed -i "s/NATOMS=$natom/NATOMS=$n/g" FILE.47
+
+module load nbo
+gennbo FILE
+
+wait

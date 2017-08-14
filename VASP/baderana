@@ -1,0 +1,10 @@
+#! /bin/env bash
+
+~/bin/spin_density CHGCAR
+mkdir elec mag
+cd elec
+~/bin/bader ../CHGCAR
+cd ../mag
+~/bin/bader ../CHGCAR-u-d -ref ../CHGCAR
+cd ../
+rm CHGCAR-u-d
