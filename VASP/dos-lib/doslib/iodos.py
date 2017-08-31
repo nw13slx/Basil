@@ -121,7 +121,8 @@ class iodos:
     if (control.zoom_in==True):
       dos.loc_down = np.argmin(abs(dos.Xenergy-control.zoom_emin))
       dos.loc_up = np.argmin(abs(dos.Xenergy-control.zoom_emax))
-    if (control.whole_range==True):
+      print "dos up down limit",dos.loc_down,dos.loc_up
+    elif (control.whole_range==True):
       dos.loc_down = 0
       dos.loc_up = dos.nedos
 
@@ -202,11 +203,11 @@ class iodos:
     self._auto_terminate()
 
     if (par_element[2]>=0):
-      d_t2g=np.zeros((dos.nedos,nspin))
-      d_eg=np.zeros((dos.nedos,nspin))
+      dos.d_t2g=np.zeros((dos.nedos,nspin))
+      dos.d_eg=np.zeros((dos.nedos,nspin))
     else:
-      d_t2g=None
-      d_eg=None
+      dos.d_t2g=None
+      dos.d_eg=None
     dos.par_orbital=[] #store the partial s, p, d, f orbital
     for i in range(4):
       if par_element[i]>=0:
@@ -228,8 +229,8 @@ class iodos:
         if (species[atomi] == par_element[orbital]):
           dos.par_orbital[orbital]+=partial[:,nspin*orbital:nspin*orbital+nspin]
       if (species[atomi] == par_element[2]):
-        d_t2g+=partial[:,nspin*4:nspin*4+nspin]
-        d_eg+=partial[:,nspin*5:nspin*5+nspin]
+        dos.d_t2g+=partial[:,nspin*4:nspin*4+nspin]
+        dos.d_eg+=partial[:,nspin*5:nspin*5+nspin]
       if perspecies:
         if dos.spin:
           dos.perspecies[:,species[atomi]] += tot[:,0] - tot[:,1]

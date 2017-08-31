@@ -1,3 +1,4 @@
+#!/bin/env python
 from control import *
 from iodos import *
 from data import *
@@ -12,6 +13,8 @@ def main():
   cont=control_knob(sys.argv,atoms,dos)
   plt=plot(cont)
   ana=analysis(atoms,dos)
+
+  dumpclean(cont.__dict__)
 
   #read in overall dos
   io=iodos(cont,plt)
@@ -33,7 +36,6 @@ def main():
     io.delete_pdosfile()
 
   #debug
-  #dumpclean(cont.__dict__)
   #dumpclean(io.__dict__)
   #dumpclean(atoms.__dict__)
   #dumpclean(dos.__dict__)

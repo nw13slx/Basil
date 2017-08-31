@@ -26,6 +26,8 @@ class dos_data(object):
   par_element=[-1,-1,-1,-1]
   par_orbital=None
   perspecies=None
+  d_t2g=None
+  d_eg=None
   tot=None
   partial=None
 

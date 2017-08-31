@@ -45,7 +45,6 @@ class control_knob:
     for k, v in self.__dict__.items():
       if type(v) == bool:  #I changed it
           yes_and_no_list +=[k]
-    print "yes_and_no_list",yes_and_no_list
 
     narg=len(argv)
     i=1

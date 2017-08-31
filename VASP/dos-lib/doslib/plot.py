@@ -47,7 +47,7 @@ class plot:
         y=[]
         line_label=['_t2g',None,'_eg',None]
         line_color=['r','r','b','b']
-        y=[d_t2g[:,0],d_t2g[:,1],d_eg[:,0],d_eg[:,1]]
+        y=[dos.d_t2g[:,0],dos.d_t2g[:,1],dos.d_eg[:,0],dos.d_eg[:,1]]
         simple("d_decompose",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
         del y, line_label, line_color
 
@@ -74,6 +74,7 @@ class plot:
   def simple(self,name,x,y,l_d,l_u,line_color,line_label):
     a=plt.figure(0)
     print len(y)
+    #print "x range: ", x[l_d],x[l_u]
     for i in range(len(y)):
       if y[i] is not None:
         line=plt.plot(x[l_d:l_u],y[i][l_d:l_u])
@@ -99,6 +100,7 @@ class plot:
     dos0=self.dos.dos0
     ef=self.dos.Xenergy
     fermiN=self.dos.fermiN
-    plt.fill_between(ef[:fermiN], 0, dos0[:fermiN,0],facecolor='red')
-    plt.fill_between(ef[:fermiN], 0, dos0[:fermiN,1],facecolor='blue')
+    l_d= self.dos.loc_down
+    plt.fill_between(ef[l_d:fermiN], 0, dos0[l_d:fermiN,0],facecolor='red')
+    plt.fill_between(ef[l_d:fermiN], 0, dos0[l_d:fermiN,1],facecolor='blue')
 
