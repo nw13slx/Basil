@@ -45,7 +45,7 @@ class plot:
 
       if (dos.par_element[2] >=0):
         y=[]
-        line_label=['_t2g',None,'_eg',None]
+        line_label=['d_t2g',None,'d_eg',None]
         line_color=['r','r','b','b']
         y=[dos.d_t2g[:,0],dos.d_t2g[:,1],dos.d_eg[:,0],dos.d_eg[:,1]]
         simple("d_decompose",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
@@ -54,13 +54,29 @@ class plot:
       if self.control.perspecies:
         y=[]
         line_label=[]
+        color_cycle=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728',
+              '#9467bd', '#8c564b', '#e377c2', '#7f7f7f',
+              '#bcbd22', '#17becf']
         line_color=[]
         for i in range(atom.ntype):
-          y+=[dos.perspecies[:,i]]
-          line_label+=["species "+str(i)]
-          line_color+=[None]
-        if atom.symbol:
-          line_label+=[atom.symbol[i]]
+          if dos.spin:
+            y+=[dos.perspecies[:,i,0]]
+            line_color+=[color_cycle[i]]
+            y+=[dos.perspecies[:,i,1]]
+            line_color+=[color_cycle[i]]
+            if atom.symbol:
+              line_label+=[atom.symbol[i]]
+              line_label+=[None]
+            else: 
+              line_label+=["species "+str(i)]
+              line_label+=[None]
+          else:
+            y+=[dos.perspecies[:,i]]
+            line_color+=[None]
+            if atom.symbol:
+              line_label+=[atom.symbol[i]]
+            else: 
+              line_label+=["species "+str(i)]
         simple("perspecies",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
         del y, line_label, line_color
 
@@ -72,15 +88,15 @@ class plot:
       del y, line_label, line_color
 
   def simple(self,name,x,y,l_d,l_u,line_color,line_label):
+    print "plotting file",name+".png"
     a=plt.figure(0)
-    print len(y)
     #print "x range: ", x[l_d],x[l_u]
     for i in range(len(y)):
       if y[i] is not None:
-        line=plt.plot(x[l_d:l_u],y[i][l_d:l_u])
-        if (line_color[i] is not None):
+        line=plt.plot(x[l_d:l_u],y[i][l_d:l_u],linewidth=1.5)
+        if line_color[i]:
           plt.setp(line,color=line_color[i])
-        if line_label[i] is not None:
+        if line_label[i]:
           plt.setp(line,label=line_label[i])
     if any(x for x in line_label):
       plt.legend()
@@ -91,11 +107,11 @@ class plot:
 
   def atom_start(self):
       pass
-  def atom(self,atomi):
+  def atom_during(self,atomi):
       pass
-
   def atom_end(self):
       pass
+
   def dos0_extra(self):
     dos0=self.dos.dos0
     ef=self.dos.Xenergy
