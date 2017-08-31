@@ -60,9 +60,12 @@ class control_knob:
             if ((i == j) and (type(u)==type(v))):  #I changed it
               self.__dict__[j] = argv.__dict__[i]
 
-      if  ((self.perspecies==False) and all(x==-1 for x in self.dos.par_element) and (self.peratom==False)):
+      if  ((self.perspecies==False) and all(x==-1 for x in self.dos.par_element) and (self.peratom==False) and (self.write_pdos==False)):
         self.run_pdos=False
       else:
         self.run_pdos=True
       if (self.run_pdos==False):
         self.write_pdos=False
+      if (self.write_pdos==True):
+        self.perspecies=True
+        
