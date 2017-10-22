@@ -2,10 +2,14 @@
 // and convert the atomic configuration to pdb format
 // Q+ will be label as Qp and Q- will be label as Qn
 // embedding potential is labeled as XXpo
+// the partial charge is put at the b-factor column
 // 
-// usage: g++ convert_pdb.cpp -o orca_pdb
-//        orca_pdb <inputfile name> <outputfile name> 
+// usage: g++ convert_pdb.cpp -o orca_nbo_pdb
+//        orca_nbo_pdb <orcaoutput> <nbooutput> <output filename>
+//        orca_nbo_pdb orcaout.asdfa FILE.nbo output.pdb
 // author: Lixin Sun nw13mifaso@gmail.com
+//
+// note: the results can be visualize by nbo.tcl
 
 #include <algorithm>
 #include <iostream>
@@ -19,8 +23,8 @@
 #include <cmath>
 #include <malloc.h>
 #include <iomanip>
-#include <stdlib.h>
-#include <string.h>
+//#include <stdlib.h>
+#include <string>
 #include <sstream>
 using namespace std;
 
@@ -35,25 +39,27 @@ using namespace std;
 
 //set up the buffer size for reading
 #define MAX_CHARACTER 1000
-#define MAX_COLUMN 20
+#define MAX_COLUMN 50
 
-bool contain(const char *string, char c){
-    int n=strlen(string);
-    for (int i=0;i<n;i++){
-        if (string[i]==c){
-            return true;
-        }
-    }
-    return false;
-}
 
 void gaussian(int grid, double *x, double *y, double x0, double sigma2){
     for (int i=0;i<grid;i++) y[i]=exp(-(x[i]-x0)*(x[i]-x0)/2./sigma2);
 }
 
+
+int split(char *temp, string * content){
+   int column=0;
+   stringstream ss(temp);
+   while ((ss>>content[column])&&(column<MAX_COLUMN)) {
+       column++;
+   }
+   return column;
+}
+
 int main(int argc, char **argv){
 
-    char temp[MAX_CHARACTER], * pch,content[MAX_COLUMN][MAX_CHARACTER];
+    char temp[MAX_CHARACTER], * pch;
+    string content[MAX_COLUMN];
     int column, line=0;
     bool Print_Conf=false;
     
@@ -63,16 +69,9 @@ int main(int argc, char **argv){
         line++;
         In1.getline(temp,MAX_CHARACTER); 
 
-        column=0;
-        pch = strtok (temp," ");
-        while ((pch != NULL)&&(column<MAX_COLUMN)) {
-            strcpy(content[column],pch);
-            column++;
-            pch = strtok (NULL, " ");
-        }
-        pch= NULL;
+        column=split(temp,content);;
         if (column == 3 ){
-            if (( strcmp(content[0],"CARTESIAN") == 0 ) && (strcmp(content[1],"COORDINATES") == 0) && (strcmp(content[2],"(A.U.)")==0)){
+            if (( content[0]=="CARTESIAN" ) && (content[1]=="COORDINATES") && (content[2]=="(A.U.)")){
                 Print_Conf=true;
                 break;
             }
@@ -86,7 +85,7 @@ int main(int argc, char **argv){
     In1.getline(temp,MAX_CHARACTER); //another buffering line
     line++;
 
-    char element[MAX_ELEMENT][10];
+    string element[10];
     double energy[MAX_ENERGYLINE];
     int n_element=0;
 
@@ -96,49 +95,45 @@ int main(int argc, char **argv){
     for (int i=0;i<MAX_ELEMENT;i++) natom[i]=0;
     
     double boundary[6]={1000,0,1000,0,1000,0};
-    int count=0;
+    int natom_tot=0;
     do{
       line++;
       In1.getline(temp,MAX_CHARACTER); 
-      column=0;
-      pch = strtok (temp," ");
-      while (pch != NULL) {
-          strcpy(content[column],pch);
-          column++;
-          pch = strtok (NULL, " ");
-      }
-      pch= NULL;
+      column=split(temp,content);
 
       if (column>7 && content[0][0]!='*' && content[0][0]!='>'){
-        char ele[10];
+        string ele;
         //second column is the label
         if (content[1][0]=='Q'){
-            if (atof(content[2])>0) sprintf(ele," Qp ");
-            else sprintf(ele," Qn ");
-        } else if (contain(content[1],'>')==true){
-            int idxToDel=strlen(content[1])-1;
-            memmove(&content[1][idxToDel], &content[1][idxToDel + 1], strlen(content[1]) - idxToDel);
-            sprintf(ele,"%2spo",content[1]);
-        }else sprintf(ele,"%2s  ",content[1]);
+            if (stod(content[2])>0) ele=" Qp ";
+            else ele=" Qn ";
+        } else if ( content[1].find_first_of(">")!=string::npos){
+            content[1].erase(content[1].length()-1,1);
+            ele=content[1]+"po";
+        }else ele=content[1]+"  ";
+        while (ele.length()<4)
+           ele=" "+ele;
+        if (ele.length()>4)
+            cout<<ele<<endl;
 
         //recognize the element name
         int elementid=-1;
         for (int eid=0;eid<n_element;eid++){
-            if (strcmp(ele,element[eid])==0) elementid=eid;
+            if (ele==element[eid]) elementid=eid;
         }
         if (elementid==-1){
             elementid=n_element;
-            strcpy(element[n_element],ele);
+            element[n_element]=ele;
             n_element++;
         }
 
         double *xx=&x[elementid*MAX_COORD*3+natom[elementid]*3];
-        count++;
-        id[elementid*MAX_COORD+natom[elementid]]=count;
+        natom_tot++;
+        id[elementid*MAX_COORD+natom[elementid]]=natom_tot;
 
-        xx[0]=atof(content[5])*0.52917721092;
-        xx[1]=atof(content[6])*0.52917721092;
-        xx[2]=atof(content[7])*0.52917721092;
+        xx[0]=stod(content[5])*0.52917721092;
+        xx[1]=stod(content[6])*0.52917721092;
+        xx[2]=stod(content[7])*0.52917721092;
         natom[elementid]++;
 
         if (xx[0]<boundary[0]) boundary[0]=xx[0];
@@ -150,19 +145,57 @@ int main(int argc, char **argv){
         
       }
     }while (column!=0);
-    cout<<"done reading"<<endl;
+    cout<<"done reading poscar"<<endl;
+    In1.close();
 
-    ofstream out(argv[2]);
+    ifstream In2(argv[2]);
+    while (In2.good()){
+        line++;
+        In2.getline(temp,MAX_CHARACTER); 
+        column=split(temp,content);;
+        if (column == 5 ){
+            if (( content[0]=="Summary" ) && (content[1]=="of") && (content[2]=="Natural")){
+                Print_Conf=true;
+                break;
+            }
+        }
+    }
+    if ((! In2.good()) || (Print_Conf==false)){
+        cout<<"ERROR: Summary of Natural Population Analysis block not found"<<endl;
+        return 1;
+    }
+    In2.getline(temp,MAX_CHARACTER);
+    In2.getline(temp,MAX_CHARACTER);
+    In2.getline(temp,MAX_CHARACTER);
+    In2.getline(temp,MAX_CHARACTER);
+    In2.getline(temp,MAX_CHARACTER);
+    double *q=new double[natom_tot];
+    for (int i=0;i<natom_tot;i++){
+        In2 >> temp>>temp>>q[i];
+        In2.getline(temp,MAX_CHARACTER);
+    }
+/*
+ Summary of Natural Population Analysis:
+
+                                     Natural Population                 Natural
+             Natural    ---------------------------------------------    Spin
+  Atom No    Charge        Core      Valence    Rydberg      Total      Density
+ -------------------------------------------------------------------------------
+    O  1   -1.54331      1.99999     7.53196    0.01135     9.54331     0.00000
+    */
+
+    ofstream out(argv[3]);
     for (int j=0;j<n_element;j++){
       double *xx=&x[j*MAX_COORD*3];
       int *iid=&id[j*MAX_COORD];
       for (int k=0;k<natom[j];k++){
         double *xxx=&xx[k*3];
         int iiid=iid[k];
+        double qq=q[iiid-1];
         xxx[0]-=(boundary[0]-5);
         xxx[1]-=(boundary[2]-5);
         xxx[2]-=(boundary[4]-5);
-        sprintf(temp,"ATOM  %5d %4s              %8.3f%8.3f%8.3f%6.2f%6.2f          %2s ",iiid,element[j],xxx[0],xxx[1],xxx[2],1.0,1.0,"O");
+        sprintf(temp,"ATOM  %5d %4s              %8.3f%8.3f%8.3f%6.2f%6.2f          %2s ",iiid,element[j].c_str(),xxx[0],xxx[1],xxx[2],1.0,qq,"O");
         out<<temp<<endl;
       }
     }

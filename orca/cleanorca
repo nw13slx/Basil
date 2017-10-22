@@ -1,2 +1,2 @@
 #!/bin/env bash
-rm *.tmp *.gbw *_property.txt *_atoms*.out *_atom*_property.txt *.prop *.gbw *.ges *.engrad orcaout*
+rm *.tmp *.gbw *_property.txt *_atoms*.out *_atom*_property.txt *.prop *.gbw *.ges *.engrad orcaout* jobenv*

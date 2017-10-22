@@ -64,7 +64,7 @@ def parse_input():
   parser.add_argument('-poscar',type=str,default="",help='filename of the poscar')
   parser.add_argument('-zoomin',nargs=2,type=float,help='only plot the dos from value1 to value2')
   parser.add_argument('-energyshift',type=float,default=None,help='shift the total energy by the value')
-  parser.add_argument('-atom_ntype',nargs='*',type=int,default=None,help='shift the total energy by the value')
+  parser.add_argument('-atom_ntype',nargs='*',type=int,default=None,help='declare the number of different atom types type1 type2 type3')
   args=parser.parse_args()
   print "input arguments:",args
   return args
