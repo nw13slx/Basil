@@ -34,7 +34,7 @@ class control_knob:
     self.zoom_in=False
     self.zoom_emax=None
     self.zoom_emin=None
-    self.energyshift=None
+    self.energyshift=0.0
     self.end=None
     self.atom=atom
     self.dos=dos
@@ -58,6 +58,7 @@ class control_knob:
         else:
           for j, v in self.__dict__.items():
             if ((i == j) and (type(u)==type(v))):  #I changed it
+              #print "read parameter",i,"value", argv.__dict__[i]
               self.__dict__[j] = argv.__dict__[i]
 
       if  ((self.perspecies==False) and all(x==-1 for x in self.dos.par_element) and (self.peratom==False) and (self.write_pdos==False)):

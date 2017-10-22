@@ -7,7 +7,7 @@ fi
 mkdir $1
 cd $1
 
-for i in DOSCAR    IBZKPT  KPOINTS  OSZICAR  out.out  POSCAR  PROCAR  run.batch          vasprun.xml  XDATCAR CONTCAR      EIGENVAL  INCAR   OUTCAR   PCDAT note job.sh
+for i in DOSCAR    IBZKPT  KPOINTS  OSZICAR  out.out  POSCAR  PROCAR  run.batch          vasprun.xml  XDATCAR CONTCAR      EIGENVAL  INCAR   OUTCAR   PCDAT note job.sh LOCPOT *.png VLINE
 do
       cp ../$i .
 done

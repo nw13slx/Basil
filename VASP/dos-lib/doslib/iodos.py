@@ -119,6 +119,9 @@ class iodos:
       dos.loc_down = np.argmin(abs(dos.Xenergy+7))
       dos.loc_up = np.argmin(abs(dos.Xenergy-7))
       dos.fermiN = np.argmin(abs(dos.Xenergy))
+    elif (control.energyshift!=0):
+      print "shift energy by ", control.energyshift
+      dos.Xenergy -= control.energyshift
     else:
       dos.fermiN = np.argmin(abs(dos.Xenergy-dos.efermi))
     if (control.zoom_in==True):

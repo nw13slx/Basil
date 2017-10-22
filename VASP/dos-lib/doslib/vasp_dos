@@ -1,4 +1,6 @@
 #!/bin/env python
+
+#author: Lixin Sun
 from control import *
 from iodos import *
 from data import *
