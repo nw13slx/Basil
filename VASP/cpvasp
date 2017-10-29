@@ -1,5 +1,6 @@
 #this code is used to copy the input file of vasp from folder 1 to folder 2
 
+#! /bin/env bash
 origin=$1
 destination=$2
 

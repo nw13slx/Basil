@@ -1,0 +1,20 @@
+path=$1
+basil_bin=$path/bin
+basil_src=./
+
+mkdir -p $basil_bin
+
+current=$(pwd)
+for i in $(find $basil_src -type f -executable -print|grep -v ".git")
+do
+   cd $(dirname $i)
+   realpath=$(pwd)/$(basename $i)
+   cd $current
+   if [ ! -f $basil_bin/$(basename $i) ]; then
+     ln -s $realpath $basil_bin/$(basename $i)
+   fi
+done
+cd $path/bin
+basil_bin=$(pwd)
+echo "add this path to your PATH variable"
+echo $basil_bin

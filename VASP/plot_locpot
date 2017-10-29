@@ -1,0 +1,108 @@
+#!/bin/env python
+
+#plot the local potential that is already average along x-y plane.
+#usage: 
+#   average_locpot LOCPOT VLINE 3
+#   plot_locpot VLINE LOC.png
+
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+import pylab as pl
+import sys
+
+chunk=60
+window1=50
+window2=45
+BUFFER=80 
+filename=sys.argv[1]
+output=sys.argv[2]
+if (len(sys.argv)>3):
+  window1=int(sys.argv[3])
+if (len(sys.argv)>4):
+  window2=int(sys.argv[4])
+lz=1
+if (len(sys.argv)>5):
+  lz=float(sys.argv[5])
+print "window",window1,window2
+
+def smooth(x,window_len=11,window='flat'):
+  if x.size < window_len:
+    raise ValueError, "Input vector needs to be bigger than window size."
+  if window_len<3:
+    return x
+  if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+    raise ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
+  s=np.r_[x[window_len-1:0:-1],x,x[-2:-window_len-1:-1]]
+  if window == 'flat': #moving average
+    w=np.ones(window_len,'d')
+  else:
+    w=eval('np.'+window+'(window_len)')
+  y=np.convolve(w/w.sum(),s,mode='valid')
+  return y
+
+if __name__=='__main__':
+  #read data
+  line=np.loadtxt(filename,skiprows=1)
+  X=line[:,0]
+  Y=line[:,1]
+  Ndata=len(Y)
+  chunkh=int(chunk/2.)
+  print "read data"
+  
+  #find the flatt region and get it's boundary
+  #and use the average of the flattest region (lenth is chunk) as the vacuum ground
+  min_var=np.std(Y)
+  LEFT=0
+  RIGHT=Ndata
+  for i in range(Ndata):
+    left=i-chunkh
+    right=left+chunkh
+    if (left<0):
+      period=(np.hstack((Y[Ndata+left:],Y[0:right]))).ravel()
+    elif (right>=len(Y)):
+      period=(np.hstack((Y[left:],Y[0:right-Ndata]))).ravel()
+    else:
+      period=Y[left:right]
+    var=np.std(period)
+    if (var<1e-2):
+      if (i<(Ndata/2.)):
+        if (i>LEFT):
+          LEFT=i
+      else:
+        if (RIGHT>i):
+          RIGHT=i
+    if (min_var>var):
+      min_var=var
+      ref=np.average(period)
+  shift=int((Ndata-RIGHT-LEFT)/2.)
+  print "find the center", shift
+  
+  #shift the periodic boundary such that the slab is at the center.
+  Ynew=np.zeros(Ndata)
+  for i in range(Ndata):
+    Yid=i+shift
+    if (Yid>=Ndata):
+        Yid-=Ndata
+    if (Yid<0):
+        Yid+=Ndata
+    Ynew[Yid]=Y[i]
+
+  average=np.average(Ynew) 
+  smoothY0=smooth(Ynew,window1)[(window1/2):window1/2+Ndata]
+  smoothY=smooth(smoothY0,window2)[(window2/2):window2/2+Ndata]
+  drop=smoothY[Ndata/2]-ref
+  
+  xmin=np.min(X)
+  xmax=np.max(X)
+  xscale=lz/float(xmax-xmin)
+  print "average",average
+  print "minumum",np.min(Ynew)
+  plt.figure(0)
+  plt.plot(xscale*X,Ynew,'k-') #,X,smoothY,'g-')
+  plt.title('drop %lf ref %lf'%(drop,ref))
+  pl.show()
+  pl.savefig(output)
+  plt.close()
+  
+  print "drop ",drop,ref

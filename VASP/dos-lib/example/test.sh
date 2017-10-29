@@ -1,4 +1,4 @@
 mkdir run 
 cd run
-python ../../doslib/one_dos.py path ../inputfile/ p 0 f 1 peratom yes write_pdos y whole_range y
+../../doslib/vasp_dos -path ../inputfile/ -p 0 -f 1 --peratom --write_pdos 
 cd ../

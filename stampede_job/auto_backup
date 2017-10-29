@@ -1,0 +1,92 @@
+#find out the relative pathway of the current folder, project it to the work folder
+home=`pwd`
+home_w=`echo $home|sed "s/\// /g"|wc -w`
+let "home_d=home_w-4"
+current_w=`pwd|sed "s/\// /g"|wc -w`
+current=`pwd|sed "s/\// /g"|awk -v c=$current_w '{print $c}'`
+relative=`pwd|sed "s/\// /g"|awk -v c=$current_w '{print $c}'`
+
+for i in `seq 1 $home_d`
+do
+  cd ../
+  current_w=`pwd|sed "s/\// /g"|wc -w`
+  current=`pwd|sed "s/\// /g"|awk -v c=$current_w '{print $c}'`
+  relative=${current}"/"$relative
+done
+cd $home
+mkdir -p $WORK/pack/$relative
+destination=$WORK/pack/$relative
+echo "copying everything to $destination"
+
+for i in `find ./ -name OSZICAR|sed "s/\.\///g"|sed "s/\/OSZICAR//g"`
+do
+  if [ -d $i ]; then
+    filename=$WORK/pack/$relative/$i.tar.gz
+    path=$(echo $(echo $i|sed "s/\// /g"|awk '{for (i=0;++i<NF;) print $i"/"}')|sed "s/ //g")
+
+    if [ $i/vasp.out -nt ${filename} ]; then
+      cd $i
+      tar cvfz temp.tar.gz INCAR POSCAR KPOINTS OUTCAR out.out *.dat *.png VLINE CONTCAR mag elec vasprun.xml DOS0 *.sh *.py *.cpp OSZICAR vasp.out
+      cd $WORK/pack/$relative
+      pwd
+      if [ ! -d $path ]; then
+        mkdir -p $path
+        #cd $path
+        #echo "I'm in a new path"
+        #pwd
+      fi
+      cd $home/$i
+      pwd
+      ##mv ${filename}.tar.gz $WORK/pack/$relative
+      mv temp.tar.gz ${filename}
+      echo cp $(pwd) to ${filename}
+      cd $home
+    fi
+  fi
+done
+
+for i in `find ./ -name sum`
+do
+    filename=`echo $i|sed "s/\//_/g"`
+    echo $filename
+    cp $i $WORK/pack/$relative/$filename
+done
+for i in `find ./ -name mag-sum`
+do
+    filename=`echo $i|sed "s/\//_/g"`
+    echo $filename
+    cp $i $WORK/pack/$relative/$filename
+done
+
+
+for i in `find ./ -name "*.sh"|grep -v job.sh|grep -v b.sh`
+do
+    filename=`echo $i|sed "s/\//_/g"|sed "s|._||g"`
+    echo $filename
+    cp $i $WORK/pack/$relative/$filename
+done
+for i in `find ./ -name "*.py"`
+do
+    filename=`echo $i|sed "s/\//_/g"|sed "s|._||g"`
+    echo $filename
+    cp $i $WORK/pack/$relative/$filename
+done
+for i in `find ./ -name "*.cpp"`
+do
+    filename=`echo $i|sed "s/\//_/g"|sed "s|._||g"`
+    echo $filename
+    cp $i $WORK/pack/$relative/$filename
+done
+
+for i in `find ./ -name "in.*"`
+do
+    filename=`echo $i|sed "s/\//_/g"`
+    echo $filename
+    cp $i $WORK/pack/$relative/$filename
+done
+for i in `find ./ -name "dat.*"`
+do
+    filename=`echo $i|sed "s/\.\///g"|sed "s/\//_/g"`
+    echo $filename
+    cp $i $WORK/pack/$relative/$filename
+done
