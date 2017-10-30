@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 
 #author: Lixin Sun
 from control import *
@@ -6,6 +6,9 @@ from iodos import *
 from data import *
 from plot import *
 from analysis import *
+matplotlib.rcParams['mathtext.fontset'] = 'stix'
+matplotlib.rcParams['font.family'] = 'STIXGeneral'
+matplotlib.rcParams['font.size'] = 10
 
 import sys
 def main():

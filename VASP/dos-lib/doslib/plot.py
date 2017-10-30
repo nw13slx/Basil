@@ -67,7 +67,7 @@ class plot:
             if atom.symbol:
               line_label+=[atom.symbol[i]]
               line_label+=[None]
-            else: 
+            else:
               line_label+=["species "+str(i)]
               line_label+=[None]
           else:
@@ -75,7 +75,7 @@ class plot:
             line_color+=[None]
             if atom.symbol:
               line_label+=[atom.symbol[i]]
-            else: 
+            else:
               line_label+=["species "+str(i)]
         simple("perspecies",dos.Xenergy,y,loc_down,loc_up,line_color,line_label)
         del y, line_label, line_color
@@ -89,7 +89,8 @@ class plot:
 
   def simple(self,name,x,y,l_d,l_u,line_color,line_label):
     print "plotting file",name+".png"
-    a=plt.figure(0)
+    a=plt.figure(0, figsize=(3.34, 2.5), dpi=300, facecolor='w', edgecolor='k')
+
     #print "x range: ", x[l_d],x[l_u]
     for i in range(len(y)):
       if y[i] is not None:
@@ -102,7 +103,9 @@ class plot:
       plt.legend()
     if (name=="DOS-tot"):
         self.dos0_extra()
-    pl.savefig(self.control.name+name+".png")
+    fig.set_size_inches(3.34,2.5)
+    plt.tight_layout()
+    fig.savefig(self.control.name+name+".png",dpi=300)
     plt.close()
 
   def atom_start(self):
