@@ -121,6 +121,7 @@ class iodos:
       dos.fermiN = np.argmin(abs(dos.Xenergy))
     elif (control.energyshift!=0):
       print "shift energy by ", control.energyshift
+      dos.fermiN = np.argmin(abs(dos.Xenergy-dos.efermi))
       dos.Xenergy -= control.energyshift
     else:
       dos.fermiN = np.argmin(abs(dos.Xenergy-dos.efermi))
