@@ -89,12 +89,12 @@ class plot:
 
   def simple(self,name,x,y,l_d,l_u,line_color,line_label):
     print "plotting file",name+".png"
-    a=plt.figure(0, figsize=(3.34, 2.5), dpi=300, facecolor='w', edgecolor='k')
+    fig=plt.figure(0, figsize=(3.34, 2.5), dpi=300, facecolor='w', edgecolor='k')
 
     #print "x range: ", x[l_d],x[l_u]
     for i in range(len(y)):
       if y[i] is not None:
-        line=plt.plot(x[l_d:l_u],y[i][l_d:l_u],linewidth=1.5)
+        line=plt.plot(x[l_d:l_u],y[i][l_d:l_u],linewidth=1)
         if line_color[i]:
           plt.setp(line,color=line_color[i])
         if line_label[i]:
@@ -103,6 +103,10 @@ class plot:
       plt.legend()
     if (name=="DOS-tot"):
         self.dos0_extra()
+    if (self.control.center_ef==True):
+      plt.xlabel("$E-E_\mathrm{VBM}$")  
+    else:
+      plt.xlabel("$E$")  
     fig.set_size_inches(3.34,2.5)
     plt.tight_layout()
     fig.savefig(self.control.name+name+".png",dpi=300)
