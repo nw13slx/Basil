@@ -103,7 +103,7 @@ class plot:
       plt.legend()
     if (name=="DOS-tot"):
         self.dos0_extra()
-    if (control.center_ef==True):
+    if (self.control.center_ef==True):
       plt.xlabel("$E-E_\mathrm{VBM}$")  
     else:
       plt.xlabel("$E$")  
