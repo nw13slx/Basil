@@ -28,8 +28,8 @@ do
   #net charge
   if [ -f $path/POTCAR ]; then
     each_element=$(awk "NR==7" $path/$position)
-    valence_e=`grep -A1 PBE $path/POTCAR|awk "NR%3 ==2"|grep -v F|awk '{printf "%s ",$1}END{printf "\n" }'`
-    atomtype=`grep PBE $path/POTCAR|wc -l |awk '{print $1/2.}'`
+    valence_e=`grep ZVAL $path/POTCAR|awk '{printf "%s ",$6}END{printf "\n" }'`
+    atomtype=`awk "NR==6" $path/POSCAR|wc -w |awk '{print $1}'`
     origin_e=`echo $each_element $valence_e|awk -v t=$atomtype '{sum=0}{for (i=1;i<=t;i++) {sum+=$(i)*$(i+t)}}{print sum}'`
     NELECT=`grep NELECT $path/OUTCAR|awk '{print $3}'`
     netcharge=`echo $NELECT $origin_e|awk '{print $2-$1}'`
