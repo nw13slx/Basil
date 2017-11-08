@@ -7,6 +7,7 @@ class atom_data(object):
   species=None
   positions=None
   constraints=None
+  boundary=None
 
 
 class dos_data(object):

@@ -1,3 +1,5 @@
+import numpy as np
+
 def plot_atom_start(self):
   rad=12
   scale=1/23.*2.

@@ -58,25 +58,43 @@ class iodos:
     if (self._posf):
       atom=self.atom
       lines=self._posf.readlines()
-      if not atom.species:
-        atom.symbol=lines[5].strip().split()
-        number=map(int,lines[6].strip().split())
-        atom.ntype=len(number)
+      scale=float(lines[1])
+      boundary=[map(float,lines[2].strip().split())]
+      boundary+=[map(float,lines[3].strip().split())]
+      boundary+=[map(float,lines[4].strip().split())]
+      atom.boundary=np.array(boundary)*scale
+      initial=lines[5].strip().split()[0][0].lower()
+      if atom.species is None:
+        if ((initial>='a') and (initial<='z')): 
+          symbol=lines[5].strip().split()
+          number=map(int,lines[6].strip().split())
+          ntype=len(number)
+          line_n=7
+        else:
+          number=map(int,lines[5].strip().split())
+          ntype=len(number)
+          symbol=range(ntype)
+          line_n=6
+      if atom.species is None:
         atom.species=[]
         for i in range(len(number)):
           atom.species += ([i]*number[i])
-      atom.natom=len(atom.species)
+        atom.natom=len(atom.species)
+        atom.symbol=symbol
+        atom.ntype=ntype
       #if there's a line of "selective dynamics'
       #read the constraints
-      initial=lines[7].strip().split()[0][0]
+      initial=lines[line_n].strip().split()[0][0]
       if ('s'==initial.lower()):
-          starting=9
+          starting=line_n+2
           a=np.array([line.strip().split() for line in lines[starting:(starting+atom.natom)]])
           atom.positions=a[:,0:3].astype(np.float)
           atom.constraints=a[:,3:6]
       else:
-          starting=8
+          starting=line_n+1
           atom.positions = np.loadtxt(lines[starting:(starting+atom.natom)])
+      if ('d'==(lines[starting-1].strip().split()[0][0]).lower()):
+          atom.positions = atom.positions.dot(boundary)
       self._posf.close()
 
   def read_tot_dosfile(self):
@@ -247,6 +265,7 @@ class iodos:
         dos.d_eg+=partial[:,nspin*5:nspin*5+nspin]
       if perspecies:
         if dos.spin:
+          print "atomi",atomi,"species",species[atomi],"element",np.min(tot[:,0]),np.max(tot[:,0])
           dos.perspecies[:,species[atomi],0] += tot[:,0] 
           dos.perspecies[:,species[atomi],1] += tot[:,1] 
         else:

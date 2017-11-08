@@ -64,7 +64,7 @@ class plot:
             line_color+=[color_cycle[i]]
             y+=[dos.perspecies[:,i,1]]
             line_color+=[color_cycle[i]]
-            if atom.symbol:
+            if atom.symbol is not None:
               line_label+=[atom.symbol[i]]
               line_label+=[None]
             else:
@@ -100,7 +100,7 @@ class plot:
         if line_label[i]:
           plt.setp(line,label=line_label[i])
     if any(x for x in line_label):
-      plt.legend()
+      plt.legend(loc=3,fontsize=6)
     if (name=="DOS-tot"):
         self.dos0_extra()
     if (self.control.center_ef==True):
