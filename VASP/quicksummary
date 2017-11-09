@@ -2,7 +2,7 @@ home=`pwd`
 
 echo netcharge directory E dE mag vol Ef conv pressure >sum
 
-for file in `find ./ -name vasprun.xml`
+for file in `find ./ -name POSCAR`
 do
   path=$(dirname $file)
   echo $path
@@ -16,9 +16,9 @@ do
   elif [ -f $path/vasp.out ]; then
     screenout=$path/vasp.out
   fi
-  E=$(grep e_fr_energy $path/vasprun.xml |tail -n 1|awk '{print $3}')
-  conv=$(grep stop $screenout|awk '{print $1}')        #converge?
-  dE=$(grep F= $screenout|tail -n 1|awk '{print $8}'|sed "s/=//g")
+  if [ -f $path/vasprun.xml ]; then
+    E=$(grep e_fr_energy $path/vasprun.xml |tail -n 1|awk '{print $3}')
+  fi
   if [ -f $path/DOSCAR ]; then
     Ef=$(awk "NR==6" $path/DOSCAR|awk '{print $4}') #fermi level
   fi
@@ -42,14 +42,35 @@ do
     netcharge=`echo $NELECT $origin_e|awk '{print $2-$1}'`
   else
     netcharge="NA"
+    ENCUT=$(grep ENCUT $path/INCAR|awk '{print $3}')
   fi
 
-  if [ ! $conv ]; then
-    conv=$(echo "maxit"$(grep F= $screenout|tail -n 1|awk '{print $1}'))
+  if [ -f $screenout ]; then
+    conv=$(grep stop $screenout|awk '{print $1}')        #converge?
+    dE=$(grep F= $screenout|tail -n 1|awk '{print $8}'|sed "s/=//g")
+    if [ ! $conv ]; then
+      conv=$(echo "maxit"$(grep F= $screenout|tail -n 1|awk '{print $1}'))
+    fi
+    if [ ! $dE ]; then
+      dE=$(tail -n 1 $screenout|awk '{print $4}')
+    fi
+    if [ ! $E ]; then
+      E=$(grep F= $screenout|tail -n 1 |awk'{print $3}')
+    fi
+    if [ ! $version ]; then
+      version=$(grep vasp $screen|head -n 1|sed -e "s/ \+//g"|sed "s/ /_/g")
+    fi
   fi
-  if [ ! $dE ]; then
-    dE=$(tail -n 1 $screenout|awk '{print $4}')
-  fi
+
+  for name in NKPTS ENCUT version netcharge path E dE mag vol Ef conv pressure
+  do
+    #echo "before" $(($name))
+    if [[ -v $name ]]; then
+      declare $name=1
+    fi
+    #echo "after" $name $(($name))
+  done
+
 
   #print all the information
   echo $NKPTS $ENCUT $version $netcharge $path $E $dE $mag $vol $Ef $conv $pressure >>sum
