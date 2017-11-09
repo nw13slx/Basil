@@ -13,9 +13,15 @@ do
   fi
 
   E=$(grep e_fr_energy $path/vasprun.xml |tail -n 1|awk '{print $3}')
-  dE=$(grep e_0_energy $path/vasprun.xml|tail -n 1|awk '{print $3}')
   mag=$(grep mag $path/OUTCAR|grep electron|tail -n 1|awk '{print $6}')
-  conv=`grep stop $path/out.out|awk '{print $1}'`        #converge?
+  if [ -f out.out ]; then
+    conv=`grep stop $path/out.out|awk '{print $1}'`        #converge?
+    dE=$(grep F= $path/out.out|tail -n 1||awk '{print $8}'|sed "s/=//g")
+  fi
+  if [ -f vasp.out ]; then
+    conv=`grep stop $path/vasp.out|awk '{print $1}'`        #converge?
+    dE=$(grep F= $path/vasp.out|tail -n 1||awk '{print $8}'|sed "s/=//g")
+  fi
   Ef=$(awk "NR==6" $path/DOSCAR|awk '{print $4}') #fermi level
   vol=$(grep volume $path/OUTCAR |tail -n 1|awk '{print $5}') #volume
   pressure=$(grep Pullay $path/OUTCAR|tail -n 1|awk '{print $4}')
