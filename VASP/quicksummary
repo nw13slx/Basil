@@ -4,6 +4,15 @@ echo netcharge directory E dE mag vol Ef conv pressure >sum
 
 for file in `find ./ -name POSCAR`
 do
+
+  for name in NKPTS ENCUT version netcharge path E dE mag vol Ef conv pressure
+  do
+    #echo "before" $(($name))
+    if [[ -v $name ]]; then
+      unset $name
+    fi
+    #echo "after" $name $(($name))
+  done
   path=$(dirname $file)
   echo $path
   if [ -f $path/POSCAR ]; then
@@ -41,31 +50,34 @@ do
     NELECT=`grep NELECT $path/OUTCAR|awk '{print $3}'`
     netcharge=`echo $NELECT $origin_e|awk '{print $2-$1}'`
   else
+    echo "OUTCAR doesn't exist"
     netcharge="NA"
     ENCUT=$(grep ENCUT $path/INCAR|awk '{print $3}')
   fi
 
   if [ -f $screenout ]; then
     conv=$(grep stop $screenout|awk '{print $1}')        #converge?
+    echo $conv
     dE=$(grep F= $screenout|tail -n 1|awk '{print $8}'|sed "s/=//g")
-    if [ ! $conv ]; then
+    if [[ ( ! $conv ) || ( $conv == "soft" ) ]]; then
       conv=$(echo "maxit"$(grep F= $screenout|tail -n 1|awk '{print $1}'))
     fi
     if [ ! $dE ]; then
       dE=$(tail -n 1 $screenout|awk '{print $4}')
     fi
     if [ ! $E ]; then
-      E=$(grep F= $screenout|tail -n 1 |awk'{print $3}')
+      E=$(grep F= $screenout|tail -n 1 |awk '{print $3}')
     fi
     if [ ! $version ]; then
-      version=$(grep vasp $screen|head -n 1|sed -e "s/ \+//g"|sed "s/ /_/g")
+      version=$(grep vasp $screenout|head -n 1|sed -e "s/ \+//g"|sed "s/ /_/g")
     fi
+  else
+    echo "$screenout doesn't exist"
   fi
-
   for name in NKPTS ENCUT version netcharge path E dE mag vol Ef conv pressure
   do
     #echo "before" $(($name))
-    if [[ -v $name ]]; then
+    if [[ ! -v $name ]]; then
       declare $name=1
     fi
     #echo "after" $name $(($name))
