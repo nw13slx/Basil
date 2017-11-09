@@ -1,8 +1,3 @@
-#plot the local potential that is already average along x-y plane.
-#usage: 
-#   average_locpot LOCPOT VLINE 3
-#   plot_locpot VLINE LOC.png
-
 #!/bin/env python
 
 #plot the local potential that is already average along x-y plane.
@@ -87,6 +82,7 @@ if __name__=='__main__':
   
   smoothY=smooth(Ynew,window)[(window/2):window/2+Ndata]
   drop=smoothY[Ndata/2]-ref
+  print "drop ",drop,ref
   
   print len(Y)
   plt.figure(0)
@@ -96,4 +92,3 @@ if __name__=='__main__':
   pl.savefig(output)
   plt.close()
   
-  print "drop ",drop,ref
