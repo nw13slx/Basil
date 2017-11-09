@@ -2,7 +2,7 @@ home=`pwd`
 
 echo netcharge directory E dE mag vol Ef conv pressure >sum
 
-for file in `find ./ -name vasprun.xml`
+for file in `find ./ -name OUTCAR`
 do
   path=$(dirname $file)
 
@@ -12,11 +12,15 @@ do
     position=POSCAR
   fi
 
-  E=$(grep e_fr_energy $path/vasprun.xml |tail -n 1|awk '{print $3}')
-  dE=$(grep e_0_energy $path/vasprun.xml|tail -n 1|awk '{print $3}')
-  mag=$(grep mag $path/OUTCAR|grep electron|tail -n 1|awk '{print $6}')
+  E=$(grep "free  energy   TOTEN  =" $path/OUTCAR |tail -n 1|awk '{print $5}')
+  dE=$(grep F= $path/out.out|tail -n 1|awk '{print $5}')
+  mag=$(grep "number of electron" $path/OUTCAR|grep "magnetization"|tail -n 1|awk '{print $6}')
   conv=`grep stop $path/out.out|awk '{print $1}'`        #converge?
-  Ef=$(awk "NR==6" $path/DOSCAR|awk '{print $4}') #fermi level
+  if [ -f $path/DOSCAR ]; then
+    Ef=$(awk "NR==6" $path/DOSCAR|awk '{print $4}') #fermi level
+  else
+    Ef=$(grep E-fermi $path/OUTCAR|tail -n 1 |awk '{print $3}') #fermi level
+  fi
   vol=$(grep volume $path/OUTCAR |tail -n 1|awk '{print $5}') #volume
   pressure=$(grep Pullay $path/OUTCAR|tail -n 1|awk '{print $4}')
   echo $path $(grep Pull $path/OUTCAR|tail -n 1) >>pressure

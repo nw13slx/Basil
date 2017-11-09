@@ -55,28 +55,47 @@ class iodos:
 
   def read_poscar(self):
     '''read POSCAR or CONTCAR, with or without constraints '''
-    atom=self.atom
-    lines=self._posf.readlines()
-    if not atom.species:
-      atom.symbol=lines[5].strip().split()
-      number=map(int,lines[6].strip().split())
-      atom.ntype=len(number)
-      atom.species=[]
-      for i in range(len(number)):
-        atom.species += ([i]*number[i])
-    atom.natom=len(atom.species)
-    #if there's a line of "selective dynamics'
-    #read the constraints
-    initial=lines[7].strip().split()[0][0]
-    if ('s'==initial.lower()):
-        starting=9
-        a=np.array([line.strip().split() for line in lines[starting:(starting+atom.natom)]])
-        atom.positions=a[:,0:3].astype(np.float)
-        atom.constraints=a[:,3:6]
-    else:
-        starting=8
-        atom.positions = np.loadtxt(lines[starting:(starting+atom.natom)])
-    self._posf.close()
+    if (self._posf):
+      atom=self.atom
+      lines=self._posf.readlines()
+      scale=float(lines[1])
+      boundary=[map(float,lines[2].strip().split())]
+      boundary+=[map(float,lines[3].strip().split())]
+      boundary+=[map(float,lines[4].strip().split())]
+      atom.boundary=np.array(boundary)*scale
+      initial=lines[5].strip().split()[0][0].lower()
+      if atom.species is None:
+        if ((initial>='a') and (initial<='z')): 
+          symbol=lines[5].strip().split()
+          number=map(int,lines[6].strip().split())
+          ntype=len(number)
+          line_n=7
+        else:
+          number=map(int,lines[5].strip().split())
+          ntype=len(number)
+          symbol=range(ntype)
+          line_n=6
+      if atom.species is None:
+        atom.species=[]
+        for i in range(len(number)):
+          atom.species += ([i]*number[i])
+        atom.natom=len(atom.species)
+        atom.symbol=symbol
+        atom.ntype=ntype
+      #if there's a line of "selective dynamics'
+      #read the constraints
+      initial=lines[line_n].strip().split()[0][0]
+      if ('s'==initial.lower()):
+          starting=line_n+2
+          a=np.array([line.strip().split() for line in lines[starting:(starting+atom.natom)]])
+          atom.positions=a[:,0:3].astype(np.float)
+          atom.constraints=a[:,3:6]
+      else:
+          starting=line_n+1
+          atom.positions = np.loadtxt(lines[starting:(starting+atom.natom)])
+      if ('d'==(lines[starting-1].strip().split()[0][0]).lower()):
+          atom.positions = atom.positions.dot(boundary)
+      self._posf.close()
 
   def read_tot_dosfile(self):
     '''read the overall dosfile'''
@@ -91,7 +110,9 @@ class iodos:
     line = self._dosf.readline()
     doscaratom=int(line.strip().split()[0])
     if (doscaratom != atom.natom):
-        self.end="doscar atom number is different from poscar %d %d"%(doscaratom,atom.natom)
+        print "WARNING: doscar atom number is different from poscar %d %d"%(doscaratom,atom.natom)
+        if (doscaratom <atom.natom):
+          atom.natom=doscaratom
     self._auto_terminate()
 
     #read the header
@@ -116,12 +137,17 @@ class iodos:
       dos.loc_down = np.argmin(abs(dos.Xenergy+7))
       dos.loc_up = np.argmin(abs(dos.Xenergy-7))
       dos.fermiN = np.argmin(abs(dos.Xenergy))
+    elif (control.energyshift!=0):
+      print "shift energy by ", control.energyshift
+      dos.fermiN = np.argmin(abs(dos.Xenergy-dos.efermi))
+      dos.Xenergy -= control.energyshift
     else:
-      dos.fermiN = np.argmin(abs(dos.Xenergy-efermi))
+      dos.fermiN = np.argmin(abs(dos.Xenergy-dos.efermi))
     if (control.zoom_in==True):
       dos.loc_down = np.argmin(abs(dos.Xenergy-control.zoom_emin))
       dos.loc_up = np.argmin(abs(dos.Xenergy-control.zoom_emax))
-    if (control.whole_range==True):
+      print "dos up down limit",dos.loc_down,dos.loc_up
+    elif (control.whole_range==True):
       dos.loc_down = 0
       dos.loc_up = dos.nedos
 
@@ -137,7 +163,10 @@ class iodos:
        return 0
     control=self._cont
     dos=self.dos
-    matrix = np.hstack([dos.Xenergy.reshape([dos.nedos,1]),dos.perspecies])
+    if dos.spin:
+      matrix = np.hstack([dos.Xenergy.reshape([dos.nedos,1]),dos.perspecies[:,:,0],dos.perspecies[:,:,1]])
+    else:
+      matrix = np.hstack([dos.Xenergy.reshape([dos.nedos,1]),dos.perspecies])
     np.savetxt(control.name+'DOS-perspecies.gz',matrix,fmt='%15.8f')
     del matrix
     matrix = dos.Xenergy.reshape([dos.nedos,1])
@@ -192,6 +221,7 @@ class iodos:
        nspin=1
     else:
         seld.end="weird DOSCAR, I cannot read it..."
+    self._auto_terminate()
 
 
     for i in range(4):
@@ -202,11 +232,11 @@ class iodos:
     self._auto_terminate()
 
     if (par_element[2]>=0):
-      d_t2g=np.zeros((dos.nedos,nspin))
-      d_eg=np.zeros((dos.nedos,nspin))
+      dos.d_t2g=np.zeros((dos.nedos,nspin))
+      dos.d_eg=np.zeros((dos.nedos,nspin))
     else:
-      d_t2g=None
-      d_eg=None
+      dos.d_t2g=None
+      dos.d_eg=None
     dos.par_orbital=[] #store the partial s, p, d, f orbital
     for i in range(4):
       if par_element[i]>=0:
@@ -215,7 +245,10 @@ class iodos:
         dos.par_orbital+=[None]
 
     if perspecies:
-      dos.perspecies=np.zeros((dos.nedos,atom.ntype))
+      if dos.spin:
+        dos.perspecies=np.zeros((dos.nedos,atom.ntype,nspin))
+      else:
+        dos.perspecies=np.zeros((dos.nedos,atom.ntype))
     if peratom:
       self.plot.atom_start()
     for atomi in xrange(atom.natom):
@@ -228,15 +261,17 @@ class iodos:
         if (species[atomi] == par_element[orbital]):
           dos.par_orbital[orbital]+=partial[:,nspin*orbital:nspin*orbital+nspin]
       if (species[atomi] == par_element[2]):
-        d_t2g+=partial[:,nspin*4:nspin*4+nspin]
-        d_eg+=partial[:,nspin*5:nspin*5+nspin]
+        dos.d_t2g+=partial[:,nspin*4:nspin*4+nspin]
+        dos.d_eg+=partial[:,nspin*5:nspin*5+nspin]
       if perspecies:
         if dos.spin:
-          dos.perspecies[:,species[atomi]] += tot[:,0] - tot[:,1]
+          print "atomi",atomi,"species",species[atomi],"element",np.min(tot[:,0]),np.max(tot[:,0])
+          dos.perspecies[:,species[atomi],0] += tot[:,0] 
+          dos.perspecies[:,species[atomi],1] += tot[:,1] 
         else:
           dos.perspecies[:,species[atomi]] += tot
       if peratom:
-        self.plot.atom(atomi)
+        self.plot.atom_during(atomi)
       del tot,partial
       #print data and png per atom
 #      #if (peratom==True):

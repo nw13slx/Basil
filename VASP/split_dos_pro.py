@@ -75,15 +75,15 @@ def main():
     cm = pl.get_cmap('winter')
     ef=None
     for atomi in range(natoms):
-      if (atomSpe[atomi]==1):
-        f=open("DOS"+str(atomi)+".dat")
-        data=np.loadtxt(f)
-        ef=data[:,0]
-        color = cm(1.*atomi/float(natoms))
-        plt.plot(data[:,0],data[:,1],c=color)
-        plt.plot(data[:,0],-data[:,2],c=color)
-        f.close()
-        del data
+      print "atom", atomi
+      f=open("DOS"+str(atomi)+".dat")
+      data=np.loadtxt(f)
+      ef=data[:,0]
+      color = cm(1.*atomi/float(natoms))
+      plt.plot(data[:,0],data[:,1],c=color)
+      plt.plot(data[:,0],-data[:,2],c=color)
+      f.close()
+      del data
     if (centerEf==True):
       plt.xlim(-7,7)
     if (zoomIn==True):
