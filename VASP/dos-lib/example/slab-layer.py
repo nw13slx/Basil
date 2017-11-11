@@ -1,3 +1,7 @@
+import os, sys, inspect
+cmd_folder = os.path.realpath(os.path.abspath("../"))
+if cmd_folder not in sys.path:
+  sys.path.insert(0, cmd_folder)
 from doslib.control import *
 from doslib.iodos import *
 from doslib.data import *

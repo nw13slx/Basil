@@ -138,7 +138,7 @@ class analysis:
       while ((planeid<(nplane-1)) and (z>division[planeid])):
         planeid+=1
       pid[i]=int(planeid)
-    symbol=np.array(range(nplane))
+    symbol=range(nplane)
 
     return pid, nplane, symbol
 
