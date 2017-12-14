@@ -1,4 +1,9 @@
 import numpy as np
+DIST=0
+DX=1
+ANGLE=2
+ID=3
+
 class analysis:
   def __init__(self,atom,dos):
       self.atom=atom
@@ -152,3 +157,198 @@ class analysis:
 #      else:
 #          #n/2 is a peak
 #
+  def find_ngh(self,rNN):
+    x=self.atom.positions
+    b0=self.atom.boundary
+    b=np.array([b0[0,0],b0[1,1],b0[2,2]])
+    bh=b/2.
+    #initialize neighborlist
+    self.atom.ngh_list=[]
+    for i in range(self.atom.natom):
+      self.atom.ngh_list+=[{}]
+    ngh_list=self.atom.ngh_list
+    #ngh_list=[{}] will lead to a weird problem...
+    #build up the neighborlist
+    for i in range(self.atom.natom):
+      for j in range(i+1,self.atom.natom):
+        dr=x[j,:]-x[i,:]
+        for k in range(3):
+          while (abs(dr[k])>bh[k]):
+            if (dr[k]>0):
+              dr[k]-=b[k]
+            else:
+              dr[k]+=b[k]
+        dist=np.linalg.norm(dr)
+        if ( dist < rNN):
+          ngh_list[i][j]=[dist,dr]
+          ngh_list[j][i]=[dist,dr]
+ 
+  def compute_nye(self,G,Q_dagger):
+    ngh_id=self.atom.ngh_id
+    A=np.zeros([self.atom.natom,3,3,3])
+    nye_tensor=np.zeros([self.atom.natom,3,3])
+    G_dagger=np.zeros([self.atom.natom,3,3])
+    for atomi in range(self.atom.natom):
+      for i in range(3):
+        for m in range(3):
+          deltaG_im=np.zeros(len(ngh_id[atomi]))
+          for n in range(len(ngh_id[atomi])):
+            deltaG_im[n]=G[ngh_id[atomi][n],i,m]
+          deltaG_im-=G[atomi,i,m]
+          A[atomi,i,m,:]=np.array(Q_dagger[atomi]).dot(deltaG_im)
+          for j in range(3):
+            for k in range(3):
+              nye_tensor[atomi,j,k]-=self.perm_parity([j,i,m])*A[atomi,i,m,k]
+      G_dagger[atomi,:,:]=np.linalg.pinv(G[atomi,:,:])
+    return nye_tensor,G_dagger
+ 
+  def computeG(self,P,Q):
+    Qdagger=np.linalg.pinv(np.array(Q))
+    G=np.array(Qdagger.dot(np.array(P)))
+    return Qdagger,G
+  
+  def match_neigh2P(self,neighbor,P0,angles,Qunsort,criteria=0.9,criteria_max=1):
+    for j in neighbor.keys():
+      if ( type(j) is int):
+        compare=np.zeros(len(P0))
+        for k in range(len(P0)):
+          compare[k]=angles[j,k]
+        indexk=np.argmax(compare)
+        anglemin=compare[indexk]
+        if (anglemin>criteria):
+           if (indexk not in Qunsort.keys()): #(Q[ref][indexk]==[]):
+             Qunsort[indexk]=[neighbor[j][DIST],neighbor[j][DX],anglemin,j]
+             del neighbor[j]
+           elif ((Qunsort[indexk][DIST] > neighbor[j][DIST]) and (Qunsort[indexk][ANGLE]<criteria_max)):
+             neighbor[Qunsort[indexk][ID]] = [Qunsort[indexk][DIST],Qunsort[indexk][DX]]
+             Qunsort[indexk]=[neighbor[j][DIST],neighbor[j][DX],anglemin,j]
+             del neighbor[j]
+  
+  def add_nearest_neigh(self,neighbor,P0,angles,Qunsort,missing_ngh):
+    sort_list=sorted(neighbor.iteritems(),key=lambda (k,v):v[0])
+    for item in sort_list[:missing_ngh]:
+      j=item[0]
+      a={}
+      for k in range(len(P0)):
+         a[j,k]=angles[j,k]
+      sort_angle=sorted(a.iteritems(),key=lambda (k,v):-v)
+      for angle in sort_angle:
+        if ( j in neighbor.keys()):
+          indexk=angle[0][1]
+          if (indexk not in Qunsort.keys()): #(Q[ref][indexk]==[]):
+            Qunsort[indexk]=[neighbor[j][DIST],neighbor[j][DX],angle[1],j]
+            del neighbor[j]
+    del sort_list
+  
+  def perm_parity(self,lst):
+    parity = 1
+    for i in range(0,len(lst)-1):
+        if lst[i] != i:
+            parity *= -1
+            mn = min(range(i,len(lst)), key=lst.__getitem__)
+            lst[i],lst[mn] = lst[mn],lst[i]
+    return parity   
+  
+  def computeQ(self,P_allspecies=None,Pn_allspecies=None):
+    ngh_list=self.atom.ngh_list
+    if ((P_allspecies is not None ) and (Pn_allspecies is not None)):
+      #sort the neighbor and compute Q and G for each atom
+      Q=[]
+      Q_dagger=[]
+      G=np.zeros([self.atom.natom,3,3])
+      self.atom.ngh_id=[]
+      ngh_id=self.atom.ngh_id
+      for i in range(self.atom.natom):
+        Q+=[[]]
+        Q_dagger+=[[]]
+        ngh_id+=[[]]
+        Pn=Pn_allspecies[self.atom.species[i]]
+        if ( Pn is None):
+          print "the reference input is not intact, please check Pn[",self.atom.species[i],"]"
+          return None, None,None
+        least_missing_id=-1
+        least_missing_value=np.max([len(Pn[ref][:,0]) for ref in range(len(Pn))])
+        angle_store=[]
+        Qunsort=[] 
+  
+        #first try to find out which pattern matches the best"
+        for ref in range(len(Pn)):
+          angle_store+=[{}]
+          Qunsort+=[{}] 
+          for j in ngh_list[i].keys():
+            for k in range(len(Pn[ref])):
+               angle_store[ref][j,k]=np.array(ngh_list[i][j][DX]).dot(Pn[ref][k,:])/ngh_list[i][j][DIST]
+          self.match_neigh2P(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref])
+          missing_ngh=len(Pn[ref])-len(Qunsort[ref])
+          if (least_missing_value > missing_ngh):
+            least_missing_value=missing_ngh
+            least_missing_id=ref
+        if (len(Pn)==2):
+          if ((len(Pn[0])-len(Qunsort[0]))==(len(Pn[1])-len(Qunsort[1]))):
+            print "competing",self.atom.positions[i]
+  
+        ref=least_missing_id
+        #sort the rest,start from the nearest remaining one
+        criteria=0.9
+        while ((missing_ngh >0) and (criteria>0)):
+          self.match_neigh2P(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],criteria,criteria+0.1)
+          missing_ngh=len(Pn[ref])-len(Qunsort[ref])
+          criteria-=0.05
+  
+        if (missing_ngh > len(ngh_list[i])):
+           print "need a larger neighbor list"
+           print "not enough neighbor to build Q"
+           return None,None,None
+        elif (missing_ngh >0):
+           self.add_nearest_neigh(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],missing_ngh)
+  
+        P=P_allspecies[self.atom.species[i]][ref]
+        if ( P is None):
+          print "the reference input is not intact, please check Pn[",self.atom.species[i],"]"
+          return None, None,None
+        Q[i]=np.zeros(P.shape)
+        ngh_id[i]=[[]]*len(P)
+        for k in range(len(P)):
+          Q[i][k,:]=Qunsort[ref][k][DX]
+          ngh_id[i][k]=Qunsort[ref][k][ID]
+        Q_dagger[i],G[i,:,:]=self.computeG(P,Q[i])
+        del angle_store
+        del Qunsort
+      del Q
+      return Q_dagger,G
+    else:
+      #sort the neighbor and compute Q and G for each atom
+      Q=[]
+      Q_dagger=[]
+      if self.atom.ngh_id is not None:
+         del self.atom.ngh_id
+      self.atom.ngh_id=[]
+      ngh_id=self.atom.ngh_id
+      for i in range(self.atom.natom):
+        Q+=[np.zeros([len(ngh_list[i]),3])]
+        Q_dagger+=[np.zeros([len(ngh_list[i]),3])]
+        ngh_id+=[len(ngh_list[i])*[[]]]
+        indexk=0
+        for j in ngh_list[i].keys():
+          Q[i][indexk,:]=ngh_list[i][j][DX]
+          ngh_id[i][indexk]=j
+          indexk+=1
+        Q_dagger[i]=np.linalg.pinv(np.array(Q[i]))
+      del Q
+      return Q_dagger,None
+
+  def compute_strain_scalar(self,G_dagger):
+    volume=np.zeros(len(G_dagger[:,0,0]))
+    vonMises=np.zeros(len(G_dagger[:,0,0]))
+    for i in range(len(G_dagger)):
+      volume[i]=G_dagger[i,0,0]
+      volume[i]+=G_dagger[i,1,1]
+      volume[i]+=G_dagger[i,2,2]
+      volume[i]-=3.
+      print i,G_dagger[i][0,0],G_dagger[i][1,1],G_dagger[i][2,2],volume[i]
+      F=1/2.*(G_dagger[i,:,:]+G_dagger[i,:,:].T)
+      G_temp=F-np.array([[1,0,0],[0,1,0],[0,0,1]])*(volume[i]/3.+1)
+      G_temp=G_temp.dot(G_temp)
+      vonMises[i]=np.sqrt((G_temp[0,0]+G_temp[1,1]+G_temp[2,2])/2.)
+    return volume, vonMises
+

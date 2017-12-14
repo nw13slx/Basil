@@ -8,7 +8,8 @@ class atom_data(object):
   positions=None
   constraints=None
   boundary=None
-
+  ngh_list=None
+  ngh_id=None
 
 class dos_data(object):
   nedos = None
