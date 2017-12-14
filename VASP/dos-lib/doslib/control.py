@@ -29,7 +29,7 @@ class control_knob:
     self.peratom=False
     self.perspecies=False
     self.whole_range=False
-    self.center_ef=True
+    self.center_ef=False
 
     self.zoom_in=False
     self.zoom_emax=None
@@ -69,4 +69,4 @@ class control_knob:
         self.write_pdos=False
       if (self.write_pdos==True):
         self.perspecies=True
-        
+
