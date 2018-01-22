@@ -20,11 +20,11 @@ if [ $# -gt 2 ]; then
     type=$(eval echo \${$i})
     shelltype=$(echo $t $i|awk '{print $1+$2-2}')
     bondtype=$(echo $t $i|awk '{print $2-2}')
-    nshell=$(grep "^$type " original_atoms |wc -l|awk '{print $1}')
+    nshell=$(grep "^${type} " original_atoms |wc -l|awk '{print $1}')
     echo "add shell to type $type, with $nshell shells, shell type $shelltype, bond type $bondtype"
     let "shellatom+=nshell"
-    grep "^$type " original_atoms |awk -v t=$t -v i=$i '{printf "%d %d %f %f %f %f\n%d %d %f %f %f %f\n",0,$1,0,$2,$3,$4,0,t+i-2,0,$2,$3,$4}' >>newatoms
-    sed -i "/^$type /d" original_atoms
+    grep "^${type} " original_atoms |awk -v t=$t -v i=$i '{printf "%d %d %f %f %f %f\n%d %d %f %f %f %f\n",0,$1,0,$2,$3,$4,0,t+i-2,0,$2,$3,$4}' >>newatoms
+    sed -i0 "/^${type} /d" original_atoms
   done
   echo "$shellatom shells in total"
   #list core and shell id
@@ -34,7 +34,7 @@ if [ $# -gt 2 ]; then
   #paste it together
   paste temp2 temp1|cat -n >bonds
   cat original_atoms |awk -v n=$atomn -v t=$t '{printf "%d %d %f %f %f %f\n",0,$1, 0,$2,$3,$4}' >>newatoms
-  rm original_atoms temp1 temp2
+  #rm original_atoms temp1 temp2
 else
   st=$t
   shellatom=$atomn

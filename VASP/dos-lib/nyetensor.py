@@ -1,9 +1,9 @@
 import os, sys, inspect
 import operator
  # realpath() will make your script run, even if you symlink it :)
-cmd_folder = "/home/leleslx/basil/VASP/dos-lib"
-if cmd_folder not in sys.path:
-  sys.path.insert(0, cmd_folder)
+#cmd_folder = "/home/leleslx/basil/VASP/dos-lib"
+#if cmd_folder not in sys.path:
+#  sys.path.insert(0, cmd_folder)
 
 from doslib.control import *
 from doslib.iodos import *
