@@ -122,13 +122,25 @@ int main(int argc, char **argv){
         cout<< " the input file does not exist or is corrupted..."<<endl;
         return 1;
     }
-    ofstream jason_o(argv[2]);
-    cout<<"{"<<endl;
-    jason_o<<"{"<<endl;
+    ofstream json_o(argv[2]);
+    if ( !json_o.good()){
+        cout<< " the output file does not exist or is corrupted..."<<endl;
+        return 1;
+    }
+    json_o.precision(5);
+    json_o<<"{"<<endl;
 
-    cout<<"\"comp_info\":[";
-    jason_o<<"\"comp_info\":[";
-    char *pattern="Your calculation utilizes ";
+    json_o<<"\"outputfile\":\""<<argv[1]<<"\","<<endl;
+    json_o<<"\"software\":\"ORCA";
+    char *pattern="Program Version";
+    int v_pos=find_pattern(In1,pattern);
+    In1.seekg(v_pos);
+    In1.getline(temp,MAX_CHARACTER); 
+    break_line(temp,content);
+    json_o<<content[2]<<"\","<<endl;
+
+    json_o<<"\"comp_info\":[";
+    pattern="Your calculation utilizes ";
     int len_pat=strlen(pattern);
     int u_count=0;
     int u_pos=find_pattern(In1,pattern);
@@ -136,35 +148,29 @@ int main(int argc, char **argv){
       In1.seekg(u_pos);
       In1.getline(temp,MAX_CHARACTER); 
       if (u_count>0){
-        cout<<", ";
-        jason_o<<", ";
+        json_o<<", ";
       }
-      cout<<"\""<<&temp[len_pat]<<"\"";
-      jason_o<<"\""<<&temp[len_pat]<<"\"";
+      json_o<<"\""<<&temp[len_pat]<<"\"";
       u_count++;
       u_pos=find_pattern(In1,pattern);
     }
-    cout<<"],"<<endl;
-    jason_o<<"],"<<endl;
+    json_o<<"],"<<endl;
 
     pattern="CARTESIAN COORDINATES (ANGSTROEM)";
     int c_pos=find_pattern(In1,pattern);
+    int atomn=0;
     if (c_pos!=NULL){
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
       column=break_line(temp,content);
-      int atomn=0;
-      cout<<"\"coordinates\":[";
-      jason_o<<"\"coordinates\":[";
+      json_o<<"\"coordinates\":[";
       char species[100000]="\"species\":[";
       while (column==4){
         if (atomn>0){
-          cout<<", ";
-          jason_o<<", ";
+          json_o<<", ";
           strcat(species,",");
         }
-        cout<<"["<<content[1]<<","<<content[2]<<","<<content[3]<<"]";
-        jason_o<<"["<<content[1]<<","<<content[2]<<","<<content[3]<<"]";
+        json_o<<"["<<content[1]<<","<<content[2]<<","<<content[3]<<"]";
         strcat(species,"\"");
         strcat(species,content[0].c_str());
         strcat(species,"\"");
@@ -172,12 +178,10 @@ int main(int argc, char **argv){
         In1.getline(temp,MAX_CHARACTER);
         column=break_line(temp,content);
       }
-      cout<<"],"<<endl;
-      jason_o<<"],"<<endl;
+      json_o<<"],"<<endl;
       strcat(species,"],");
-      cout<<species<<endl;
-      jason_o<<species<<endl;
-      jason_o<<"\"atomn\":"<<atomn<<","<<endl;
+      json_o<<species<<endl;
+      json_o<<"\"atomn\":"<<atomn<<","<<endl;
     }
 
     pattern="Hamiltonian:";
@@ -185,18 +189,22 @@ int main(int argc, char **argv){
     if (ham_pos!=NULL){
       In1.getline(temp,MAX_CHARACTER);
       column=break_line(temp,content);
-      jason_o<<"\"hamiltonian\":[";
+      json_o<<"\"hamiltonian\":[";
       int nha=0;
       while(column>0){
         if (temp[1]!=' '){
-          if (nha>0) jason_o<<",";
-          jason_o<<"\""<<content[0]<<" "<<content[column-1]<<"\"";
+          if (nha>0) json_o<<",";
+          json_o<<"\""<<content[0];
+          if (content[column-1].compare("on")!=0){
+            json_o<<" "<<content[column-1];
+          }
+          json_o<<"\"";
           nha++; 
         }
         In1.getline(temp,MAX_CHARACTER);
         column=break_line(temp,content);
       }
-      jason_o<<"],"<<endl;
+      json_o<<"],"<<endl;
     }
 
 
@@ -208,55 +216,83 @@ int main(int argc, char **argv){
 
     In1.getline(temp,MAX_CHARACTER);
     break_line(temp,content);
-    jason_o<<"\""<<content[0]<<"_"<<content[1]<<"_"<<content[2]<<"\":"<<content[4]<<","<<endl;
+    json_o<<"\""<<content[0]<<"_"<<content[1]<<"_"<<content[2]<<"\":"<<content[4]<<","<<endl;
     In1.getline(temp,MAX_CHARACTER);
     break_line(temp,content);
-    jason_o<<"\""<<content[0]<<"_"<<content[1]<<"_"<<content[2]<<"\":"<<content[4]<<","<<endl;
+    json_o<<"\""<<content[0]<<"_"<<content[1]<<"_"<<content[2]<<"\":"<<content[4]<<","<<endl;
     In1.getline(temp,MAX_CHARACTER);
     break_line(temp,content);
-    jason_o<<"\""<<content[0]<<"_"<<content[1]<<"_"<<content[2]<<"\":"<<content[4]<<","<<endl;
+    json_o<<"\""<<content[0]<<"_"<<content[1]<<"_"<<content[2]<<"\":"<<content[4]<<","<<endl;
     In1.getline(temp,MAX_CHARACTER);
     break_line(temp,content);
-    jason_o<<"\""<<content[0]<<"_"<<content[1]<<"_"<<content[2]<<"\":"<<content[4]<<","<<endl;
+    json_o<<"\""<<content[0]<<"_"<<content[1]<<"_"<<content[2]<<"\":"<<content[4]<<","<<endl;
 
     pattern="UHF SPIN CONTAMINATION"; 
     int spin_pos=find_pattern(In1,pattern);
     if (spin_pos!=NULL){
-      In1.getline(temp,MAX_CHARACTER);
-      In1.getline(temp,MAX_CHARACTER);
+      int s2_pos=find_pattern(In1,"Expectation value of");
+      In1.seekg(s2_pos);
       In1.getline(temp,MAX_CHARACTER);
       break_line(temp,content);
-      jason_o<<"\"S2\":"<<content[5]<<","<<endl;
+      json_o<<"\"S2\":"<<content[5]<<","<<endl;
+    }
+
+    pattern="Summary of Natural Population Analysis";
+    int nbo_pos=find_pattern(In1,pattern);
+    if (nbo_pos!=NULL){
+      char nbo_q[100000],nbo_s[100000];
+      strcpy(nbo_q,"\"nbo_charge\":[");
+      strcpy(nbo_s,"\"nbo_spin\":[");
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      for (int i=0;i<atomn;i++){
+        In1.getline(temp,MAX_CHARACTER);
+        break_line(temp,content);
+        if (i>0) {
+          strcat(nbo_q,", ");
+          strcat(nbo_s,", ");
+        }
+        strcat(nbo_q,content[2].c_str());
+        strcat(nbo_s,content[7].c_str());
+      }
+      json_o<<nbo_q<<"],"<<endl;
+      json_o<<nbo_s<<"],"<<endl;
     }
 
     pattern="DFT-D V3";
+    json_o<<std::fixed;
     int d3_pos=find_pattern(In1,pattern);
     if (d3_pos!=NULL){
       d3_pos=find_pattern(In1,"Edisp/kcal");
       In1.seekg(d3_pos);
       In1.getline(temp,MAX_CHARACTER);
       break_line(temp,content);
-      jason_o<<"\"edisp\":"<<atof(content[2].c_str())*Eh2eV<<","<<endl;
+      json_o<<"\"edisp\":"<<atof(content[2].c_str())*Eh2eV<<","<<endl;
       In1.getline(temp,MAX_CHARACTER);
       break_line(temp,content);
-      jason_o<<"\"e6\":"<<atof(content[4].c_str())*kcal2eV<<","<<endl;
+      json_o<<"\"e6\":"<<atof(content[3].c_str())*kcal2eV<<","<<endl;
       In1.getline(temp,MAX_CHARACTER);
       break_line(temp,content);
-      jason_o<<"\"e8\":"<<atof(content[4].c_str())*kcal2eV<<","<<endl;
+      json_o<<"\"e8\":"<<atof(content[3].c_str())*kcal2eV<<","<<endl;
+      In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
       break_line(temp,content);
-      jason_o<<"\"dispersion_corr\":"<<atof(content[2].c_str())*Eh2eV<<","<<endl;
+      json_o<<"\"dispersion_corr\":"<<atof(content[2].c_str())*Eh2eV<<","<<endl;
     }
 
     pattern="FINAL SINGLE POINT ENERGY";
+    json_o<<std::fixed;
     int fe_pos=find_pattern(In1,pattern);
     if (fe_pos!=NULL){
       In1.seekg(fe_pos);
       In1.getline(temp,MAX_CHARACTER);
       break_line(temp,content);
-      jason_o<<"\"energy\":"<<atof(content[1].c_str())*Eh2eV<<","<<endl;
+      json_o<<"\"energy\":"<<atof(content[4].c_str())*Eh2eV<<","<<endl;
     }
 
     pattern="CARTESIAN GRADIENT";
@@ -266,18 +302,18 @@ int main(int argc, char **argv){
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
       column=break_line(temp,content);
-      int atomn=0;
-      jason_o<<"\"forces\":[";
+      int catomn=0;
+      json_o<<"\"forces\":[";
       while (column==6){
-        if (atomn>0){
-          jason_o<<", ";
+        if (catomn>0){
+          json_o<<", ";
         }
-        atomn++;
-        jason_o<<"["<<atof(content[3].c_str())*Ehau2eVa<<","<<atof(content[4].c_str())*Ehau2eVa<<","<<atof(content[5].c_str())*Ehau2eVa<<"]";
+        catomn++;
+        json_o<<"["<<atof(content[3].c_str())*Ehau2eVa<<","<<atof(content[4].c_str())*Ehau2eVa<<","<<atof(content[5].c_str())*Ehau2eVa<<"]";
         In1.getline(temp,MAX_CHARACTER);
         column=break_line(temp,content);
       }
-      jason_o<<"],"<<endl;
+      json_o<<"],"<<endl;
     }
 
     pattern="DIPOLE MOMENT";
@@ -287,17 +323,16 @@ int main(int argc, char **argv){
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
       break_line(temp,content);
-      jason_o<<"\"dipole_elec\":["<<atof(content[2].c_str())*bohr2a<<","<<atof(content[3].c_str())*bohr2a<<","<<atof(content[4].c_str())*bohr2a<<"],"<<endl;
+      json_o<<"\"dipole_elec\":["<<atof(content[2].c_str())*bohr2a<<","<<atof(content[3].c_str())*bohr2a<<","<<atof(content[4].c_str())*bohr2a<<"],"<<endl;
       In1.getline(temp,MAX_CHARACTER);
       break_line(temp,content);
-      jason_o<<"\"dipole_nuc\":["<<atof(content[2].c_str())*bohr2a<<","<<atof(content[3].c_str())*bohr2a<<","<<atof(content[4].c_str())*bohr2a<<"],"<<endl;
+      json_o<<"\"dipole_nuc\":["<<atof(content[2].c_str())*bohr2a<<","<<atof(content[3].c_str())*bohr2a<<","<<atof(content[4].c_str())*bohr2a<<"],"<<endl;
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
       break_line(temp,content);
-      jason_o<<"\"dipole\":["<<atof(content[2].c_str())*bohr2a<<","<<atof(content[3].c_str())*bohr2a<<","<<atof(content[4].c_str())*bohr2a<<"]"<<endl;
+      json_o<<"\"dipole\":["<<atof(content[2].c_str())*bohr2a<<","<<atof(content[3].c_str())*bohr2a<<","<<atof(content[4].c_str())*bohr2a<<"]"<<endl;
     }
 
-    cout<<"}"<<endl;
-    jason_o<<"}"<<endl;
+    json_o<<"}"<<endl;
 }
 
