@@ -1,4 +1,8 @@
-path=$1
+if [ $# -gt 0 ]; then
+ path=$1
+else
+ path="./"
+fi
 basil_bin=$path/bin
 basil_src=./
 
