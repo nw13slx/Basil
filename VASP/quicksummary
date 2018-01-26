@@ -1,6 +1,6 @@
 home=`pwd`
 
-echo netcharge directory E dE mag vol Ef conv pressure >sum
+echo NKPTS ENCUT version netcharge path E dE mag vol Ef conv pressure >sum
 
 for file in `find ./ -name POSCAR`
 do
@@ -15,16 +15,20 @@ do
   done
   path=$(dirname $file)
   echo $path
+
+  position=none
   if [ -f $path/POSCAR ]; then
     position=$path/POSCAR
   else
     position=$path/CONTCAR
   fi
+  screenout=none
   if [ -f $path/out.out ]; then
     screenout=$path/out.out
   elif [ -f $path/vasp.out ]; then
     screenout=$path/vasp.out
   fi
+
   if [ -f $path/vasprun.xml ]; then
     E=$(grep e_fr_energy $path/vasprun.xml |tail -n 1|awk '{print $3}')
   fi
@@ -49,6 +53,7 @@ do
     origin_e=`echo $each_element $valence_e|awk -v t=$atomtype '{sum=0}{for (i=1;i<=t;i++) {sum+=$(i)*$(i+t)}}{print sum}'`
     NELECT=`grep NELECT $path/OUTCAR|awk '{print $3}'`
     netcharge=`echo $NELECT $origin_e|awk '{print $2-$1}'`
+    echo "netcharge" $netcharge
   else
     echo "OUTCAR doesn't exist"
     netcharge="NA"
@@ -74,6 +79,7 @@ do
   else
     echo "$screenout doesn't exist"
   fi
+
   for name in NKPTS ENCUT version netcharge path E dE mag vol Ef conv pressure
   do
     #echo "before" $(($name))
