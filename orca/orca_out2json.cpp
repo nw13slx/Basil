@@ -5,110 +5,7 @@
 //usage: MO <inputfile name> <outputfile name> 
 //author: Lixin Sun nw13mifaso@gmail.com
 
-#include <algorithm>
-#include <iostream>
-#include <locale>
-#include <fstream>          // file I/O suppport
-#include <cstdlib>          // support for exit()
-#include <stdio.h>
-#include <sys/timeb.h>
-#include <sys/types.h>
-#include <time.h>
-#include <cmath>
-#include <malloc.h>
-#include <iomanip>
-#include <stdlib.h>
-#include <string.h>
-#include <sstream>
-using namespace std;
-
-#include "math.h"
-#include "stdlib.h"       // for random
-#include <vector>
-
-//set up the size of array used for storage
-#define MAX_ELEMENT 10
-#define MAX_M   6
-#define MAX_ENERGYLINE 4000
-#define TEMP_ENERGYLINE 10
-
-//set up the final plotting region
-//the fermi level is shfited to zero
-#define EMIN -30
-#define EMAX 15
-
-//set up the buffer size for reading
-#define MAX_CHARACTER 1000
-#define MAX_COLUMN 20
-
-const double Eh2eV=27.2113834;
-const double bohr2a=0.529177249;
-const double Ehau2eVa=Eh2eV/bohr2a;
-const double kcal2eV=4.3363e-2;
-
-bool isxyz(char c){
-    if ((c=='x')||(c=='y')||(c=='z')) return true;
-    else return false;
-}
-
-bool isdigit1(char c){
-    if ((c>='0')&&(c<='9')) return true;
-    else return false;
-}
-
-void gaussian(int grid, double *x, double *y, double x0, double sigma2){
-    for (int i=0;i<grid;i++) y[i]=exp(-(x[i]-x0)*(x[i]-x0)/2./sigma2);
-}
-
-bool contain_alphabet(char * c){
-    for (int i=0;i<strlen(c);i++){
-        if (((c[i]>='a')&&(c[i]<='z'))||((c[i]>='A')&&(c[i]<='Z')))
-            return true;
-    }
-    return false;
-}
-
-int find_pattern(ifstream &In1,const char *pattern,const char * mode=(const char *)"contains"){
-  char temp[MAX_CHARACTER], * pch;
-  int beg_pos=In1.tellg();
-  bool find=false;
-  int beg_line=0;
-  if (strcmp(mode,"contains")==0){
-    while (In1.good() && !find){
-      beg_line=In1.tellg();
-      In1.getline(temp,MAX_CHARACTER); 
-      pch=strstr(temp,pattern);
-      if (pch!=NULL){
-        find=true;
-      }
-    }
-  }else{
-    while (In1.good() && !find){
-      beg_line=In1.tellg();
-      In1.getline(temp,MAX_CHARACTER); 
-      if (strcmp(temp,pattern)==0) find=true;
-    }
-  }
-  if (!find){
-      In1.clear();
-      In1.seekg(beg_pos);
-      beg_line=NULL;
-  }
-  return beg_line;
-}
-
-int break_line(char *temp,string *content){
-  char *pch = strtok (temp," ");
-  int column=0;
-  while (pch != NULL) {
-      content[column]=string(pch);
-      column++;
-      pch = strtok (NULL, " ");
-  }
-  pch= NULL;
-  return column;
-}
-
+#include "functions.h"
 int main(int argc, char **argv){
 
     char temp[MAX_CHARACTER], * pch;
@@ -122,44 +19,88 @@ int main(int argc, char **argv){
         cout<< " the input file does not exist or is corrupted..."<<endl;
         return 1;
     }
+
+    //first check whether the result is converge
+    string pattern="ERROR";
+    int beg_pos=In1.tellg();
+    int v_pos=find_pattern(In1,pattern,"contains",true);
+    if (v_pos!=-1){
+      cout<<"the calculation is not converged"<<endl;
+      return 1;
+    }else{
+      In1.seekg(beg_pos);
+    }
+
+    pattern="FINAL SINGLE POINT ENERGY";
+    int fe_pos=find_pattern(In1,pattern,"contains",true);
+    if (fe_pos!=-1){
+      In1.getline(temp,MAX_CHARACTER);
+      if ( strstr(temp,"fully converged!")){
+        cout<<"the calculation is not converged"<<endl;
+        return 1;
+      }
+      break_line(temp,content);
+      In1.seekg(beg_pos);
+    }else{
+      cout<<"the calculation is not converged"<<endl;
+      return 1;
+    }
+
+    double *energy=new double[2*MAX_ENERGYLINE];
+    double *occupancy=new double[2*MAX_ENERGYLINE];
+    int *nstate=new int[2];
+    double *homo=new double[2];
+    double *lumo=new double[2];
+    bool read=read_orbital(In1,nstate,energy,occupancy,homo,lumo);
+    if (read==false){
+      return 1;
+    }else{
+      In1.seekg(beg_pos);
+    }
+
     ofstream json_o(argv[2]);
     if ( !json_o.good()){
         cout<< " the output file does not exist or is corrupted..."<<endl;
         return 1;
     }
+    json_o<<std::fixed;
+
+
     json_o.precision(5);
     json_o<<"{"<<endl;
+    json_o<<"\"energy\":"<<atof(content[4].c_str())*Eh2eV<<","<<endl;
+    json_o<<"\"homo\":["<<homo[0]<<","<<homo[1]<<"],"<<endl;
+    json_o<<"\"lumo\":["<<lumo[0]<<","<<lumo[1]<<"],"<<endl;
+    json_o<<"\"gap\":["<<lumo[0]-homo[0]<<","<<lumo[1]-homo[1]<<"],"<<endl;
 
     json_o<<"\"outputfile\":\""<<argv[1]<<"\","<<endl;
     json_o<<"\"software\":\"ORCA";
-    char *pattern="Program Version";
-    int v_pos=find_pattern(In1,pattern);
-    In1.seekg(v_pos);
+    pattern="Program Version";
+    v_pos=find_pattern(In1,pattern,"contains",true);
     In1.getline(temp,MAX_CHARACTER); 
     break_line(temp,content);
     json_o<<content[2]<<"\","<<endl;
 
     json_o<<"\"comp_info\":[";
     pattern="Your calculation utilizes ";
-    int len_pat=strlen(pattern);
+    int len_pat=pattern.length();
     int u_count=0;
-    int u_pos=find_pattern(In1,pattern);
-    while (u_pos!=NULL && In1.good()){
-      In1.seekg(u_pos);
+    int u_pos=find_pattern(In1,pattern,"contains",true);
+    while (u_pos!=-1 && In1.good()){
       In1.getline(temp,MAX_CHARACTER); 
       if (u_count>0){
         json_o<<", ";
       }
       json_o<<"\""<<&temp[len_pat]<<"\"";
       u_count++;
-      u_pos=find_pattern(In1,pattern);
+      u_pos=find_pattern(In1,pattern,"contains",true);
     }
     json_o<<"],"<<endl;
 
     pattern="CARTESIAN COORDINATES (ANGSTROEM)";
     int c_pos=find_pattern(In1,pattern);
     int atomn=0;
-    if (c_pos!=NULL){
+    if (c_pos!=-1){
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
       column=break_line(temp,content);
@@ -186,7 +127,7 @@ int main(int argc, char **argv){
 
     pattern="Hamiltonian:";
     int ham_pos=find_pattern(In1,pattern);
-    if (ham_pos!=NULL){
+    if (ham_pos!=-1){
       In1.getline(temp,MAX_CHARACTER);
       column=break_line(temp,content);
       json_o<<"\"hamiltonian\":[";
@@ -229,9 +170,8 @@ int main(int argc, char **argv){
 
     pattern="UHF SPIN CONTAMINATION"; 
     int spin_pos=find_pattern(In1,pattern);
-    if (spin_pos!=NULL){
-      int s2_pos=find_pattern(In1,"Expectation value of");
-      In1.seekg(s2_pos);
+    if (spin_pos!=-1){
+      int s2_pos=find_pattern(In1,"Expectation value of","contains",true);
       In1.getline(temp,MAX_CHARACTER);
       break_line(temp,content);
       json_o<<"\"S2\":"<<content[5]<<","<<endl;
@@ -239,7 +179,7 @@ int main(int argc, char **argv){
 
     pattern="Summary of Natural Population Analysis";
     int nbo_pos=find_pattern(In1,pattern);
-    if (nbo_pos!=NULL){
+    if (nbo_pos!=-1){
       char nbo_q[100000],nbo_s[100000];
       strcpy(nbo_q,"\"nbo_charge\":[");
       strcpy(nbo_s,"\"nbo_spin\":[");
@@ -265,9 +205,8 @@ int main(int argc, char **argv){
     pattern="DFT-D V3";
     json_o<<std::fixed;
     int d3_pos=find_pattern(In1,pattern);
-    if (d3_pos!=NULL){
-      d3_pos=find_pattern(In1,"Edisp/kcal");
-      In1.seekg(d3_pos);
+    if (d3_pos!=-1){
+      d3_pos=find_pattern(In1,"Edisp/kcal","contains",true);
       In1.getline(temp,MAX_CHARACTER);
       break_line(temp,content);
       json_o<<"\"edisp\":"<<atof(content[2].c_str())*Eh2eV<<","<<endl;
@@ -285,19 +224,10 @@ int main(int argc, char **argv){
       json_o<<"\"dispersion_corr\":"<<atof(content[2].c_str())*Eh2eV<<","<<endl;
     }
 
-    pattern="FINAL SINGLE POINT ENERGY";
-    json_o<<std::fixed;
-    int fe_pos=find_pattern(In1,pattern);
-    if (fe_pos!=NULL){
-      In1.seekg(fe_pos);
-      In1.getline(temp,MAX_CHARACTER);
-      break_line(temp,content);
-      json_o<<"\"energy\":"<<atof(content[4].c_str())*Eh2eV<<","<<endl;
-    }
 
     pattern="CARTESIAN GRADIENT";
     c_pos=find_pattern(In1,pattern);
-    if (c_pos!=NULL){
+    if (c_pos!=-1){
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
@@ -318,7 +248,7 @@ int main(int argc, char **argv){
 
     pattern="DIPOLE MOMENT";
     int dip_pos=find_pattern(In1,pattern);
-    if (dip_pos!=NULL){
+    if (dip_pos!=-1){
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
