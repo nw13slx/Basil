@@ -1,0 +1,55 @@
+#/bin/env python
+import json
+import sys
+import os
+import numpy as np
+
+def main():
+  if (len(sys.argv)<3):
+    return 1
+  inp=json.load(open(sys.argv[1]))
+
+  #[u'Last_Energy_change', u'S2', u'energy', u'dispersion_corr', u'dipole_nuc', u'homo', u'Last_RMS-Density_change', u'species', u'outputfile', u'dipole_elec', u'dipole', u'coordinates', u'forces', u'Last_DIIS_Error', u'comp_info', u'gap', u'lumo', u'atomn', u'Last_MAX-Density_change', u'e8', u'e6', u'hamiltonian', u'edisp', u'software']
+  if (inp["S2"]!=0):
+      return 1
+
+  if ("nbo_charge" in inp.keys()):
+    tmp=open("tmp.gin","w")
+    out=open(sys.argv[2]+".gulp","w")
+    print >>out, inp["atomn"], "charges"
+    print >>tmp, "gradient conp\n cartesian"
+    for i in range(inp["atomn"]):
+      pos= inp["coordinates"][i]
+      print >> out,inp["species"][i],pos[0],pos[1],pos[2],inp["nbo_charge"][i]
+      print >> tmp,inp["species"][i],pos[0],pos[1],pos[2],inp["nbo_charge"][i]
+    tmp.close()
+    os.system("gulp < tmp.gin> output; grep \"Final Cartesian derivatives \" output -A%d |tail -n %d |awk \'{print $4,$5,$6}\'> ef "%(inp["atomn"]+5,inp["atomn"]))
+    inp["ef"]=np.loadtxt("ef").tolist()
+    out.close()
+
+    out=open(sys.argv[2]+".f2","w")
+    for i in range(inp["atomn"]):
+      force = inp["ef"][i]
+      print >> out,force[0],force[1],force[2]
+    out.close()
+
+    #store this calculation results back
+    json.dump(inp, open(sys.argv[2]+".json","w"))
+  else:
+    out=open(sys.argv[2]+".gulp","w")
+    print >>out, inp["atomn"], "no_nbo"
+    for i in range(inp["atomn"]):
+      pos= inp["coordinates"][i]
+      print >> out,inp["species"][i],pos[0],pos[1],pos[2]
+
+  out=open(sys.argv[2]+".f1","w")
+  for i in range(inp["atomn"]):
+    force= inp["forces"][i]
+    print >> out,force[0],force[1],force[2]
+  out.close()
+
+
+
+if __name__ == '__main__':
+    main()
+
