@@ -1,4 +1,4 @@
-#/bin/env python
+#!/bin/env python
 import json
 import sys
 import os
@@ -6,6 +6,7 @@ import numpy as np
 
 def main():
   if (len(sys.argv)<3):
+    print "need two more arguments: json2gulp input output_prefix"
     return 1
   inp=json.load(open(sys.argv[1]))
 
@@ -47,8 +48,6 @@ def main():
     force= inp["forces"][i]
     print >> out,force[0],force[1],force[2]
   out.close()
-
-
 
 if __name__ == '__main__':
     main()
