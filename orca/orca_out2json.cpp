@@ -256,11 +256,11 @@ int main(int argc, char **argv){
       json_o<<"\"dipole_elec\":["<<atof(content[2].c_str())*bohr2a<<","<<atof(content[3].c_str())*bohr2a<<","<<atof(content[4].c_str())*bohr2a<<"],"<<endl;
       In1.getline(temp,MAX_CHARACTER);
       break_line(temp,content);
-      json_o<<"\"dipole_nuc\":["<<atof(content[2].c_str())*bohr2a<<","<<atof(content[3].c_str())*bohr2a<<","<<atof(content[4].c_str())*bohr2a<<"],"<<endl;
+      json_o<<"\"dipole_nuc\":["<<atof(content[3].c_str())*bohr2a<<","<<atof(content[4].c_str())*bohr2a<<","<<atof(content[5].c_str())*bohr2a<<"],"<<endl;
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
       break_line(temp,content);
-      json_o<<"\"dipole\":["<<atof(content[2].c_str())*bohr2a<<","<<atof(content[3].c_str())*bohr2a<<","<<atof(content[4].c_str())*bohr2a<<"]"<<endl;
+      json_o<<"\"dipole\":["<<atof(content[4].c_str())*bohr2a<<","<<atof(content[5].c_str())*bohr2a<<","<<atof(content[6].c_str())*bohr2a<<"]"<<endl;
     }
 
     json_o<<"}"<<endl;

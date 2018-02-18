@@ -118,22 +118,36 @@ class analysis:
     natom=len(positions)
     #get the seperation part for each plane
     dz=0.1
-    zmin=np.min(positions[:,direction])-3
-    zmax=np.max(positions[:,direction])+3
+    buf=3
+    zmin0=np.min(positions[:,direction])
+    zmax0=np.max(positions[:,direction])
+    zmin=zmin0-buf
+    zmax=zmax0+buf
     binz=np.zeros(int(np.ceil((zmax-zmin)/dz)))
     for i in range(natom):
       z=positions[i,direction]
       idz=int(np.floor((z-zmin)/dz))
       binz[idz]+=1
     from scipy.signal import find_peaks_cwt
-    peak_atoms=find_peaks_cwt(binz,np.arange(2,10),min_snr=0.5)
-    print "peak",peak_atoms*dz+zmin
-    division=np.zeros(len(peak_atoms))
+    midland=self.find_zero(binz,conti=int(1./dz),Th=1)*dz+zmin
+    division=[zmin0-0.1]
+    print midland
+    print zmin0
+    for dv in midland:
+      if (dv>=zmin0 and dv<=zmax0):
+        division+=[dv]
+    division=np.array(division)
+    print division
     nplane=len(division)
-    for i in range(len(peak_atoms)-1):
-      division[i]=zmin+((peak_atoms[i]+peak_atoms[i+1])/2.)*dz
-      print -(peak_atoms[i]-peak_atoms[i+1])*dz
-    division[nplane-1]=zmax
+    #peak_atoms=find_peaks_cwt(binz,np.arange(1,7))#,min_snr=0.2)
+    #print "peak",peak_atoms
+    #print "peak",peak_atoms*dz+zmin
+    #division=[] #np.zeros(len(peak_atoms))
+    #nplane=len(division)
+    #for i in range(len(peak_atoms)-1):
+    #  division[i]=zmin+((peak_atoms[i]+peak_atoms[i+1])/2.)*dz
+    #  print -(peak_atoms[i]-peak_atoms[i+1])*dz, -(peak_atoms[i]-peak_atoms[i+1])
+    #division[nplane-1]=zmax
     #print nplane
     pid=np.array(range(natom))
     #for each atom, find the plane id
@@ -157,6 +171,22 @@ class analysis:
 #      else:
 #          #n/2 is a peak
 #
+  def find_zero(self,f,conti=0,Th=1):
+    iszero=False
+    count=0
+    midland=[]
+    for i in range(len(f)):
+      if ((f[i]==0) and iszero==False):
+        iszero=True
+        count+=1
+      elif (f[i]<Th and iszero==True):
+        count+=1
+      elif (f[i]>=Th and iszero==True):
+        iszero=False
+        if (count>conti):
+          midland+=[i-int(count/2.)]
+    return np.array(midland)
+
   def find_ngh(self,rNN):
     x=self.atom.positions
     b0=self.atom.boundary
@@ -182,7 +212,7 @@ class analysis:
         if ( dist < rNN):
           ngh_list[i][j]=[dist,dr]
           ngh_list[j][i]=[dist,dr]
- 
+
   def compute_nye(self,G,Q_dagger):
     ngh_id=self.atom.ngh_id
     A=np.zeros([self.atom.natom,3,3,3])
@@ -201,12 +231,12 @@ class analysis:
               nye_tensor[atomi,j,k]-=self.perm_parity([j,i,m])*A[atomi,i,m,k]
       G_dagger[atomi,:,:]=np.linalg.pinv(G[atomi,:,:])
     return nye_tensor,G_dagger
- 
+
   def computeG(self,P,Q):
     Qdagger=np.linalg.pinv(np.array(Q))
     G=np.array(Qdagger.dot(np.array(P)))
     return Qdagger,G
-  
+
   def match_neigh2P(self,neighbor,P0,angles,Qunsort,criteria=0.9,criteria_max=1):
     for j in neighbor.keys():
       if ( type(j) is int):
@@ -223,7 +253,7 @@ class analysis:
              neighbor[Qunsort[indexk][ID]] = [Qunsort[indexk][DIST],Qunsort[indexk][DX]]
              Qunsort[indexk]=[neighbor[j][DIST],neighbor[j][DX],anglemin,j]
              del neighbor[j]
-  
+
   def add_nearest_neigh(self,neighbor,P0,angles,Qunsort,missing_ngh):
     sort_list=sorted(neighbor.iteritems(),key=lambda (k,v):v[0])
     for item in sort_list[:missing_ngh]:
@@ -239,7 +269,7 @@ class analysis:
             Qunsort[indexk]=[neighbor[j][DIST],neighbor[j][DX],angle[1],j]
             del neighbor[j]
     del sort_list
-  
+
   def perm_parity(self,lst):
     parity = 1
     for i in range(0,len(lst)-1):
@@ -247,8 +277,8 @@ class analysis:
             parity *= -1
             mn = min(range(i,len(lst)), key=lst.__getitem__)
             lst[i],lst[mn] = lst[mn],lst[i]
-    return parity   
-  
+    return parity
+
   def computeQ(self,P_allspecies=None,Pn_allspecies=None):
     ngh_list=self.atom.ngh_list
     if ((P_allspecies is not None ) and (Pn_allspecies is not None)):
@@ -269,12 +299,12 @@ class analysis:
         least_missing_id=-1
         least_missing_value=np.max([len(Pn[ref][:,0]) for ref in range(len(Pn))])
         angle_store=[]
-        Qunsort=[] 
-  
+        Qunsort=[]
+
         #first try to find out which pattern matches the best"
         for ref in range(len(Pn)):
           angle_store+=[{}]
-          Qunsort+=[{}] 
+          Qunsort+=[{}]
           for j in ngh_list[i].keys():
             for k in range(len(Pn[ref])):
                angle_store[ref][j,k]=np.array(ngh_list[i][j][DX]).dot(Pn[ref][k,:])/ngh_list[i][j][DIST]
@@ -286,7 +316,7 @@ class analysis:
         if (len(Pn)==2):
           if ((len(Pn[0])-len(Qunsort[0]))==(len(Pn[1])-len(Qunsort[1]))):
             print "competing",self.atom.positions[i]
-  
+
         ref=least_missing_id
         #sort the rest,start from the nearest remaining one
         criteria=0.9
@@ -294,14 +324,14 @@ class analysis:
           self.match_neigh2P(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],criteria,criteria+0.1)
           missing_ngh=len(Pn[ref])-len(Qunsort[ref])
           criteria-=0.05
-  
+
         if (missing_ngh > len(ngh_list[i])):
            print "need a larger neighbor list"
            print "not enough neighbor to build Q"
            return None,None,None
         elif (missing_ngh >0):
            self.add_nearest_neigh(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],missing_ngh)
-  
+
         P=P_allspecies[self.atom.species[i]][ref]
         if ( P is None):
           print "the reference input is not intact, please check Pn[",self.atom.species[i],"]"
