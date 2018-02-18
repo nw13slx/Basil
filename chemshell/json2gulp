@@ -10,8 +10,10 @@ def main():
     return 1
   inp=json.load(open(sys.argv[1]))
 
-  #[u'Last_Energy_change', u'S2', u'energy', u'dispersion_corr', u'dipole_nuc', u'homo', u'Last_RMS-Density_change', u'species', u'outputfile', u'dipole_elec', u'dipole', u'coordinates', u'forces', u'Last_DIIS_Error', u'comp_info', u'gap', u'lumo', u'atomn', u'Last_MAX-Density_change', u'e8', u'e6', u'hamiltonian', u'edisp', u'software']
-  if (inp["S2"]!=0):
+  if ("S2" in inp.keys()):
+    if (inp["S2"]!=0):
+        return 1
+  if (not "forces" in inp.keys()):
       return 1
 
   if ("nbo_charge" in inp.keys()):
@@ -36,18 +38,29 @@ def main():
 
     #store this calculation results back
     json.dump(inp, open(sys.argv[2]+".json","w"))
+    os.system("rm tmp.gin output ef")
   else:
     out=open(sys.argv[2]+".gulp","w")
     print >>out, inp["atomn"], "no_nbo"
     for i in range(inp["atomn"]):
       pos= inp["coordinates"][i]
       print >> out,inp["species"][i],pos[0],pos[1],pos[2]
+    out.close()
+  if ("dipole" in inp.keys()):
+    dipole=inp["dipole"]
+    out=open(sys.argv[2]+".dipole","w")
+    for i in range(3):
+      print >> out,dipole[i],
+    print >>out, " "
+    out.close
+
 
   out=open(sys.argv[2]+".f1","w")
   for i in range(inp["atomn"]):
     force= inp["forces"][i]
     print >> out,force[0],force[1],force[2]
   out.close()
+
 
 if __name__ == '__main__':
     main()
