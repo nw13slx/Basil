@@ -12,7 +12,8 @@
 #
 # Author: Lixin Sun, nw13mifaso@gmail.com
 
-proc addbond {type1 type2 radius1 radius2} {
+
+proc addbond_selection {sel1 sel2 radius1 radius2} {
   ## for periodic boundary
   ## see more note below
   #set pbc 0
@@ -23,18 +24,15 @@ proc addbond {type1 type2 radius1 radius2} {
   #    set pbc 1
   #  }
   #}
-
-  set sel1 [atomselect top "type $type1" ]
   set coord1 [ $sel1 get {x y z} ]
   set id1 [ $sel1 get index]
   set n1 [ $sel1 num ]
 
-  set sel2 [atomselect top "type $type2" ]
   set coord2 [ $sel2 get {x y z} ]
   set id2 [ $sel2 get index]
   set n2 [ $sel2 num ]
 
-  puts [ format "%s type has %g atoms, %s type has %g atoms" $type1 $n1 $type2 $n2 ]
+  puts [ format "group 1 has %g atoms, group 2 has %g atoms"  $n1 $n2 ]
 
   set bonds 0
 
@@ -122,4 +120,16 @@ proc deletebond {type1 type2 radius1 radius2} {
     }
   }
   puts [format "%g bonds are deleted" $bonds ]
+}
+
+proc addbond_group {string1 string2 radius1 radius2} {
+  set sel1 [atomselect top "$string1" ]
+  set sel2 [atomselect top "$string2" ]
+  addbond_selection $sel1 $sel2 $radius1 $radius2
+}
+
+proc addbond {type1 type2 radius1 radius2} {
+  set sel1 [atomselect top "type $type1" ]
+  set sel2 [atomselect top "type $type2" ]
+  addbond_selection $sel1 $sel2 $radius1 $radius2
 }

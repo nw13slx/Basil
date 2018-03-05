@@ -1,0 +1,410 @@
+proc ladd L {expr [join $L +]+0} ;
+
+#requirement: type should be element symbol instead of number. point charge should be labelled as "F"
+
+#argument 1: QM_string definition of the QM zone. can be anything that vmd recognize
+#argument 2: active_string. region 3
+#argument 3: pot_type the definition of potential group. i.e. "type Ti" or "none"
+#argument 4: name i.e. "CaO2"
+#argument 5: partial or formal charge scheme. either "p" or "f"
+
+#partial charge scheme:
+#   region 1: QM atom, with charge 0
+#   region 2: potential, use partial charge or formal charge
+#
+#   compensated charge computed from: region 1 original charge + region 2 current charge
+#   delta charge: compensated charge divided by the number of atoms in region 3 and region 4
+#
+#   region 3: active MM, use partial charge, and partial charge shell
+#   region 4: frozen MM, use partial charge, no shell
+
+#formal charge scheme:
+#   region 1: QM atom, with charge 0
+#   region 2: potential, use partial charge or formal charge
+#
+#   compensated charge computed from: region 1 original charge + region 2 current charge
+#   delta charge: compensated charge divided by the number of atoms in region 3 and region 4
+#
+#   region 3: active MM, each 
+#   region 4: frozen MM
+
+proc selectQM {QM_string active_string pot_type name scheme} {
+
+  set fo_info [ open [format "%s.info" $name] "w"]
+
+  #repeats the argument
+  puts [ format "original command: selectQM %s %s %s %s" $QM_string $active_string $pot_type $name ]
+  puts [ format "selection string: %s " $QM_string ]
+  puts $fo_info [ format "original command: selectQM %s %s %s %s" $QM_string $active_string $pot_type $name ]
+  puts $fo_info [ format "selection string: %s " $QM_string ]
+
+  #thickness for the potential embedding region
+  set thickness    3.5000000000000
+  set formal_pQ    4.0000000000000
+  set formal_nQ   -2.0000000000000
+  set partial_pQ   2.23
+  set partial_nQ   -1.115
+  set pQ_type  Ti
+  set nQ_type  O
+  set element  { " " "Ti" "O" }
+  set QM_size      20
+  set shell_Q     -2.7513
+
+  #set up output
+  set fo_QM [ open [format "%s.xyz" $name] "w"]
+  set fo_MM [ open [format "%s.pc" $name] "w"]
+  set fo_all [ open [format "%s.chm" $name] "w"]
+  set fo_nonperiodic [ open [format "%s_nonperiodic.chm" $name] "w"]
+  set fo_orca [ open [ format "%s.orcaxyz" $name ] "w" ]
+  set fo_shell [ open [format "%s_shell.chm" $name] "w"]
+  set fo_ff [ open [format "%s_ff.chm" $name] "w"]
+  
+  # for periodic boundary, get the boundary condition
+  set pbc 0
+  set cell [ pbc get ]
+  if { [ llength $cell ] ==1 } {
+    set vcell [ lindex $cell 0 ]
+    if { [ llength $vcell ] == 6 } {
+      set pbc 1
+      for { set k 0 } { $k < 3 } { incr k } {
+        set pbc [expr $pbc*[lindex $vcell $k]] 
+      }
+    }
+  }
+  puts "cell information $vcell"
+  
+  #get all informatino of the QM group
+  set QM [ atomselect top $QM_string ]
+  set x_QM [ $QM get {x y z} ]
+  set q_QM [ $QM get charge ]
+  set type_QM [ $QM get type ]
+  set n_QM [ $QM num ]
+  set netcharge_QM [  ladd [ $QM get charge ] ] 
+
+
+  #define the center of mass for the QM region
+  set cQM1 [ expr [ ladd [ $QM get x ] ] / $n_QM ] 
+  set cQM2 [ expr [ ladd [ $QM get y ] ] / $n_QM ] 
+  set cQM3 [ expr [ ladd [ $QM get z ] ] / $n_QM ] 
+  set cQM [list $cQM1 $cQM2 $cQM3]
+  puts "QM center $cQM "
+  
+  #get all informatino of the MMM group
+  set MM [ atomselect top [ format "(%s) and ( not (%s))" $active_string $QM_string] ]
+  set x_MM [ $MM get {x y z} ]
+  set q_MM [ $MM get charge ]
+  set type_MM [ $MM get type ]
+  set n_MM [ $MM num ]
+  set index_MM [ $MM get index ]
+
+  #get the frozen boundary
+  set frozen [ atomselect top [ format "(not (%s)) and (not (%s))" $QM_string $active_string ] ]
+  set n_frozen [ $frozen num ]
+
+  #output basic statistic
+  puts $fo_info [ format "QM: %g MM_active:%g MM_frozen:%g" $n_QM $n_MM $n_frozen ]
+  puts [ format "QM: %g MM_active:%g MM_frozen:%g" $n_QM $n_MM $n_frozen ]
+
+  #find all boundary elements from the MM_active group
+  set pot_def "index "
+  set n_pot 0 
+  #for each MM_active atom
+  for { set i 0 } { $i < $n_MM } { incr i } {
+    set is_pot 0
+    set type1 [ lindex $type_MM $i ] 
+    set c1 [ lindex $x_MM $i ]
+    set in [ lindex $index_MM $i ]
+    #if it is the type required
+    if { [ string match $type1 $pot_type ] == 1 } {
+      #compute its distance to the QM center
+      for { set k 0 } { $k < 3 } { incr k } {
+        set dk [expr [lindex $c1 $k ] - [lindex $cQM $k]]
+        set dk [expr abs($dk)]
+        set x$k $dk
+      }
+      set dx [ expr sqrt($x1*$x1+$x2*$x2+$x0*$x0)]
+      #if it is not too far from the QM cluster
+      if { $dx < ( $thickness + $QM_size)  } {
+        #calculate the distance to all QM atoms 
+        for { set j 0 } { $j < $n_QM } { incr j } {
+          set c2 [ lindex $x_QM $j ]
+          for { set k 0 } { $k < 3 } { incr k } {
+            set dk [expr [lindex $c1 $k ] - [lindex $c2 $k]]
+            set dk [expr abs($dk)]
+            if { $pbc > 0 } {
+              while { $dk > [expr 0.5*[lindex $vcell $k]] } {
+                set dk [expr $dk-[lindex $vcell $k]]
+              }
+            }
+            set x$k $dk
+          }
+          set dx [ expr sqrt($x1*$x1+$x2*$x2+$x0*$x0)]
+          #if the distance is smaller than the boundary thickness
+          if { $dx < $thickness  } {
+            incr is_pot
+          }
+        }
+      }
+    }
+    if { $is_pot > 0 } {
+      set pot_def "$pot_def $in"
+      puts "potential atom found $in "
+      incr n_pot
+    } 
+  }
+
+  puts "define all four regions"
+  #region two boundary
+  set boundary [ atomselect top [ format "%s" $pot_def ] ]
+  set x_pot [ $boundary get {x y z} ]
+  set type_pot [ $boundary get type ]
+  #region three active
+  set MM_active [ atomselect top [ format "(%s) and (not (%s)) and (not (%s))" $active_string $QM_string $pot_def ] ]
+  set n_active [ $MM_active num ]
+  set x_active [ $MM_active get {x y z} ]
+  set type_active [ $MM_active get type ]
+  set q_active [ $MM_active get charge ]
+  #region four frozen
+  set x_frozen [ $frozen get {x y z} ]
+  set type_frozen [ $frozen get type ]
+  set q_frozen [ $frozen get charge ]
+  
+  puts "compute the excess nQ type..."
+  set nQ_MM [ [ atomselect top [ format "(type %s ) and (%s) and (not (%s)) and (not (%s))" $nQ_type $active_string $QM_string $pot_def ] ] num ]
+  set pQ_MM [ [ atomselect top [ format "(type %s ) and (%s) and (not (%s)) and (not (%s))" $pQ_type $active_string $QM_string $pot_def ] ] num ]
+  set excessO [ expr $nQ_MM-$pQ_MM*2 ]
+  set delta   [ expr $excessO*(-$formal_nQ+$partial_nQ)/$nQ_MM ]
+  set final_nQ [ expr $partial_nQ-$delta ] 
+  puts [ format "excess number of oxygen in the point charges %g" $excessO ]
+  puts [ format "corrected pot%g MM_active %g MM_frozen %g" $n_pot $n_active $n_frozen ]
+  puts [ format "delta: %g final nQ %g" $delta $final_nQ ]
+  puts $fo_info [ format "excess number of oxygen in the point charges %g" $excessO ]
+  puts $fo_info [ format "corrected pot%g MM_active %g MM_frozen %g" $n_pot $n_active $n_frozen ]
+  puts $fo_info [ format "delta: %g final nQ %g" $delta $final_nQ ]
+
+  #set final_nQ_shell [ expr $final_nQ-$shell_Q]
+  set core_Q [ expr $formal_nQ - $shell_Q ]
+  set final_core_Q  [ expr $final_nQ - $shell_Q ]
+  
+
+  set multi [ expr $netcharge_QM*2+1 ]
+  puts $fo_orca [ format "*xyz %.0g %.0g" $netcharge_QM $multi ]
+  puts $fo_all "c_create coords=$name.pun {"
+  puts $fo_all "connect ionic\n space_group\n 1 \n cell_constants angstrom"
+  puts $fo_MM [ expr $n_active+$n_frozen ]
+
+  puts $fo_nonperiodic "c_create coords=${name}_np.pun {"
+  puts $fo_nonperiodic "connect ionic\ncoordinates angstrom"
+  puts $fo_shell "c_create coords=${name}_s.pun {"
+  puts $fo_shell "connect ionic\ncoordinates angstrom"
+  puts $fo_ff "c_create coords=${name}_ff.pun {"
+  puts $fo_ff "connect ionic\ncoordinates angstrom"
+
+  set lx [lindex $vcell 0 ]
+  set ly [lindex $vcell 1 ]
+  set lz [lindex $vcell 2 ]
+  puts $fo_all [ format "%g %g %g 90 90 90\ncoordinates" $lx $ly $lz ]
+
+  puts "output region 1 ..."
+  for { set j 0 } { $j < $n_QM } { incr j } {
+    set c2 [ lindex $x_QM $j ]
+    set x [ lindex $c2 0 ]
+    set y [ lindex $c2 1 ]
+    set z [ lindex $c2 2 ]
+    set ts [ lindex $type_QM $j ]
+    #set t [ lindex $type_QM $j ]
+    #set ts [ lindex $element $t ]
+    puts $fo_QM [ format "%s %g %g %g" $ts $x $y $z ]
+    puts $fo_all [ format "%s1 %g %g %g 0" $ts [ expr ($x-$cQM1+$lx/2.)/$lx ] [expr ($y-$cQM2+$ly/2.)/$ly] [expr ($z-$cQM3+$lz/2.)/$lz] ]
+    puts $fo_nonperiodic [ format "%s1 %g %g %g 0" $ts $x $y $z ]
+    puts $fo_orca [ format "%s %g %g %g" $ts $x $y $z ]
+    puts $fo_shell [ format "%s1 %g %g %g 0" $ts $x $y $z ]
+    if { $ts == $pQ_type } {
+      puts $fo_ff [ format "%s1 %g %g %g %g" $ts $x $y $z $formal_pQ ]
+    } else {
+      puts $fo_ff [ format "%s1 %g %g %g %g" $ts $x $y $z $core_Q ]
+    }
+  }
+
+  puts "output region 2..."
+  for { set j 0 } { $j < $n_pot } { incr j } {
+    set c2 [ lindex $x_pot $j ]
+    set x [ lindex $c2 0 ]
+    set y [ lindex $c2 1 ]
+    set z [ lindex $c2 2 ]
+    set ts [ lindex $type_pot $j ]
+    #set t [ lindex $type_pot $j ]
+    #set ts [ lindex $element $t ]
+    puts $fo_QM [ format "Np> %g %g %g %g"  $formal_pQ $x $y $z ]
+    puts $fo_orca [ format "Np> %g %g %g %g" $formal_pQ $x $y $z ]
+    puts $fo_all [ format "%s2 %g %g %g 0" $ts [ expr ($x-$cQM1+$lx/2.)/$lx ] [expr ($y-$cQM2+$ly/2.)/$ly] [expr ($z-$cQM3+$lz/2.)/$lz] ]
+    puts $fo_nonperiodic [ format "%s2 %g %g %g 0" $ts $x $y $z ]
+    puts $fo_shell [ format "%s2 %g %g %g 0" $ts $x $y $z ]
+    puts $fo_ff [ format "%s2 %g %g %g %g" $ts $x $y $z $formal_pQ ]
+  }
+
+  puts "output region 3..."
+  for { set j 0 } { $j < $n_active } { incr j } {
+    set c2 [ lindex $x_active $j ]
+    set x [ lindex $c2 0 ]
+    set y [ lindex $c2 1 ]
+    set z [ lindex $c2 2 ]
+    set q [ lindex $q_active $j ]
+    set ts [ lindex $type_active $j ]
+    #set t [ lindex $type_active $j ]
+    #set ts [ lindex $elemnt $t ]
+    if { [string match $ts $pQ_type ] == 1 } {
+      puts $fo_MM [ format "%g %g %g %g" $partial_pQ $x $y $z ]
+      puts $fo_all [ format "%s3 %g %g %g %g" $ts [ expr ($x-$cQM1+$lx/2.)/$lx ] [expr ($y-$cQM2+$ly/2.)/$ly] [expr ($z-$cQM3+$lz/2.)/$lz] $partial_pQ ]
+      puts $fo_orca [ format "Q  %g %g %g %g" $formal_pQ $x $y $z ]
+      puts $fo_nonperiodic [ format "%s3 %g %g %g %g" $ts $x $y $z $partial_pQ ]
+      puts $fo_shell [ format "%s3 %g %g %g %g" $ts $x $y $z $partial_pQ ]
+      puts $fo_ff [ format "%s3 %g %g %g %g" $ts $x $y $z $partial_pQ ]
+    } elseif { [ string match $ts "F" ] == 1 } {
+      puts $fo_MM [ format "%g %g %g %g" $q $x $y $z ]
+      puts $fo_all [ format "%s3 %g %g %g %g" $ts [ expr ($x-$cQM1+$lx/2.)/$lx ] [expr ($y-$cQM2+$ly/2.)/$ly] [expr ($z-$cQM3+$lz/2.)/$lz] $q ]
+      puts $fo_orca [ format "Q  %g %g %g %g" $q  $x $y $z ]
+      puts $fo_nonperiodic [ format "%s3 %g %g %g %g" $ts $x $y $z $q ]
+      puts $fo_shell [ format "%s3 %g %g %g %g" $ts $x $y $z $q ]
+      puts $fo_ff [ format "%s3 %g %g %g %g" $ts $x $y $z $q ]
+    } else {
+      puts $fo_MM [ format "%g %g %g %g" $final_nQ $x $y $z ]
+      puts $fo_all [ format "%s3 %g %g %g %g" $ts [ expr ($x-$cQM1+$lx/2.)/$lx ] [expr ($y-$cQM2+$ly/2.)/$ly] [expr ($z-$cQM3+$lz/2.)/$lz] $final_nQ ]
+      puts $fo_orca [ format "Q  %g %g %g %g" $formal_nQ  $x $y $z ]
+      puts $fo_nonperiodic [ format "%s3 %g %g %g %g" $ts $x $y $z $final_nQ ]
+      puts $fo_shell [ format "%s3 %g %g %g %g" $ts $x $y $z $final_core_Q ]
+      puts $fo_ff [ format "%s3 %g %g %g %g" $ts $x $y $z $final_core_Q ]
+    }
+  }
+
+  puts "output region 4..."
+  for { set j 0 } { $j < $n_frozen } { incr j } {
+    set c2 [ lindex $x_frozen $j ]
+    set x [ lindex $c2 0 ]
+    set y [ lindex $c2 1 ]
+    set z [ lindex $c2 2 ]
+    set q [ lindex $q_frozen $j ]
+    set ts [ lindex $type_frozen $j ]
+    #set t [ lindex $type_frozen $j ]
+    #set ts [ lindex $element $t ]
+    if { [string match $ts $pQ_type ] == 1 } {
+      puts $fo_MM [ format "%g %g %g %g" $partial_pQ $x $y $z ]
+      puts $fo_all [ format "%s4 %g %g %g %g" $ts [ expr ($x-$cQM1+$lx/2.)/$lx ] [expr ($y-$cQM2+$ly/2.)/$ly] [expr ($z-$cQM3+$lz/2.)/$lz] $partial_pQ ]
+      puts $fo_orca [ format "Q  %g %g %g %g" $formal_pQ  $x $y $z ]
+      puts $fo_nonperiodic [ format "%s4 %g %g %g %g" $ts $x $y $z $partial_pQ ]
+      puts $fo_shell [ format "%s4 %g %g %g %g" $ts $x $y $z $partial_pQ ]
+      puts $fo_ff [ format "%s4 %g %g %g %g" $ts $x $y $z $partial_pQ ]
+    } elseif { [ string match $ts "F" ] == 1 } {
+      puts $fo_MM [ format "%g %g %g %g" $q $x $y $z ]
+      puts $fo_all [ format "%s4 %g %g %g %g" $ts [ expr ($x-$cQM1+$lx/2.)/$lx ] [expr ($y-$cQM2+$ly/2.)/$ly] [expr ($z-$cQM3+$lz/2.)/$lz] $q ]
+      puts $fo_orca [ format "Q  %g %g %g %g" $q  $x $y $z ]
+      puts $fo_nonperiodic [ format "%s4 %g %g %g %g" $ts $x $y $z $q ]
+      puts $fo_shell [ format "%s4 %g %g %g %g" $ts $x $y $z $q ]
+      puts $fo_ff [ format "%s4 %g %g %g %g" $ts $x $y $z $q ]
+    } else {
+      puts $fo_MM [ format "%g %g %g %g" $final_nQ $x $y $z ]
+      puts $fo_all [ format "%s4 %g %g %g %g" $ts [ expr ($x-$cQM1+$lx/2.)/$lx ] [expr ($y-$cQM2+$ly/2.)/$ly] [expr ($z-$cQM3+$lz/2.)/$lz] $final_nQ ]
+      puts $fo_orca [ format "Q  %g %g %g %g" $formal_nQ  $x $y $z ]
+      puts $fo_nonperiodic [ format "%s4 %g %g %g %g" $ts $x $y $z $final_nQ ]
+      puts $fo_shell [ format "%s4 %g %g %g %g" $ts $x $y $z $final_core_Q ]
+      puts $fo_ff [ format "%s4 %g %g %g %g" $ts $x $y $z $final_core_Q ]
+    }
+  }
+
+  puts $fo_shell "shells"
+  puts $fo_ff "shells"
+
+  puts "output region 1 ..."
+  for { set j 0 } { $j < $n_QM } { incr j } {
+    set c2 [ lindex $x_QM $j ]
+    set x [ lindex $c2 0 ]
+    set y [ lindex $c2 1 ]
+    set z [ lindex $c2 2 ]
+    set ts [ lindex $type_QM $j ]
+    #set t [ lindex $type_QM $j ]
+    #set ts [ lindex $element $t ]
+    if { [string match $ts $pQ_type ] != 1 } {
+      if { [ string match $ts "F" ] != 1 } {
+        puts $fo_ff [ format "%s1 %g %g %g %g" $ts $x $y $z $shell_Q ]
+      }
+    }
+  }
+
+  puts "output shell region 3..."
+  for { set j 0 } { $j < $n_active } { incr j } {
+    set c2 [ lindex $x_active $j ]
+    set x [ lindex $c2 0 ]
+    set y [ lindex $c2 1 ]
+    set z [ lindex $c2 2 ]
+    set q [ lindex $q_active $j ]
+    set ts [ lindex $type_active $j ]
+    #set t [ lindex $type_active $j ]
+    #set ts [ lindex $element $t ]
+    if { [string match $ts $pQ_type ] != 1 } {
+      if { [ string match $ts "F" ] != 1 } {
+        puts $fo_shell [ format "%s3 %g %g %g %g" $ts $x $y $z $shell_Q ]
+        puts $fo_ff [ format "%s3 %g %g %g %g" $ts $x $y $z $shell_Q ]
+      }
+    }
+  }
+  puts "output shell region 4..."
+  for { set j 0 } { $j < $n_frozen } { incr j } {
+    set c2 [ lindex $x_frozen $j ]
+    set x [ lindex $c2 0 ]
+    set y [ lindex $c2 1 ]
+    set z [ lindex $c2 2 ]
+    set ts [ lindex $type_frozen $j ]
+    #set t [ lindex $type_frozen $j ]
+    #set ts [ lindex $element $t ]
+    if { [string match $ts $pQ_type ] != 1 } {
+      if { [ string match $ts "F" ] != 1 } {
+        puts $fo_shell [ format "%s4 %g %g %g %g" $ts $x $y $z $shell_Q ]
+        puts $fo_ff [ format "%s4 %g %g %g %g" $ts $x $y $z $shell_Q ]
+      }
+    }
+  }
+  
+
+  puts $fo_orca "*"
+  puts $fo_all "}"
+  puts $fo_all "write_xyz coords=$name.pun file=${name}_chemshell.xyz"
+  puts $fo_nonperiodic "}"
+  puts $fo_nonperiodic "write_xyz coords=${name}_np.pun file=${name}_np_chemshell.xyz"
+  puts $fo_shell "}"
+  puts $fo_shell "write_xyz coords=${name}_s.pun file=${name}_s_chemshell.xyz"
+  puts $fo_ff "}"
+  puts $fo_ff "write_xyz coords=${name}_ff.pun file=${name}_chemff.xyz"
+
+  close $fo_orca
+  close $fo_QM
+  close $fo_MM
+  close $fo_info
+  close $fo_all
+  close $fo_nonperiodic
+  close $fo_shell
+  close $fo_ff
+
+  mol delrep 0 top
+
+  mol color name
+  mol representation CPK 1.00 0.000000 32.000000 12.000000
+  mol material Opaque
+  mol selection [ format "(%s) and (not (%s)) and (not (%s))" $active_string $QM_string $pot_def ] 
+  mol addrep top
+
+  mol material Transparent
+  mol representation CPK 0.500 0.000000 32.000000 12.000000
+  mol selection [ format "(not (%s)) and (not (%s))" $QM_string $active_string ] 
+  mol addrep top
+
+  mol material Opaque
+  mol representation CPK 3.000000 0.000000 32.000000 12.000000
+  mol selection "$QM_string"
+  mol addrep top
+  mol representation CPK 2.000000 0.000000 32.000000 12.000000
+  mol selection "$pot_def"
+  mol color colorid 1
+  mol addrep top
+  
+}
+
