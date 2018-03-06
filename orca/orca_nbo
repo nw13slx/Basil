@@ -10,6 +10,19 @@ sed -i "${start},${end}!b;/^\s*113\s/d" FILE.47
 sed -i "s/NATOMS=$natom/NATOMS=$n/g" FILE.47
 
 module load nbo
+rm -rf FILE.nbo
 gennbo FILE
 
-wait
+for i in `seq 2`
+do
+  sleep 5m
+  nboid=$(ps ax|grep nbo|grep " R "|awk '{print $1}'|head -n 1)
+  if [ ! -z $nboid ]; then
+    echo "wait $nboid"
+    while [ -e /proc/$nboid ]
+    do
+      echo -e "."
+      sleep 2m
+    done
+  fi
+done

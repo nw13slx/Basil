@@ -192,9 +192,9 @@ int main(int argc, char **argv){
         double *xxx=&xx[k*3];
         int iiid=iid[k];
         double qq=q[iiid-1];
-        xxx[0]-=(boundary[0]-5);
-        xxx[1]-=(boundary[2]-5);
-        xxx[2]-=(boundary[4]-5);
+        //xxx[0]-=(boundary[0]-5);
+        //xxx[1]-=(boundary[2]-5);
+        //xxx[2]-=(boundary[4]-5);
         sprintf(temp,"ATOM  %5d %4s              %8.3f%8.3f%8.3f%6.2f%6.2f          %2s ",iiid,element[j].c_str(),xxx[0],xxx[1],xxx[2],1.0,qq,"O");
         out<<temp<<endl;
       }
