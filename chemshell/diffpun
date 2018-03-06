@@ -1,0 +1,42 @@
+#!/bin/env bash
+file1=$1
+file2=$2
+thred=$3
+
+if [ ! -f $1 ]; then
+    echo "$1 does not exist"
+    exit
+fi
+
+tmp=$(date +%Y-%m-%d-%H-%M-%S)
+
+natom=$(grep "block = coordinates records" $file1|awk '{print $6}')
+grep -A$natom "block = coordinates records" $file1|tail -n $natom |awk '{print $2,$3,$4}'>  ${tmp}_coord1
+if grep -Eq "block = shells records =" $file1 ; then
+  nshell=$(grep "block = shells records =" $file1|awk '{print $6}')
+  grep -A$nshell "block = shells records =" $file1|tail -n $nshell |awk '{print $2,$3,$4}' >  ${tmp}_shell1
+fi
+
+natom=$(grep "block = coordinates records" $file2|awk '{print $6}')
+grep -A$natom "block = coordinates records" $file2|tail -n $natom  |awk '{print $2,$3,$4}'>  ${tmp}_coord2
+if grep -Eq "block = shells records =" $file2 ; then
+  nshell=$(grep "block = shells records =" $file2|awk '{print $6}')
+  grep -A$nshell "block = shells records =" $file2|tail -n $nshell |awk '{print $2,$3,$4}'>  ${tmp}_shell2
+fi
+
+
+paste ${tmp}_coord1 ${tmp}_coord2 |awk -v ang=0.52917721092 '{print ($1-$4)*ang,($2-$5)*ang,($3-$6)*ang}'|cat -n>> ${tmp}_out
+paste ${tmp}_shell1 ${tmp}_shell2 |awk -v ang=0.52917721092 '{print ($1-$4)*ang,($2-$5)*ang,($3-$6)*ang}'|cat -n>> ${tmp}_shellout
+
+if [ $# -gt 3 ]; then
+  out=$4
+  cat ${tmp}_out >$out
+  echo "shell" >>$out
+  cat ${tmp}_shellout >>$out
+fi
+
+awk -v t=$thred '{if (sqrt($2*$2+$3*$3+$4*$4)>t) print $1,$2,$3,$4}' ${tmp}_out
+echo "shell"
+awk -v t=$thred '{if (sqrt($2*$2+$3*$3+$4*$4)>t) print $1,$2,$3,$4}' ${tmp}_shellout
+
+rm ${tmp}_coord* ${tmp}_*out

@@ -152,8 +152,10 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   set nQd [ expr $nQ-$delta ]
   set core_Qd [ expr $core_Q-$delta ]
 
+  puts [ format "QM charge %g" $netcharge_QM ]
   puts [ format "excess charge %g" $excessq ]
   puts [ format "delta: %g" $delta ]
+  puts $fo_info [ format "QM charge %g" $netcharge_QM ]
   puts $fo_info [ format "excess charge %g" $excessq ]
   puts $fo_info [ format "delta: %g" $delta ]
 
