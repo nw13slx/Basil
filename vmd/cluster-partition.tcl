@@ -1,6 +1,36 @@
 proc ladd L {expr [join $L +]+0} ;
 
-proc selectQM { QM_string active_string ecp_string ecp_q name scheme } {
+#requirement: type should be element symbol instead of number. point charge should be labelled as "F"
+#             the configuration does not have periodic boundary
+
+#argument 1: QM_string definition of the QM zone. can be anything that vmd recognize
+#argument 2: active_string. region 3
+#argument 3: ecp_string the definition of potential group. i.e. "type Ti" or "none"
+#argument 4: charge of the ecp
+#argument 5: name i.e. "CaO2"
+#argument 6: partial or formal charge scheme. either "p" or "f"
+
+#partial charge scheme:
+#   region 1: QM atom, with charge 0
+#   region 2: potential, use partial charge or formal charge
+#
+#   compensated charge computed from: region 1 original charge + region 2 current charge
+#   delta charge: compensated charge divided by the number of atoms in region 3 and region 4
+#
+#   region 3: active MM, use partial charge, and partial charge shell
+#   region 4: frozen MM, use original charge, no shell
+
+#formal charge scheme:
+#   region 1: QM atom, with charge 0
+#   region 2: potential, use partial charge or formal charge
+#
+#   compensated charge computed from: region 1 original charge + region 2 current charge
+#   delta charge: compensated charge divided by the number of atoms in region 3 and region 4
+#
+#   region 3: active MM, each 
+#   region 4: frozen MM, use original charge
+
+proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
 
 
   set fo_info [ open [format "%s.info" $name] "w"]
@@ -22,7 +52,6 @@ proc selectQM { QM_string active_string ecp_string ecp_q name scheme } {
   set nQ_type  O
   set element  { " " "Ti" "O" }
   set QM_size      20
-  set shell_Q     -2.7513
 
   if { [ string match $scheme "p" ] == 1 } {
     set core_Q [ expr $partial_nQ - $shell_Q ]
@@ -34,7 +63,8 @@ proc selectQM { QM_string active_string ecp_string ecp_q name scheme } {
     set nQ $formal_nQ
   }
 
-  puts [ format "pQ %g nQ %g core_Q %g" $pQ $nQ $core_Q ]
+  puts [ format "pQ %g nQ %g core_Q %g shell_Q %g" $pQ $nQ $core_Q $shell_Q]
+  puts $fo_info [ format "pQ %g nQ %g core_Q %g shell_Q %g" $pQ $nQ $core_Q $shell_Q]
   
   
   #get all informatino of the QM group
@@ -257,10 +287,8 @@ proc selectQM { QM_string active_string ecp_string ecp_q name scheme } {
     set ts [ lindex $type_QM $j ]
     #set t [ lindex $type_QM $j ]
     #set ts [ lindex $element $t ]
-    if { [string match $ts $pQ_type ] != 1 } {
-      if { [ string match $ts "F" ] != 1 } {
+    if { [string match $ts $nQ_type ] == 1 } {
         puts $fo_ff [ format "%s1 %g %g %g %g" $ts $x $y $z $shell_Q ]
-      }
     }
   }
 
@@ -274,7 +302,7 @@ proc selectQM { QM_string active_string ecp_string ecp_q name scheme } {
     set ts [ lindex $type_active $j ]
     #set t [ lindex $type_active $j ]
     #set ts [ lindex $element $t ]
-    if { [string match $ts $nQ_type ] != 1 } {
+    if { [string match $ts $nQ_type ] == 1 } {
       puts $fo_shell [ format "%s3 %g %g %g %g" $ts $x $y $z $shell_Q ]
       puts $fo_ff [ format "%s3 %g %g %g %g" $ts $x $y $z $shell_Q ]
     }
