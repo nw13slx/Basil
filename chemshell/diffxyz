@@ -1,0 +1,30 @@
+#!/bin/env bash
+file1=$1
+file2=$2
+thred=$3
+
+if [ ! -f $1 ]; then
+    echo "$1 does not exist"
+    exit
+fi
+
+tmp=$(date +%Y-%m-%d-%H-%M-%S)
+
+natom=$(head -n 1 $file1|awk '{print $1+2}')
+head -n $natom $file1 |tail -n +3|awk '{print $2,$3,$4}'>  ${tmp}_coord1
+natom=$(head -n 1 $file2|awk '{print $1+2}')
+head -n $natom $file2 |tail -n +3|awk '{print $2,$3,$4}'>  ${tmp}_coord2
+
+
+paste ${tmp}_coord1 ${tmp}_coord2 |awk -v ang=0.52917721092 '{print ($1-$4)*ang,($2-$5)*ang,($3-$6)*ang}'|cat -n>> ${tmp}_out
+
+if [ $# -gt 3 ]; then
+  out=$4
+  cat ${tmp}_out >$out
+  echo "shell" >>$out
+  cat ${tmp}_shellout >>$out
+fi
+
+awk -v t=$thred '{if (sqrt($2*$2+$3*$3+$4*$4)>t) print $1,$2,$3,$4}' ${tmp}_out
+
+rm ${tmp}_coord* ${tmp}_*out
