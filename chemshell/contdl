@@ -1,0 +1,27 @@
+#!/bin/env bash
+if [ $# -lt 1 ]; then
+  echo "need 1 argument: contdl target_folder"
+  exit
+fi
+folder=$1
+
+mkdir $folder
+
+rm *tmp*
+mv * $folder
+
+
+for i in orca1.gbw ecpfile *.ff job.sh 
+do
+  if [ -f $folder/$i ]; then
+    mv $folder/$i .
+  fi
+done
+cp $folder/opt.chm .
+result=$(grep "set result_pun" opt.chm|awk '{print $3}')
+cp $folder/$result ${folder}.pun
+
+sed -i "/set coords/d" opt.chm #perfect-4pot.pun
+sed -i "/set result_pun/d" opt.chm
+sed -i "1s/^/set coords ${folder}.pun\n/" opt.chm
+sed -i "1s/^/set result_pun conti-${folder}.pun\n/" opt.chm
