@@ -83,6 +83,7 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   set n_pECP [ $pECP num ]
   set pot_def "index "
   set n_pot 0 
+  puts "bufferlayer has $n_pECP atoms"
   #for each atom
   for { set i 0 } { $i < $n_pECP } { incr i } {
     set is_pot 0
