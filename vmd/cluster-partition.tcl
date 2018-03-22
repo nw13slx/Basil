@@ -116,24 +116,24 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   }
 
   if { $n_pot > 0 } {
-    puts "region 2: ecp embedding"
     set boundary [ atomselect top $pot_def  ]
     set region2 $pot_def
     set x_pot [ $boundary get {x y z} ]
     set type_pot [ $boundary get type ]
     set n_pot [ $boundary num ]
+    puts "region 2: ecp embedding $n_pot "
     set region3 [ format "(%s) and (not (%s)) and (not (%s))" $active_string $QM_string $pot_def ] 
   } else {
     set boundary [ atomselect top "none" ]
     set region2 "none"
     set region3 [ format "(%s) and (not (%s)) " $active_string $QM_string  ] 
   }
-  puts "region 3: active"
   set MM_active [ atomselect top $region3 ]
   set n_active [ $MM_active num ]
   set x_active [ $MM_active get {x y z} ]
   set type_active [ $MM_active get type ]
   set q_active [ $MM_active get charge ]
+  puts "region 3: active $n_active" 
 
 
   puts "region 4: frozen"
@@ -152,6 +152,7 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   set nQ_QM [ [ atomselect top [ format "(type %s ) and (%s)" $nQ_type $QM_string ] ] num ]
   set pQ_QM [ [ atomselect top [ format "(type %s ) and (%s)" $pQ_type $QM_string ] ] num ]
   set newq [ expr $nQ_QM*$formal_nQ+$pQ_QM*$formal_pQ+$n_pot*$ecp_q ]
+  puts [ $QM get charge ]
   set q1 [ ladd [ $QM get charge ] ]
   set q2 [ ladd [ $boundary get charge ] ]
   set original_q [ expr $q1+$q2 ]
@@ -163,10 +164,10 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   set core_Qd [ expr $core_Q-$delta ]
 
   puts [ format "QM charge %g" $netcharge_QM ]
-  puts [ format "excess charge %g" $excessq ]
+  puts [ format "excess charge %g = (%g*%g+%g*%g+%g*%g)-%g-%g" $excessq $nQ_QM $formal_nQ $pQ_QM $formal_pQ $n_pot $ecp_q $q1 $q2 ]
   puts [ format "delta: %g" $delta ]
   puts $fo_info [ format "QM charge %g" $netcharge_QM ]
-  puts $fo_info [ format "excess charge %g" $excessq ]
+  puts $fo_info [ format "excess charge %g = (%g*%g+%g*%g+%g*%g)-%g-%g" $excessq $nQ_QM $formal_nQ $pQ_QM $formal_pQ $n_pot $ecp_q $q1 $q2 ]
   puts $fo_info [ format "delta: %g" $delta ]
 
   ##periodic boundary
