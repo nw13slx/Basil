@@ -19,7 +19,7 @@ do
 done
 cp $folder/opt.chm .
 result=$(grep "set result_pun" opt.chm|awk '{print $3}')
-cp $folder/$result ${folder}.pun
+cp $folder/${result} ${folder}.pun
 
 sed -i "/set coords/d" opt.chm #perfect-4pot.pun
 sed -i "/set result_pun/d" opt.chm
