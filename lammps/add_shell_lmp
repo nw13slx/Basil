@@ -1,5 +1,12 @@
 #/bin/env bash
 
+echo "Warning: the input format should be  [id] [type] [charge] [x] [y] [z]"
+if [ $# -lt 2 ]; then
+  echo "need at least two input arguments"
+  echo "add_shell_lmp input outpu"
+  exit
+fi
+
 infile=$1
 outfile=$2
 

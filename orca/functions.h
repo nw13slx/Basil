@@ -135,6 +135,7 @@ bool read_orbital(ifstream &In1,int *nstate,double *energy,double *occupancy,dou
   homo[0]=-INFINITY;
   homo[1]=-INFINITY;
   In1.getline(temp,MAX_CHARACTER); //another buffering line
+  In1.getline(temp,MAX_CHARACTER); //another buffering line
   for (int spin=0;spin<2;spin++){
     line++;
     In1.getline(temp,MAX_CHARACTER); //another buffering line
@@ -156,7 +157,7 @@ bool read_orbital(ifstream &In1,int *nstate,double *energy,double *occupancy,dou
           if (occ>0 && e>homo[spin]){
             homo[spin]=e;
           }else{
-            if (occ==0 && homo[spin]<e && lumo[spin]>e){
+            if (occ==0 && homo[spin]<e && lumo[spin]==INFINITY){ //&& lumo[spin]>e){
               lumo[spin]=e;
             }
           }
