@@ -1,0 +1,26 @@
+#/bin/env bash
+
+#natom=$(head -n 1 FILE.47|awk '{print $2}'|sed 's/NATOMS=//g')
+#n_ep=$(awk -v n=$natom 'NR>4 && NR<(5+n){print $1}' FILE.47|grep 113|wc -l |awk '{print $1}')
+#n=$(echo $natom $n_ep|awk '{print $1-$2}')
+#start=5
+#end=$(echo 4 $natom|awk '{print $1+$2}')
+#
+#sed -i "${start},${end}!b;/^\s*113\s/d" FILE.47
+#sed -i "s/NATOMS=$natom/NATOMS=$n/g" FILE.47
+#
+#module load nbo
+#rm -rf FILE.nbo
+#sed -i "/\$NBO/d" $1
+#sed -i '2s/^/\$NBO NPA SKIPBO \$END\n/' $1
+#
+#if [ $# -gt 0 ]; then
+#  $GENEXE $1  > FILE.nbo
+#else
+#  $GENEXE FILE.47 >FILE.nbo
+#fi
+
+echo block = fragment records = 0
+echo block = title records = 1
+echo molecule 3
+echo block = coordinates records = 
