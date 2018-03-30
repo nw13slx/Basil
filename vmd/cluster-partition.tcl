@@ -43,14 +43,16 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   
 
   #thickness for the potential embedding region
-  set thickness    3.5000000000000
-  set formal_pQ    4.0000000000000
-  set formal_nQ   -2.0000000000000
+  set thickness   3.5000000000000
+  set formal_pQ   2.0 
+  #4.0000000000000
+  set formal_nQ   -2.0
+  #-2.0000000000000
   set partial_pQ   2.23
   set partial_nQ   -1.115
-  set pQ_type  Ti
+  set pQ_type  Mg
   set nQ_type  O
-  set element  { " " "Ti" "O" }
+  set element  { " " "Mg" "O" }
   set QM_size      20
 
   if { [ string match $scheme "p" ] == 1 } {
@@ -75,7 +77,8 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
 
 
   puts "find all possible sites for potential embedding"
-  set pECP [ atomselect top [ format "%s and (not %s)" $ecp_string $QM_string ] ]
+  set dpECP [ format "%s and (not (%s))" $ecp_string $QM_string ] 
+  set pECP [ atomselect top $dpECP ]
   set index_pECP [ $pECP get index ]
   set x_pECP [ $pECP get {x y z} ]
   set q_pECP [ $pECP get charge ]
@@ -84,6 +87,7 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   set pot_def "index "
   set n_pot 0 
   puts "bufferlayer has $n_pECP atoms"
+  puts "definition $dpECP"
   #for each atom
   for { set i 0 } { $i < $n_pECP } { incr i } {
     set is_pot 0
