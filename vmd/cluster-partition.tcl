@@ -69,7 +69,7 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   puts $fo_info [ format "pQ %g nQ %g core_Q %g shell_Q %g" $pQ $nQ $core_Q $shell_Q]
   
   
-  puts "get all informatino of the QM group"
+  puts "get all informatino of the QM group $QM_string"
   set QM [ atomselect top $QM_string ]
   set x_QM [ $QM get {x y z} ]
   set type_QM [ $QM get type ]
@@ -343,26 +343,39 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   close $fo_ff
   #close $fo_periodic
 
+
+  addbond_group "($QM_string) and (type $pQ_type)" "($QM_string) and (type $nQ_type)" 0 3
+  addbond_group "($region2)" "($QM_string) and (type $nQ_type)" 0 3
+
+  color Type {T} cyan
+
   mol delrep 0 top
 
-  mol color name
-  mol representation CPK 1.00 0.000000 32.000000 12.000000
+  mol color Type
+
+  mol representation Points 1.0
   mol material Opaque
   mol selection $region3
   mol addrep top
 
   mol material Transparent
-  mol representation CPK 0.500 0.000000 32.000000 12.000000
+  mol representation Points 1.0
   mol selection $region4 
   mol addrep top
 
   mol material Opaque
-  mol representation CPK 3.000000 0.000000 32.000000 12.000000
+  mol representation CPK 1.0000 0.000000 32.000000 12.000000
   mol selection "$QM_string"
   mol addrep top
-  mol representation CPK 2.000000 0.000000 32.000000 12.000000
+
+  mol representation CPK 0.000000 0.500000 32.000000 12.000000
+  mol selection "($QM_string) or ($region2)"
+  mol addrep top
+
+  mol material Transparent
+  mol representation CPK 1.00000 0.000000 32.000000 12.000000
   mol selection "$region2"
-  mol color colorid 1
+  mol color colorid 16
   mol addrep top
 }
   
