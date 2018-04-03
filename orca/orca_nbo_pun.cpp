@@ -71,8 +71,8 @@ int main(int argc, char **argv){
     q=new double[natom];
 
     ifstream In2(argv[2]);
-    pattern="Summary of Natural Population Analysis";
-    v_pos=find_pattern(In1,pattern);
+    pattern="Summary"; // of Natural Population Analysis";
+    v_pos=find_pattern(In2,pattern);
     if (v_pos!=-1){
       In2.getline(temp,MAX_CHARACTER);
       In2.getline(temp,MAX_CHARACTER);

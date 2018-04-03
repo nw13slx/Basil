@@ -39,7 +39,7 @@ void parse(char * temp, int & column, string *content){
 }
 
 int main(int argc, char **argv){
-  double cutoff=2;
+  double cutoff=3;
   if (argc < 2){
     cout<<" FAILED: need more input arguments"<<endl;
     return 1;
