@@ -67,7 +67,7 @@ int main(int argc, char **argv){
   fin.getline(temp,MAX_CHARACTER); 
   fout<<temp<<endl;
   parse(temp,column,content);
-  int natom=stof(content[5]);
+  int natom=atof(content[5].c_str());
   double * x= new double [3*natom];
   int *QM = new int [natom];
   int nQM=0;
@@ -77,9 +77,9 @@ int main(int argc, char **argv){
     fin.getline(temp,MAX_CHARACTER); 
     fout<<temp<<endl;
     parse(temp,column,content);
-    x[i*3]=stof(content[1]);
-    x[i*3+1]=stof(content[2]);
-    x[i*3+2]=stof(content[3]);
+    x[i*3]=atof(content[1].c_str());
+    x[i*3+1]=atof(content[2].c_str());
+    x[i*3+2]=atof(content[3].c_str());
     if (content[0].compare(sym1)==0){
       QM[nQM]=i;
       nQM++;
@@ -112,7 +112,8 @@ int main(int argc, char **argv){
       double r=sqrt((dx[0]*dx[0])+(dx[1]*dx[1])+(dx[2]*dx[2]));
       if (r<cutoff/0.52917721092){
         ncoord++;
-        conn[nconn]=to_string(QM[i]+1)+" "+to_string(MM[j]+1);
+        sprintf(temp,"%d %d",QM[i]+1,MM[j]+1);
+        conn[nconn]=temp;
         nconn++;
       }
     }

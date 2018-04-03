@@ -177,6 +177,92 @@ int main(int argc, char **argv){
       json_o<<"\"S2\":"<<content[5]<<","<<endl;
     }
 
+    pattern="MULLIKEN POPULATION ANALYSIS";
+    int mq_pos=find_pattern(In1,pattern);
+    if (mq_pos!=-1){
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      char mulliken_q[100000],mulliken_s[100000];
+      strcpy(mulliken_q,"\"mulliken_charge\":[");
+      strcpy(mulliken_s,"\"mulliken_spin\":[");
+      for (int i=0;i<atomn;i++){
+        In1.getline(temp,MAX_CHARACTER);
+        break_line(temp,content);
+        if (i>0) {
+          strcat(mulliken_q,", ");
+          strcat(mulliken_s,", ");
+        }
+        if (content[2]!=":"){
+          strcat(mulliken_q,content[2].c_str());
+          strcat(mulliken_s,content[3].c_str());
+        }else{
+          strcat(mulliken_q,content[3].c_str());
+          strcat(mulliken_s,content[4].c_str());
+        }
+      }
+      json_o<<mulliken_q<<"],"<<endl;
+      json_o<<mulliken_s<<"],"<<endl;
+    }
+
+    pattern="LOEWDIN POPULATION ANALYSIS";
+    mq_pos=find_pattern(In1,pattern);
+    if (mq_pos!=-1){
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      char loewdin_q[100000],loewdin_s[100000];
+      strcpy(loewdin_q,"\"loewdin_charge\":[");
+      strcpy(loewdin_s,"\"loewdin_spin\":[");
+      for (int i=0;i<atomn;i++){
+        In1.getline(temp,MAX_CHARACTER);
+        break_line(temp,content);
+        if (i>0) {
+          strcat(loewdin_q,", ");
+          strcat(loewdin_s,", ");
+        }
+        if (content[2]!=":"){
+          strcat(loewdin_q,content[2].c_str());
+          strcat(loewdin_s,content[3].c_str());
+        }else{
+          strcat(loewdin_q,content[3].c_str());
+          strcat(loewdin_s,content[4].c_str());
+        }
+      }
+      json_o<<loewdin_q<<"],"<<endl;
+      json_o<<loewdin_s<<"],"<<endl;
+    }
+
+    pattern="MAYER POPULATION ANALYSIS";
+    mq_pos=find_pattern(In1,pattern);
+    if (mq_pos!=-1){
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      In1.getline(temp,MAX_CHARACTER);
+      char mayer_q[100000];
+      strcpy(mayer_q,"\"mayer_charge\":[");
+      for (int i=0;i<atomn;i++){
+        In1.getline(temp,MAX_CHARACTER);
+        break_line(temp,content);
+        if (i>0) {
+          strcat(mayer_q,", ");
+        }
+        strcat(mayer_q,content[4].c_str());
+      }
+      json_o<<mayer_q<<"],"<<endl;
+    }
+
     pattern="Summary of Natural Population Analysis";
     int nbo_pos=find_pattern(In1,pattern);
     if (nbo_pos!=-1){
