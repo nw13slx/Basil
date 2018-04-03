@@ -34,8 +34,7 @@ int main(int argc, char **argv){
     ifstream In1(argv[1]);
     string pattern="CARTESIAN COORDINATES (A.U.)";
     double *x=new double [MAX_ELEMENT*MAX_COORD*3];
-    double *qecp=new double [MAX_ELEMENT*MAX_COORD];
-    bool   *isecp = new bool [MAX_ELEMENT*MAX_COORD];
+    double *q;
     int natom=0;
     int v_pos=find_pattern(In1,pattern);
     if (v_pos!=-1){
@@ -46,6 +45,7 @@ int main(int argc, char **argv){
       string element[10];
       double energy[MAX_ENERGYLINE];
       int n_element=0;
+
       do{
         line++;
         In1.getline(temp,MAX_CHARACTER); 
@@ -59,15 +59,6 @@ int main(int argc, char **argv){
             xx[0]=atof(content[5].c_str());
             xx[1]=atof(content[6].c_str());
             xx[2]=atof(content[7].c_str());
-            isecp[natom]=false;
-            natom++;
-          }else if ( content[1].find_first_of(">")!=string::npos) {
-            double *xx=&x[natom*3];
-            qecp[natom]=atof(content[2].c_str());
-            isecp[natom]=true;
-            xx[0]=atof(content[5].c_str());
-            xx[1]=atof(content[6].c_str());
-            xx[2]=atof(content[7].c_str());
             natom++;
           }
         }
@@ -77,34 +68,17 @@ int main(int argc, char **argv){
       return 1;
     }
     In1.close();
-    double *q=new double[natom];
+    q=new double[natom];
 
     ifstream In2(argv[2]);
-    pattern="Summary"; // of Natural Population Analysis";
+    pattern="CHELPG Charges"; // of Natural Population Analysis";
     v_pos=find_pattern(In2,pattern);
     if (v_pos!=-1){
       In2.getline(temp,MAX_CHARACTER);
-      In2.getline(temp,MAX_CHARACTER);
-      In2.getline(temp,MAX_CHARACTER);
-      In2.getline(temp,MAX_CHARACTER);
-      In2.getline(temp,MAX_CHARACTER);
       for (int i=0;i<natom;i++){
-        if (isecp[i]==true){
-          q[i]=qecp[i];
-        } else{
-        In2 >> temp>>temp>>q[i];
+        In2 >> temp>>temp>>temp>>q[i];
         In2.getline(temp,MAX_CHARACTER);
-        }
       }
-      /*
-         Summary of Natural Population Analysis:
-
-         Natural Population                 Natural
-         Natural    ---------------------------------------------    Spin
-         Atom No    Charge        Core      Valence    Rydberg      Total      Density
-         -------------------------------------------------------------------------------
-         O  1   -1.54331      1.99999     7.53196    0.01135     9.54331     0.00000
-         */
     } else{
         cout<<"ERROR: Summary of Natural Population Analysis block not found"<<endl;
         return 1;
@@ -124,11 +98,6 @@ int main(int argc, char **argv){
       double *xx=&x[k*3];
       out<<q[k]<<endl;
     }
-//sprintf(temp,"ATOM  %5d %4s              %8.3f%8.3f%8.3f%6.2f%6.2f          %2s ",iiid,element[j].c_str(),xxx[0],xxx[1],xxx[2],1.0,qq,"O");
     out<<"block = connectivity records = 0"<<endl;
-    delete [] x;
-    delete [] q;
-    delete [] qecp;
-    delete [] isecp;
     return 0;
 }
