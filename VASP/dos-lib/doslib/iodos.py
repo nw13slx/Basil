@@ -176,6 +176,16 @@ class iodos:
     np.savetxt(control.name+'DOS-parorbital.gz',matrix,fmt='%15.8f')
     del matrix
 
+  def write_peratom(self,atomi):
+    if not self._cont.run_pdos:
+       return 0
+    control=self._cont
+    dos=self.dos
+    tot=dos.tot
+    matrix = np.hstack([dos.Xenergy.reshape([dos.nedos,1]),tot])
+    np.savetxt(control.name+'DOS-atom'+str(atomi)+'.gz',matrix,fmt='%15.8f')
+    del matrix
+
   def delete_tot_dosfile(self):
     self.dos.dos0=None
 
@@ -251,6 +261,7 @@ class iodos:
         dos.perspecies=np.zeros((dos.nedos,atom.ntype))
     if peratom:
       self.plot.atom_start()
+      self.atom_start()
     for atomi in xrange(atom.natom):
       #skip the first line, and loop over dos.nedos
       tot,partial=self.read_atomDOS()
@@ -272,14 +283,28 @@ class iodos:
           dos.perspecies[:,species[atomi]] += tot
       if peratom:
         self.plot.atom_during(atomi)
+        self.atom_during(atomi)
       del tot,partial
       #print data and png per atom
 #      #if (peratom==True):
 #      #  matrix = np.hstack([xEnergy.reshape([len(xEnergy),1]),partial])
 #      #  header_line="#"+name+"atom"+str(atomi)+"\n#E su sd pu pd du dd fu fd dt2gu dt2gd degu degd"
 #      #  np.savetxt(name+'DOS'+str(atomi)+".dat",matrix,fmt='%15.8f',header=header_line)
+
     if peratom:
       self.plot.atom_end()
+      self.atom_end()
+
+  def atom_start(self):
+      pass
+  def atom_during(self,atomi):
+    control=self._cont
+    if control.write_pdos :
+      self.write_peratom(atomi)
+
+  def atom_end(self):
+      pass
+
   def read_atomDOS(self):
       dos=self.dos
       atom=self.atom

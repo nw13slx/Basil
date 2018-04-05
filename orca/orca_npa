@@ -11,8 +11,11 @@ sed -i "s/NATOMS=$natom/NATOMS=$n/g" FILE.47
 
 module load nbo
 rm -rf FILE.nbo
+sed -i "/\$NBO/d" $1
+sed -i '2s/^/\$NBO NPA SKIPBO \$END\n/' $1
+
 if [ $# -gt 0 ]; then
-  $GENEXE $1
+  $GENEXE $1  > FILE.nbo
 else
-  $GENEXE FILE.47
+  $GENEXE FILE.47 >FILE.nbo
 fi

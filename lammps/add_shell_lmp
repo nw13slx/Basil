@@ -1,0 +1,80 @@
+#/bin/env bash
+
+echo "Warning: the input format should be  [id] [type] [charge] [x] [y] [z]"
+if [ $# -lt 2 ]; then
+  echo "need at least two input arguments"
+  echo "add_shell_lmp input outpu"
+  exit
+fi
+
+infile=$1
+outfile=$2
+
+atomn=$(grep atoms $infile|awk '{print $1}')
+t=$(grep "atom types" $infile|awk '{print $1}')
+grep Atoms -A$(echo $atomn|awk '{print $1+1}') $infile| tail -n $atomn |awk '{print $2,$4,$5,$6}' >original_atoms
+
+if [ -f newatoms ];then
+    rm newatoms
+fi
+
+if [ $# -gt 2 ]; then
+  echo "add shells to selective species"
+  st=$(echo $#|awk '{print $1-2}')
+  shellatom=0
+  for i in `seq 3 $#`
+  do
+    type=$(eval echo \${$i})
+    shelltype=$(echo $t $i|awk '{print $1+$2-2}')
+    bondtype=$(echo $t $i|awk '{print $2-2}')
+    nshell=$(grep "^${type} " original_atoms |wc -l|awk '{print $1}')
+    echo "add shell to type $type, with $nshell shells, shell type $shelltype, bond type $bondtype"
+    let "shellatom+=nshell"
+    grep "^${type} " original_atoms |awk -v t=$t -v i=$i '{printf "%d %d %f %f %f %f\n%d %d %f %f %f %f\n",0,$1,0,$2,$3,$4,0,t+i-2,0,$2,$3,$4}' >>newatoms
+    sed -i0 "/^${type} /d" original_atoms
+  done
+  echo "$shellatom shells in total"
+  #list core and shell id
+  seq $shellatom|awk '{print $1*2-1,$1*2}' >temp1 #>>$outfile
+  #identify their species
+  awk -v t=$t 'NR%2==0{print $2-t}' newatoms  >temp2
+  #paste it together
+  paste temp2 temp1|cat -n >bonds
+  cat original_atoms |awk -v n=$atomn -v t=$t '{printf "%d %d %f %f %f %f\n",0,$1, 0,$2,$3,$4}' >>newatoms
+  #rm original_atoms temp1 temp2
+else
+  st=$t
+  shellatom=$atomn
+  echo "add shell to all"
+  #create shell at the same position as the core
+  cat original_atoms |awk -v n=$atomn -v t=$t '{printf "%d %d %f %f %f %f\n%d %d %f %f %f %f\n",0,$2,$3,$4,$5,$6,0,$2+t,0,$4,$5,$6}'|cat -n >newatoms
+  #create bonds
+  #list core and shell id
+  seq $atomn|awk '{print $1*2-1,$1*2}' >temp1 #>>$outfile
+  #identify their species
+  grep Atoms -A$(echo $atomn|awk '{print $1+1}') $infile|tail -n $atomn|awk '{print $2}' >temp2
+  #paste it together
+  paste temp2 temp1|cat -n >bonds
+  rm temp1 temp2
+fi
+
+
+cat > $outfile <<EOF
+
+    $(echo $atomn $shellatom |awk '{print $1+$2}') atoms
+    $(echo $t $st |awk '{print $1+$2}') atom types
+    $st bond types
+    $shellatom bonds
+
+    $(grep xlo $infile)
+    $(grep ylo $infile)
+    $(grep zlo $infile)
+
+Atoms
+
+EOF
+
+cat -n newatoms >>$outfile
+echo $'\n'"Bonds"$'\n' >>$outfile
+cat bonds >>$outfile
+rm bonds newatoms

@@ -1,7 +1,4 @@
-//average the local potential file along certain direction
-//usage: average_loc input output direction<1-3>
 
-//revised from a source code called vtotav.f. don't remember where did I find the code...
 //author: Lixin Sun nw13mifaso@gmail.com
 
 #include <algorithm>
@@ -47,6 +44,14 @@ int main(int argc, char **argv){
   }
   ifstream fin(argv[1]); 
   ofstream fout(argv[2]); 
+  bool frac=true;
+  if (argc >3){
+    if ( strcmp (argv[3],"frac")==0){
+      frac=true;
+    }else{
+      frac=false;
+    }
+  }
 
   char temp[MAX_CHARACTER];
   string content[MAX_COLUMN];
@@ -94,16 +99,28 @@ int main(int argc, char **argv){
     fin.getline(temp,MAX_CHARACTER); 
 
   //read ions
-  fout<<"frac"<<endl;
-  double x[3];
-  for (int ele=0; ele<nelement;ele++){
-    for (int i=0;i<natom[ele];i++){
-      fin>>x[0]>>x[1]>>x[2];
-      fin.getline(temp,MAX_CHARACTER); 
-      fout<<element[ele]<<" "<<x[0]<<" "<<x[1]<<" "<<x[2]<<endl;
+  if (frac){
+    fout<<"frac"<<endl;
+    double x[3];
+    for (int ele=0; ele<nelement;ele++){
+      for (int i=0;i<natom[ele];i++){
+        fin>>x[0]>>x[1]>>x[2];
+        fin.getline(temp,MAX_CHARACTER); 
+        fout<<element[ele]<<" "<<x[0]*cell[0]<<" "<<x[1]*cell[1]<<" "<<x[2]*cell[2]<<endl;
+      }
     }
+    fin.getline(temp,MAX_CHARACTER); //empty line
+  }{
+    fout<<"frac"<<endl;
+    double x[3];
+    for (int ele=0; ele<nelement;ele++){
+      for (int i=0;i<natom[ele];i++){
+        fin>>x[0]>>x[1]>>x[2];
+        fin.getline(temp,MAX_CHARACTER); 
+        fout<<element[ele]<<" "<<x[0]<<" "<<x[1]<<" "<<x[2]<<endl;
+      }
+    }
+    fin.getline(temp,MAX_CHARACTER); //empty line
   }
-  fin.getline(temp,MAX_CHARACTER); //empty line
-  cout<<"read ions"<<endl;
 
 }

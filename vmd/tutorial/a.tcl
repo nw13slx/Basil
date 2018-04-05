@@ -1,0 +1,1 @@
+color Display {Background} blue

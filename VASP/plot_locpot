@@ -15,6 +15,8 @@ chunk=60
 window1=50
 window2=45
 BUFFER=80 
+if (len(sys.argv)<2):
+  print "plot_locpot filename output <opt window1> <opt window2>"
 filename=sys.argv[1]
 output=sys.argv[2]
 if (len(sys.argv)>3):
@@ -100,7 +102,8 @@ if __name__=='__main__':
   print "average",average
   print "minumum",np.min(Ynew)
   plt.figure(0)
-  plt.plot(xscale*X,Ynew,'k-') #,X,smoothY,'g-')
+  #plt.plot(xscale*X,Ynew,'k-',xscale*X,smoothY,'g-')
+  plt.plot(X,Ynew,'k-',X,smoothY,'g-')
   plt.title('drop %lf ref %lf'%(drop,ref))
   pl.show()
   pl.savefig(output)
