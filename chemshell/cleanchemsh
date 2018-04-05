@@ -1,0 +1,2 @@
+#!/bin/env bash
+rm hybrid* gulp* orca* dl* path* pointcharges.xyz *.gbw slurm* jobenv* cancel.sh chemshellout

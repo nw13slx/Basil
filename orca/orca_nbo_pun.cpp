@@ -80,7 +80,7 @@ int main(int argc, char **argv){
     double *q=new double[natom];
 
     ifstream In2(argv[2]);
-    pattern="Summary"; // of Natural Population Analysis";
+    pattern="Summary of Natural Population Analysis";
     v_pos=find_pattern(In2,pattern);
     if (v_pos!=-1){
       In2.getline(temp,MAX_CHARACTER);
@@ -92,8 +92,13 @@ int main(int argc, char **argv){
         if (isecp[i]==true){
           q[i]=qecp[i];
         } else{
-        In2 >> temp>>temp>>q[i];
-        In2.getline(temp,MAX_CHARACTER);
+          In2.getline(temp,MAX_CHARACTER); 
+          column=split(temp,content);
+          if (column >=7){
+            q[i]=atof(content[2].c_str());
+          }else{
+            q[i]=atof(content[1].c_str());
+          }
         }
       }
       /*
