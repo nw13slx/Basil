@@ -25,18 +25,16 @@ do
   elif [ -f $path/vasp.out ]; then
     screenout=$path/vasp.out
   fi
-  if [ -f $path/vasprun.xml ]; then
-    E=$(grep e_fr_energy $path/vasprun.xml |tail -n 1|awk '{print $3}')
-  fi
   if [ -f $path/DOSCAR ]; then
     Ef=$(awk "NR==6" $path/DOSCAR|awk '{print $4}') #fermi level
   fi
   #net charge
   if [ -f $path/OUTCAR ]; then
+    E=$(grep "energy  without entropy" $path/OUTCAR|tail -n 1|awk '{print $4}')
     ENCUT=$(grep ENCUT $path/OUTCAR|awk '{print $3}')
     NKPTS=$(grep NKPTS $path/OUTCAR|awk '{print $4}')
     version=$(grep vasp $path/OUTCAR|head -n 1|sed -e "s/ \+//g"|sed "s/ /_/g")
-    if [ ! $Ef ]; then
+    if [[ -v $Ef ]]; then
       Ef=$(grep fermi $path/OUTCAR|tail -n 1|awk '{print $3}')
     fi
     vol=$(grep volume $path/OUTCAR |tail -n 1|awk '{print $5}') #volume
@@ -53,6 +51,11 @@ do
     echo "OUTCAR doesn't exist"
     netcharge="NA"
     ENCUT=$(grep ENCUT $path/INCAR|awk '{print $3}')
+  fi
+  if [ -f $path/vasprun.xml ]; then
+    if [[ -v $E ]]; then
+      E=$(grep e_fr_energy $path/vasprun.xml |tail -n 1|awk '{print $3}')
+    fi
   fi
 
   if [ -f $screenout ]; then
@@ -82,7 +85,6 @@ do
     fi
     #echo "after" $name $(($name))
   done
-
 
   #print all the information
   echo $NKPTS $ENCUT $version $netcharge $path $E $dE $mag $vol $Ef $conv $pressure >>sum
