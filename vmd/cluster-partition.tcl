@@ -5,9 +5,10 @@ proc ladd L {expr [join $L +]+0} ;
 
 #argument 1: QM_string definition of the QM zone. can be anything that vmd recognize
 #argument 2: active_string. region 3
-#argument 3: charge of the ecp
-#argument 4: name i.e. "CaO2"
-#argument 5: partial or formal charge scheme. either "p" or "f"
+#argument 3: ecp_group can be "none" or "type Ti"
+#argument 4: charge of the ecp
+#argument 5: name i.e. "CaO2"
+#argument 6: partial or formal charge scheme. either "p" or "f"
 
 #partial charge scheme:
 #   region 1: QM atom, with charge 0
@@ -29,30 +30,27 @@ proc ladd L {expr [join $L +]+0} ;
 #   region 3: active MM, each 
 #   region 4: frozen MM, use original charge
 
-proc selectQM { QM_string active_string ecp_q shell_Q name scheme } {
+proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
 
 
   set fo_info [ open [format "%s.info" $name] "w"]
 
   #repeats the argument
-  puts [ format "original command: selectQM \"%s\" \"%s\" %s %s %s" $QM_string $active_string $ecp_q $name $scheme]
+  puts [ format "original command: selectQM \"%s\" \"%s\" \"%s\" %s %s %s" $QM_string $active_string $ecp_string $ecp_q $name $scheme]
   puts [ format "selection string: %s " $QM_string ]
-  puts $fo_info [ format "original command: selectQM \"%s\" \"%s\" %s %s %s" $QM_string $active_string $ecp_q $name $scheme]
+  puts $fo_info [ format "original command: selectQM \"%s\" \"%s\" \"%s\" %s %s %s" $QM_string $active_string $ecp_string $ecp_q $name $scheme]
   puts $fo_info [ format "selection string: %s " $QM_string ]
   
 
-  #thickness for the potential embedding region
-  set thickness   3.5000000000000
-  set formal_pQ   4.0 
-  #4.0000000000000
-  set formal_nQ   -2.0
-  #-2.0000000000000
-  set partial_pQ   1.6
-  set partial_nQ   -0.8
-  set pQ_type  Ti
-  set nQ_type  O
-  set element  { " " "Ti" "O" }
-  set QM_size      20
+  global thickness  
+  global formal_pQ  
+  global formal_nQ  
+  global partial_pQ 
+  global partial_nQ 
+  global pQ_type
+  global nQ_type
+  global element
+
 
   if { [ string match $scheme "p" ] == 1 } {
     set core_Q [ expr $partial_nQ - $shell_Q ]
@@ -75,7 +73,7 @@ proc selectQM { QM_string active_string ecp_q shell_Q name scheme } {
   set n_QM [ $QM num ]
 
 
-  set pot_def [ format "not (%s) and type %s and within %f of (%s)" $QM_string $pQ_type $thickness $QM_string ] 
+  set pot_def [ format "not (%s) and (%s) and within %f of (%s)" $QM_string $ecp_string $thickness $QM_string ] 
   set boundary [ atomselect top $pot_def  ]
   set n_pot [ $boundary num ]
   #for each atom
