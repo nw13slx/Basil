@@ -43,13 +43,11 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   
 
   #thickness for the potential embedding region
-  set thickness   3.5000000000000
-  set formal_pQ   4.0 
-  #4.0000000000000
+  set thickness    3.000000000000
+  set formal_pQ    4.0 
   set formal_nQ   -2.0
-  #-2.0000000000000
-  set partial_pQ   1.6
-  set partial_nQ   -0.8
+  set partial_pQ   2.23
+  set partial_nQ  -1.115
   set pQ_type  Ti
   set nQ_type  O
   set element  { " " "Ti" "O" }
