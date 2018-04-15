@@ -5,7 +5,7 @@ proc ladd L {expr [join $L +]+0} ;
 
 #argument 1: QM_string definition of the QM zone. can be anything that vmd recognize
 #argument 2: active_string. region 3
-#argument 3: ecp_string the definition of potential group. i.e. "type Ti" or "none"
+#argument 3: ecp_group can be "none" or "type Ti"
 #argument 4: charge of the ecp
 #argument 5: name i.e. "CaO2"
 #argument 6: partial or formal charge scheme. either "p" or "f"
@@ -42,16 +42,14 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   puts $fo_info [ format "selection string: %s " $QM_string ]
   
 
-  #thickness for the potential embedding region
-  set thickness    3.000000000000
-  set formal_pQ    4.0 
-  set formal_nQ   -2.0
-  set partial_pQ   2.23
-  set partial_nQ  -1.115
-  set pQ_type  Ti
-  set nQ_type  O
-  set element  { " " "Ti" "O" }
-  set QM_size      20
+  global thickness  
+  global formal_pQ  
+  global formal_nQ  
+  global partial_pQ 
+  global partial_nQ 
+  global pQ_type
+  global nQ_type
+  global element
 
   if { [ string match $scheme "p" ] == 1 } {
     set core_Q [ expr $partial_nQ - $shell_Q ]
@@ -74,55 +72,15 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   set n_QM [ $QM num ]
 
 
-  puts "find all possible sites for potential embedding"
-  set dpECP [ format "%s and (not (%s))" $ecp_string $QM_string ] 
-  set pECP [ atomselect top $dpECP ]
-  set index_pECP [ $pECP get index ]
-  set x_pECP [ $pECP get {x y z} ]
-  set q_pECP [ $pECP get charge ]
-  set type_pECP [ $pECP get type ]
-  set n_pECP [ $pECP num ]
-  set pot_def "index "
-  set n_pot 0 
-  puts "bufferlayer has $n_pECP atoms"
-  puts "definition $dpECP"
+  set pot_def [ format "not (%s) and (%s) and within %f of (%s)" $QM_string $ecp_string $thickness $QM_string ] 
+  set boundary [ atomselect top $pot_def  ]
+  set n_pot [ $boundary num ]
   #for each atom
-  for { set i 0 } { $i < $n_pECP } { incr i } {
-    set is_pot 0
-    set type1 [ lindex $type_pECP $i ] 
-    set c1 [ lindex $x_pECP $i ]
-    set in [ lindex $index_pECP $i ]
-    for { set j 0 } { $j < $n_QM } { incr j } {
-      set c2 [ lindex $x_QM $j ]
-      for { set k 0 } { $k < 3 } { incr k } {
-        set dk [expr [lindex $c1 $k ] - [lindex $c2 $k]]
-        set dk [expr abs($dk)]
-        #if { $pbc > 0 } {
-        #  while { $dk > [expr 0.5*[lindex $vcell $k]] } {
-        #    set dk [expr $dk-[lindex $vcell $k]]
-        #  }
-        #}
-        set x$k $dk
-      }
-      set dx [ expr sqrt($x1*$x1+$x2*$x2+$x0*$x0)]
-      #if the distance is smaller than the boundary thickness
-      if { $dx < $thickness  } {
-        incr is_pot
-      }
-    }
-    if { $is_pot > 0 } {
-      set pot_def "$pot_def $in"
-      puts "$n_pot: potential atom found $in "
-      incr n_pot
-    } 
-  }
 
   if { $n_pot > 0 } {
-    set boundary [ atomselect top $pot_def  ]
     set region2 $pot_def
     set x_pot [ $boundary get {x y z} ]
     set type_pot [ $boundary get type ]
-    set n_pot [ $boundary num ]
     puts "region 2: ecp embedding $n_pot "
     set region3 [ format "(%s) and (not (%s)) and (not (%s))" $active_string $QM_string $pot_def ] 
   } else {
