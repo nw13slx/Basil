@@ -66,4 +66,10 @@ int main(int argc, char **argv){
 
     for (int i=0;i<grid;i++)
         out<<x[i]-homo[0]<<" "<<smearing[i]<<" "<<-smearing[i+grid]<<endl;
+
+    ofstream plot("gnuplot.dos");
+    plot <<"set output \""<<argv[2]<<"-orcados.png\""<<endl;
+    plot << "pl \'"<<argv[2]<<"\' u 1:2 lc 2 lt 2 lw 2 with linespoints title \"spin up\"\\"<<endl;
+    plot << ", \'"<<argv[2]<<"\' u 1:3 lc 3 lt 2 lw 2 with linespoints title \"spin down\""<<endl;
+    plot.close();
 }
