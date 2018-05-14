@@ -51,7 +51,6 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   global nQ_type
   global element
 
-
   if { [ string match $scheme "p" ] == 1 } {
     set core_Q [ expr $partial_nQ - $shell_Q ]
     set pQ $partial_pQ
