@@ -1,0 +1,30 @@
+
+#requirement: type should be element symbol instead of number. point charge should be labelled as "F"
+#             the configuration does not have periodic boundary
+
+#argument 1: QM_string definition of the QM zone. can be anything that vmd recognize
+#argument 2: active_string. region 3
+#argument 3: ecp_string the definition of potential group. i.e. "type Ti" or "none"
+#argument 4: charge of the ecp
+#argument 5: name i.e. "CaO2"
+#argument 6: partial or formal charge scheme. either "p" or "f"
+
+#partial charge scheme:
+#   region 1: QM atom, with charge 0
+#   region 2: potential, use partial charge or formal charge
+#
+#   compensated charge computed from: region 1 original charge + region 2 current charge
+#   delta charge: compensated charge divided by the number of atoms in region 3 and region 4
+#
+#   region 3: active MM, use partial charge, and partial charge shell
+#   region 4: frozen MM, use original charge, no shell
+
+#formal charge scheme:
+#   region 1: QM atom, with charge 0
+#   region 2: potential, use partial charge or formal charge
+#
+#   compensated charge computed from: region 1 original charge + region 2 current charge
+#   delta charge: compensated charge divided by the number of atoms in region 3 and region 4
+#
+#   region 3: active MM, each 
+#   region 4: frozen MM, use original charge

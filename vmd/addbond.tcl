@@ -28,47 +28,49 @@ proc addbond_selection {sel1 sel2 radius1 radius2} {
   set id1 [ $sel1 get index]
   set n1 [ $sel1 num ]
 
-  set coord2 [ $sel2 get {x y z} ]
-  set id2 [ $sel2 get index]
-  set n2 [ $sel2 num ]
-
-  puts [ format "group 1 has %g atoms, group 2 has %g atoms"  $n1 $n2 ]
-
-  set bonds 0
+  set id20 [ $sel2 get index]
+  set n20 [ $sel2 num ]
 
   for { set i 0 } { $i < $n1 } { incr i } {
+    set i1 [ lindex $id1 $i ]
+    set sel1n [atomselect top "($string2 ) and within $radius2 of index $i1" ]
+    set coord2 [ $sel2 get {x y z} ]
+    set id2 [ $sel2 get index]
+    set n2 [ $sel2 num ]
     for { set j 0 } { $j < $n2 } { incr j } {
-      set i1 [ lindex $id1 $i ]
       set i2 [ lindex $id2 $j ]
-      if { $i1 != $i2 } {
-        set c1 [ lindex $coord1 $i ]
-        set c2 [ lindex $coord2 $j ]
-        for { set k 0 } { $k < 3 } { incr k } {
-          set dk [expr [lindex $c1 $k ] - [lindex $c2 $k]]
-          ## this one is used for periodic boundary. 
-          ## however, vmd doesn't really have a good way to visualize 
-          ## bond across periodic boundary unless you use the dynamic 
-          ## bond representation
-          #set dk [expr abs($dk)]
-          #if { $pbc == 1 } {
-          #  while { $dk > [expr 0.5*[lindex $vcell $k]] } {
-          #    set dk [expr $dk-[lindex $vcell $k]]
-          #  }
-          #}
-          set x$k $dk
-        }
-        set dx [ expr sqrt($x1*$x1+$x2*$x2+$x0*$x0)] 
-        if { ( $dx < $radius2 ) && ( $dx > $radius1 ) } {
-          topo delbond $i1 $i2
-          topo addbond $i1 $i2
-          #puts $dx
-          incr bonds
+      if { [lsearch $id20 $i2 ] >= 0 } {
+        if { $i1 != $i2 } {
+          set c1 [ lindex $coord1 $i ]
+          set c2 [ lindex $coord2 $j ]
+          for { set k 0 } { $k < 3 } { incr k } {
+            set dk [expr [lindex $c1 $k ] - [lindex $c2 $k]]
+            ## this one is used for periodic boundary. 
+            ## however, vmd doesn't really have a good way to visualize 
+            ## bond across periodic boundary unless you use the dynamic 
+            ## bond representation
+            #set dk [expr abs($dk)]
+            #if { $pbc == 1 } {
+            #  while { $dk > [expr 0.5*[lindex $vcell $k]] } {
+            #    set dk [expr $dk-[lindex $vcell $k]]
+            #  }
+            #}
+            set x$k $dk
+          }
+          set dx [ expr sqrt($x1*$x1+$x2*$x2+$x0*$x0)] 
+          if { ( $dx < $radius2 ) && ( $dx > $radius1 ) } {
+            topo delbond $i1 $i2
+            topo addbond $i1 $i2
+            #puts $dx
+            incr bonds
+          }
         }
       }
     }
   }
   puts [format "%g bonds are added" $bonds ]
 }
+
 proc deletebond {type1 type2 radius1 radius2} {
   set pbc 0
   set cell [ pbc get ]
@@ -132,7 +134,7 @@ proc addbond_group {string1 string2 radius1 radius2} {
 
   for { set i 0 } { $i < $n1 } { incr i } {
     set i1 [ lindex $id1 $i ]
-    set sel2 [atomselect top "$string2 and within $radius2 of index $i1" ]
+    set sel2 [atomselect top "($string2) and within $radius2 of index $i1" ]
     set coord2 [ $sel2 get {x y z} ]
     set id2 [ $sel2 get index]
     set n2 [ $sel2 num ]
