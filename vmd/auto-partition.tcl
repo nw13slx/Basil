@@ -1,32 +1,4 @@
-proc comp_coulomb { def } {
-  set a [ atomselect top "$def" ]
-  return [ coulomb $a ]
-}
-proc checklooseatom { t_ele buffer def } {
-  #check whethere there are unconnected atoms
-  set dangling false
-  set QM1 [ atomselect top "not type $t_ele and $def" ]
-  set QM2 [ atomselect top "type $t_ele and $def" ]
-  set id_QM1 [ $QM1 get index ]
-  set id_QM2 [ $QM2 get index ]
-  foreach id2 $id_QM2 {
-    set ngh [ atomselect top "(not type $t_ele) and ($def) and (within $buffer of index $id2)" ]
-    set n_ngh [ $ngh num ]
-    if { $n_ngh < 1  } {
-      set dangling true
-    }
-  }
-  foreach id1 $id_QM1 {
-    set ngh [ atomselect top "(type $t_ele) and ($def) and (within $buffer of index $id1)" ]
-    set n_ngh [ $ngh num ]
-    if { $n_ngh < 1  } {
-      set dangling true
-    }
-  }
-  return $dangling
-
-}
-proc filter { input output } {
+proc filter { centerid input output } {
 
   set fd [open $input "r"]
   set filedata [read $fd]
@@ -47,20 +19,25 @@ proc filter { input output } {
     set items [split $line]
     set last [ expr [ llength $items ]-1 ]
     set lab [ lindex $items 0 ]
+
     set definition [ lrange $items 2 $last ]
     set def [join $definition ]
-  
-    set eng [ comp_coulomb $def ]
+    set sel [ atomselect top "$def" ] 
+    set eng [ coulomb $sel ]
     #check whether it is computed before
     if { [ dict exists $alleng $eng ] < 1 } {
       dict incr alleng $eng
-      set dangling [ checklooseatom $t_ele $buffer $def ]
+      set dangling [ count_undercoord $buffer $sel 1 ]
+      puts $def
   
-      if { $dangling == "false" } {
-        puts "$lab $eng $def"
-        puts $fout "$lab $eng $def"
-      } 
-    }
+      if { $dangling < 1 } {
+        set m2 [ moment2nd $centerid $sel ]
+        puts "$lab $eng $m2 $def"
+        puts $fout "$lab $eng $m2 $def"
+      } else {
+        puts "$lab has dangling bond"
+      }
+    } 
   }
   close $fout
 }
