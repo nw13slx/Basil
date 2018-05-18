@@ -31,9 +31,11 @@ proc filter { centerid input output } {
       puts $def
   
       if { $dangling < 1 } {
-        set m2 [ moment2nd $centerid $sel ]
-        puts "$lab $eng $m2 $def"
-        puts $fout "$lab $eng $m2 $def"
+        #set m2 [ moment2nd $centerid $sel ]
+        #puts "$lab $eng $m2 $def"
+        #puts $fout "$lab $eng $m2 $def"
+        puts "$lab $eng $def"
+        puts $fout "$lab $eng $def"
       } else {
         puts "$lab has dangling bond"
       }

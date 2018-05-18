@@ -47,7 +47,6 @@ proc autoselectQM { centerid rmin t_ele buffer T attempt} {
   set n_QMi [ $QMi num ]
   set Q_QMi [ ladd [ $QMi get charge ] ]
   set type_QMi [ $QMi get type ]
-  set qmpot [ coulomb $QMi ]
   set counters [ count_ele $type_QMi ]
   set stat ""
   dict for {item count} $counters {
@@ -67,6 +66,7 @@ proc autoselectQM { centerid rmin t_ele buffer T attempt} {
   set QMo [ atomselect top "type $t_ele and (not within $rmin of index $centerid ) and within $buffer of (within $rmin of index $centerid)" ]
   set n_QMo [ $QMo num ]
   set id_QMo [ $QMo get index ]
+  set rest [ atomselect top " (not (index $id_QMo or (within $rmin of index $centerid))) and within 10 of index $centerid " ]
 
   #check charge and find out number of atoms to add
   set q_QMo [ $QMo get charge ]
@@ -103,8 +103,9 @@ proc autoselectQM { centerid rmin t_ele buffer T attempt} {
     for { set i 0 } { $i < $n_QMo } {incr i} {
       for { set j [ expr $i+1] } { $j < $n_QMo } {incr j} {
         set sel_id [ list [lindex $id_QMo $i] [lindex $id_QMo $j] ]
-        set test [ atomselect top "index $sel_id "]
-        set pot [ expr [coulomb $sel] +[ coulomb_cross $QMi $test ] ]
+        set select [ atomselect top "index $sel_id "]
+        set unselect [ atomselect top "index $id_QMo and not index $sel_id" ] 
+        set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
         if { $minpot >$pot } {
           set minpot $pot
           set minsel $sel_id
@@ -112,9 +113,9 @@ proc autoselectQM { centerid rmin t_ele buffer T attempt} {
       }
     }
 
-    puts "minimum potential $minpot [ expr ( $qmpot + $minpot ) ] "
+    puts "minimum potential $minpot "
     puts "(index $minsel ) or (within $rmin of index $centerid)"
-    puts $fo_info "final potential $minpot [ expr ( $qmpot + $minpot ) ] "
+    puts $fo_info "final potential $minpot "
     puts $fo_info "(index $minsel ) or (within $rmin of index $centerid)"
 
     close $fo_info
@@ -129,17 +130,18 @@ proc autoselectQM { centerid rmin t_ele buffer T attempt} {
     set id_QMo [ $QMo get index ]
     for { set i 0 } { $i < $n_QMo } {incr i} {
       set sel_id [ list [lindex $id_QMo $i] ]
-      set test [ atomselect top "index $sel_id "]
-      set pot [ coulomb_cross $QMi $test ]
+      set select [ atomselect top "index $sel_id "]
+      set unselect [ atomselect top "index $id_QMo and not index $sel_id" ] 
+      set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
       if { $minpot >$pot } {
         set minpot $pot
         set minsel $sel_id
       }
     }
 
-    puts "minimum potential $minpot [ expr ( $qmpot + $minpot ) ] "
+    puts "minimum potential $minpot "
     puts "(index $minsel ) or (within $rmin of index $centerid)"
-    puts $fo_info "final potential $minpot [ expr ( $qmpot + $minpot ) ] "
+    puts $fo_info "final potential $minpot "
     puts $fo_info "(index $minsel ) or (within $rmin of index $centerid)"
 
     close $fo_info
@@ -168,20 +170,13 @@ proc autoselectQM { centerid rmin t_ele buffer T attempt} {
   }
 
 
-  set test [ atomselect top "index $sel_id "]
+  set select [ atomselect top "index $sel_id "]
+  set unselect [ atomselect top "index $unsel_id "]
   set sel_id0 $sel_id
-  set pot [ coulomb_cross $QMi $test ]
-  set all [ atomselect top "index $sel_id or (within $rmin of index $centerid)" ]
-  set opot [ coulomb $all ]
-  puts "initial gues: $pot + $qmpot = $opot"
-  puts $fo_info "initial gues: $pot + $qmpot = $opot"
+  set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+  puts "initial gues: $pot "
+  puts $fo_info "initial gues: $pot "
  
-  ##compute the whole set
-  #set test [ atomselect top "index $sel_id or (within $rmin of index $centerid)" ]
-  #set pot [ coulomb $test ]
-  #puts "initial gues: $pot"
-  #puts $fo_info "initial gues: $pot"
-
   set naccept 0
   set minpot $pot
   set minsel $sel_id
@@ -197,10 +192,10 @@ proc autoselectQM { centerid rmin t_ele buffer T attempt} {
     lappend sel_id $ele2
     lappend unsel_id $ele1
 
-    set test [ atomselect top "index $sel_id " ] 
-    set newpot [ coulomb_cross $QMi $test ]
-    #set test [ atomselect top "index $sel_id or (within $rmin of index $centerid)" ]
-    #set newpot [ coulomb $test ]
+    set select [ atomselect top "index $sel_id "]
+    set unselect [ atomselect top "index $unsel_id "]
+    set newpot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+    puts "initial gues: $pot "
 
     set accept 0
 
@@ -246,14 +241,14 @@ proc autoselectQM { centerid rmin t_ele buffer T attempt} {
   puts "accepting ratio $naccept $tmp [ expr $naccept/double($tmp) ]"
   puts $fo_info "accepting ratio [ expr $naccept/double($tmp) ]"
 
-  puts "final potential $pot [ expr ( $qmpot + $minpot ) ] "
+  puts "final potential $pot "
   puts "index $sel_id or (within $rmin of index $centerid)" 
-  puts $fo_info "final potential $pot [ expr ( $qmpot + $minpot ) ] "
+  puts $fo_info "final potential $pot "
   puts $fo_info "index $sel_id or (within $rmin of index $centerid)" 
 
-  puts "minimum potential $minpot [ expr ( $qmpot + $minpot ) ] "
+  puts "minimum potential $minpot "
   puts "index $minsel or (within $rmin of index $centerid)" 
-  puts $fo_info "final potential $minpot [ expr ( $qmpot + $minpot ) ] "
+  puts $fo_info "final potential $minpot "
   puts $fo_info "index $minsel or (within $rmin of index $centerid)" 
 
   close $fo_info
@@ -299,7 +294,6 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
   set n_QMi [ $QMi num ]
   set Q_QMi [ ladd [ $QMi get charge ] ]
   set type_QMi [ $QMi get type ]
-  set qmpot [ coulomb $QMi ]
   set counters [ count_ele $type_QMi ]
   set stat ""
   dict for {item count} $counters {
@@ -319,6 +313,9 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
   set QMo [ atomselect top "type $t_ele and (not index $QM2_sel $QM1_sel ) and (within $buffer of (index $QM2_sel $QM1_sel))" ]
   set n_QMo [ $QMo num ]
   set id_QMo [ $QMo get index ]
+  set rest [ atomselect top " (not index $id_QMo $QM1_sel $QM2_sel) and within 10 of index $centerid " ]
+  puts "known atoms $QM2_sel $QM1_sel "
+  puts "select atoms from $id_QMo"
   puts $fo_info "known atoms $QM2_sel $QM1_sel "
   puts $fo_info "select atoms from $id_QMo"
 
@@ -358,8 +355,9 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
     for { set i 0 } { $i < $n_QMo } {incr i} {
       for { set j [ expr $i+1] } { $j < $n_QMo } {incr j} {
         set sel_id [ list [lindex $id_QMo $i] [lindex $id_QMo $j] ]
-        set test [ atomselect top "index $sel_id" ]
-        set pot [ coulomb_cross $QMi $test ]
+        set select [ atomselect top "index $sel_id" ]
+        set unselect [ atomselect top "index $id_QMo and not (index $sel_id)" ]
+        set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
         if { $minpot >$pot } {
           set minpot $pot
           set minsel $sel_id
@@ -367,9 +365,9 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
       }
     }
 
-    puts "minimum potential $minpot [ expr ( $qmpot + $minpot ) ] "
+    puts "minimum potential $minpot "
     puts "index $minsel $QM2_sel $QM1_sel" 
-    puts $fo_info "final potential $minpot [ expr ( $qmpot + $minpot ) ] "
+    puts $fo_info "final potential $minpot "
     puts $fo_info "index $minsel $QM2_sel $QM1_sel" 
 
     close $fo_info
@@ -384,17 +382,18 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
     set id_QMo [ $QMo get index ]
     for { set i 0 } { $i < $n_QMo } {incr i} {
       set sel_id [ list [lindex $id_QMo $i] ]
-      set test [ atomselect top "index $sel_id " ]
-      set pot [ coulomb_cross $QMi $test ]
+      set select [ atomselect top "index $sel_id" ]
+      set unselect [ atomselect top "index $id_QMo and not (index $sel_id)" ]
+      set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
       if { $minpot >$pot } {
         set minpot $pot
         set minsel $sel_id
       }
     }
 
-    puts "minimum potential $minpot [ expr ( $qmpot + $minpot ) ] "
+    puts "minimum potential $minpot "
     puts "index $minsel $QM2_sel $QM1_sel" 
-    puts $fo_info "final potential $minpot [ expr ( $qmpot + $minpot ) ] "
+    puts $fo_info "final potential $minpot "
     puts $fo_info "index $minsel $QM2_sel $QM1_sel" 
 
     close $fo_info
@@ -432,7 +431,6 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
   set sel_id0 $sel_id
   set select   [ atomselect top "index $sel_id" ]
   set unselect [ atomselect top "index $unsel_id" ]
-  set rest [ atomselect top " (not index $id_QMo $QM1_sel $QM2_sel) and within 10 of index $centerid " ]
   set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
 
   puts "initial gues: $pot "
@@ -525,46 +523,36 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
   close $fo_config
 }
 
-
-proc autoselectQM2_ini { centerid rmin t_ele buffer T attempt initial_guess } {
+proc autoselectQM3 { centerid QM1_def t_ele buffer coord T attempt } {
 
   global K
   global debug
 
-  #first label all cation
-  set QM1 [ atomselect top "not type $t_ele and within $rmin of index $centerid" ]
-  set QM2 [ atomselect top "type $t_ele and within $rmin of index $centerid" ]
-  set id_QM1 [ $QM1 get index ]
-  set id_QM2 [ $QM2 get index ]
+  set QM1 [ atomselect top "not type $t_ele and ($QM1_def)" ]
+  set QM1_sel [ $QM1 get index ]
   set n_QM1 [ $QM1 num ]
+  puts "label all cation $QM1_sel"
+
+  set QM2 [ atomselect top "type $t_ele and within $buffer of (index $QM1_sel)" ]
+  set id_QM2 [ $QM2 get index ]
   set n_QM2 [ $QM2 num ]
 
-  #remove the dangling oxygen
   set QM2_sel {}
-  foreach id2 $id_QM2 {
-    set ngh [ atomselect top "(not type $t_ele) and (within $rmin of index $centerid) and (within $buffer of index $id2)" ]
+  for { set i 0 } { $i < $n_QM2 } { incr i } {
+    set id [ lindex $id_QM2 $i ]
+    set ngh [ atomselect top "(not type $t_ele) and (index $QM1_sel) and (within $buffer of index $id)" ]
     set n_ngh [ $ngh num ]
-    if { $n_ngh >1  } {
-      lappend QM2_sel $id2
+    if { $n_ngh >= $coord  } {
+      lappend QM2_sel $id
     }
   }
-
-  #remove the dangling cation
-  set QM1_sel {}
-  foreach id1 $id_QM1 {
-    set ngh [ atomselect top "(index $QM2_sel) and (within $buffer of index $id1)" ]
-    set n_ngh [ $ngh num ]
-    if { $n_ngh >1  } {
-      lappend QM1_sel $id1
-    }
-  }
+  puts "find all the linked anion $QM2_sel"
 
   #set up the inner sphere
   set QMi [ atomselect top "index $QM2_sel $QM1_sel" ]
   set n_QMi [ $QMi num ]
   set Q_QMi [ ladd [ $QMi get charge ] ]
   set type_QMi [ $QMi get type ]
-  set qmpot [ coulomb $QMi ]
   set counters [ count_ele $type_QMi ]
   set stat ""
   dict for {item count} $counters {
@@ -575,15 +563,16 @@ proc autoselectQM2_ini { centerid rmin t_ele buffer T attempt initial_guess } {
   set fo_info [ open [format "$stat-$T.autoinfo" ] "w"]
   set fo_config [ open [format "$stat-$T.config" ] "w"]
   #repeats the argument
-  puts "original command: autoselectQM2 $centerid $rmin $t_ele $buffer $T $attempt "
-  puts $fo_info "original command: autoselectQM2 $centerid $rmin $t_ele $buffer $T $attempt "
+  puts "original command: autoselectQM2 $centerid $t_ele $buffer $T $attempt "
+  puts $fo_info "original command: autoselectQM2 $centerid $t_ele $buffer $T $attempt "
   puts $fo_info "$stat netcharge $Q_QMi"
 
   #set outer sphere
-  set rmax [ expr $rmin+$buffer ]
   set QMo [ atomselect top "type $t_ele and (not index $QM2_sel $QM1_sel ) and (within $buffer of (index $QM2_sel $QM1_sel))" ]
   set n_QMo [ $QMo num ]
   set id_QMo [ $QMo get index ]
+  puts "known atoms $QM2_sel $QM1_sel "
+  puts "select atoms from $id_QMo"
   puts $fo_info "known atoms $QM2_sel $QM1_sel "
   puts $fo_info "select atoms from $id_QMo"
 
@@ -599,8 +588,8 @@ proc autoselectQM2_ini { centerid rmin t_ele buffer T attempt initial_guess } {
   set shellq [ lindex $q_QMo 0 ]
   set nshell [ expr int(-$Q_QMi/$shellq) ]
   if { $nshell <0 } {
-    puts "ERROR, no way to balance the charge, change the rmin or t_ele"
-    puts $fo_info "ERROR, no way to balance the charge, change the rmin or t_ele"
+    puts "ERROR, no way to balance the charge, change t_ele"
+    puts $fo_info "ERROR, no way to balance the charge, change t_ele"
     return 1
   } elseif { $nshell == 0 } {
     puts "Hooray, automatically charge compensate... "
@@ -614,6 +603,8 @@ proc autoselectQM2_ini { centerid rmin t_ele buffer T attempt initial_guess } {
     }
   }
 
+  set rmin 0
+  set rest [ atomselect top " (not index $id_QMo $QM1_sel $QM2_sel) and within 10 of index $centerid " ]
   
   if { $nshell == 2 } {
 
@@ -623,8 +614,9 @@ proc autoselectQM2_ini { centerid rmin t_ele buffer T attempt initial_guess } {
     for { set i 0 } { $i < $n_QMo } {incr i} {
       for { set j [ expr $i+1] } { $j < $n_QMo } {incr j} {
         set sel_id [ list [lindex $id_QMo $i] [lindex $id_QMo $j] ]
-        set test [ atomselect top "index $sel_id" ]
-        set pot [ coulomb_cross $QMi $test ]
+        set select   [ atomselect top "index $sel_id" ]
+        set unselect [ atomselect top "index $id_QMo and not index $sel_id" ]
+        set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
         if { $minpot >$pot } {
           set minpot $pot
           set minsel $sel_id
@@ -632,9 +624,9 @@ proc autoselectQM2_ini { centerid rmin t_ele buffer T attempt initial_guess } {
       }
     }
 
-    puts "minimum potential $minpot [ expr ( $qmpot + $minpot ) ] "
+    puts "minimum potential $minpot "
     puts "index $minsel $QM2_sel $QM1_sel" 
-    puts $fo_info "final potential $minpot [ expr ( $qmpot + $minpot ) ] "
+    puts $fo_info "final potential $minpot "
     puts $fo_info "index $minsel $QM2_sel $QM1_sel" 
 
     close $fo_info
@@ -649,17 +641,18 @@ proc autoselectQM2_ini { centerid rmin t_ele buffer T attempt initial_guess } {
     set id_QMo [ $QMo get index ]
     for { set i 0 } { $i < $n_QMo } {incr i} {
       set sel_id [ list [lindex $id_QMo $i] ]
-      set test [ atomselect top "index $sel_id " ]
-      set pot [ coulomb_cross $QMi $test ]
+      set select   [ atomselect top "index $sel_id" ]
+      set unselect [ atomselect top "index $id_QMo and not index $sel_id" ]
+      set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
       if { $minpot >$pot } {
         set minpot $pot
         set minsel $sel_id
       }
     }
 
-    puts "minimum potential $minpot [ expr ( $qmpot + $minpot ) ] "
+    puts "minimum potential $minpot "
     puts "index $minsel $QM2_sel $QM1_sel" 
-    puts $fo_info "final potential $minpot [ expr ( $qmpot + $minpot ) ] "
+    puts $fo_info "final potential $minpot "
     puts $fo_info "index $minsel $QM2_sel $QM1_sel" 
 
     close $fo_info
@@ -669,6 +662,12 @@ proc autoselectQM2_ini { centerid rmin t_ele buffer T attempt initial_guess } {
 
   #monte carlo sampling
   #output minimum and final guess
+
+  ##input initial guess
+  #set sel_id [ [atomselect top "($initial) and (not index $QM1_sel $QM2_sel)" ] get index ]
+  #puts $sel_id
+  #set unsel_id [ [atomselect top "(index $id_QMo) and (not ($initial))" ] get index ]
+  #puts $unsel_id
 
   #prepare initial guess
   set rand [ expr srand(1356) ]
@@ -687,19 +686,16 @@ proc autoselectQM2_ini { centerid rmin t_ele buffer T attempt initial_guess } {
     incr tmp
   }
 
-  set test [ atomselect top "index $sel_id "]
-  set pot [ coulomb_cross $QMi $test ]
+
   set sel_id0 $sel_id
-  set all [ atomselect top "index $sel_id or (within $rmin of index $centerid)" ]
-  set opot [ coulomb $all ]
-  puts "initial gues: $pot + $qmpot = $opot"
-  puts $fo_info "initial gues: $pot + $qmpot = $opot"
- 
-  ##compute the whole set
-  #set test [ atomselect top "index $sel_id or (within $rmin of index $centerid)" ]
-  #set pot [ coulomb $test ]
-  #puts "initial gues: $pot"
-  #puts $fo_info "initial gues: $pot"
+  set select   [ atomselect top "index $sel_id" ]
+  set unselect [ atomselect top "index $unsel_id" ]
+  set rest [ atomselect top " (not index $id_QMo $QM1_sel $QM2_sel) and within 10 of index $centerid " ]
+  set rmin 0
+  set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+
+  puts "initial gues: $pot "
+  puts $fo_info "initial gues: $pot "
 
   set naccept 0
   set minpot $pot
@@ -717,10 +713,9 @@ proc autoselectQM2_ini { centerid rmin t_ele buffer T attempt initial_guess } {
     lappend sel_id $ele2
     lappend unsel_id $ele1
 
-    set test [ atomselect top "index $sel_id " ] 
-    set newpot [ coulomb_cross $QMi $test ]
-    #set test [ atomselect top "index $sel_id or (within $rmin of index $centerid)" ]
-    #set newpot [ coulomb $test ]
+    set select   [ atomselect top "index $sel_id" ]
+    set unselect [ atomselect top "index $unsel_id" ]
+    set newpot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
 
     set accept 0
 
@@ -775,14 +770,14 @@ proc autoselectQM2_ini { centerid rmin t_ele buffer T attempt initial_guess } {
   puts "accepting ratio $naccept $tmp [ expr $naccept/double($tmp) ]"
   puts $fo_info "accepting ratio [ expr $naccept/double($tmp) ]"
 
-  puts "final potential $pot [ expr ( $qmpot + $minpot ) ] "
+  puts "final potential $pot "
   puts "index $sel_id0 $QM2_sel $QM1_sel" 
-  puts $fo_info "final potential $pot [ expr ( $qmpot + $minpot ) ] "
+  puts $fo_info "final potential $pot "
   puts $fo_info "index $sel_id0 $QM2_sel $QM1_sel" 
 
-  puts "minimum potential $minpot [ expr ( $qmpot + $minpot ) ] "
+  puts "minimum potential $minpot "
   puts "index $minsel $QM2_sel $QM1_sel" 
-  puts $fo_info "minimum potential $minpot [ expr ( $qmpot + $minpot ) ] "
+  puts $fo_info "minimum potential $minpot "
   puts $fo_info "index $minsel $QM2_sel $QM1_sel" 
 
   close $fo_info
@@ -790,4 +785,5 @@ proc autoselectQM2_ini { centerid rmin t_ele buffer T attempt initial_guess } {
 }
 
 #}
+#
 #
