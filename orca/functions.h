@@ -110,7 +110,7 @@ int break_line(char *temp,string *content){
   return column;
 }
 
-bool read_orbital(ifstream &In1,int *nstate,double *energy,double *occupancy,double *homo,double *lumo){
+bool read_orbital(ifstream &In1,int *nstate,double *energy,double *occupancy,double *homo,double *lumo,int *homo_i, int *lumo_i){
   char temp[MAX_CHARACTER], * pch;
   string *content=new string[MAX_COLUMN];
   int column, line=0;
@@ -134,6 +134,10 @@ bool read_orbital(ifstream &In1,int *nstate,double *energy,double *occupancy,dou
   lumo[1]=INFINITY;
   homo[0]=-INFINITY;
   homo[1]=-INFINITY;
+  homo_i[0]=0;
+  homo_i[1]=0;
+  lumo_i[0]=0;
+  lumo_i[1]=0;
   In1.getline(temp,MAX_CHARACTER); //another buffering line
   In1.getline(temp,MAX_CHARACTER); //another buffering line
   for (int spin=0;spin<2;spin++){
@@ -150,15 +154,18 @@ bool read_orbital(ifstream &In1,int *nstate,double *energy,double *occupancy,dou
         line++;
         column=break_line(temp,content);
         if (column == 4){
+          int number=atoi(content[0].c_str());
           double occ=atof(content[1].c_str());
           double e=atof(content[3].c_str());
           p_energy[nstate[spin]]=e;
           p_occupancy[nstate[spin]]=occ;
           if (occ>0 && e>homo[spin]){
             homo[spin]=e;
+            homo_i[spin]=number;
           }else{
             if (occ==0 && homo[spin]<e && lumo[spin]==INFINITY){ //&& lumo[spin]>e){
               lumo[spin]=e;
+              lumo_i[spin]=number;
             }
           }
           nstate[spin]++; 

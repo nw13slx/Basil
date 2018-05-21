@@ -105,7 +105,7 @@ int main(int argc, char **argv){
         string ele;
         //second column is the label
         if (content[1][0]=='Q'){
-            if (stod(content[2])>0) ele=" Qp ";
+            if (atof(content[2].c_str())>0) ele=" Qp ";
             else ele=" Qn ";
         } else if ( content[1].find_first_of(">")!=string::npos){
             content[1].erase(content[1].length()-1,1);
@@ -131,9 +131,9 @@ int main(int argc, char **argv){
         natom_tot++;
         id[elementid*MAX_COORD+natom[elementid]]=natom_tot;
 
-        xx[0]=stod(content[5])*0.52917721092;
-        xx[1]=stod(content[6])*0.52917721092;
-        xx[2]=stod(content[7])*0.52917721092;
+        xx[0]=atof(content[5].c_str())*0.52917721092;
+        xx[1]=atof(content[6].c_str())*0.52917721092;
+        xx[2]=atof(content[7].c_str())*0.52917721092;
         natom[elementid]++;
 
         if (xx[0]<boundary[0]) boundary[0]=xx[0];
@@ -200,4 +200,60 @@ int main(int argc, char **argv){
       }
     }
     out<<"END"<<endl;
+    out.close();
+
+   if (argc>5){
+     int *coord=new int [MAX_ELEMENT*MAX_COORD];
+     for (int i=0;i<(MAX_ELEMENT*MAX_COORD); i++){
+       coord[i]=0;
+     }
+
+     ofstream out2(argv[4]);
+     double cutoff=atof(argv[5]);
+     for (int j=0;j<n_element;j++){
+       double *xx=&x[j*MAX_COORD*3];
+       int *iid=&id[j*MAX_COORD];
+       int *cc=&coord[j*MAX_COORD];
+       for (int k=0;k<natom[j];k++){
+         double *xxx=&xx[k*3];
+         int iiid=id[k];
+         int *icc=&cc[k];
+         for (int j1=j+1;j1<n_element;j1++){
+           double *xx1=&x[j1*MAX_COORD*3];
+           int *iid1=&id[j1*MAX_COORD];
+           int *cc1=&coord[j1*MAX_COORD];
+           for (int k1=0;k1<natom[j1];k1++){
+             double *xxx1=&xx1[k1*3];
+             int *icc1=&cc1[k1];
+             int iiid1=iid1[k1];
+             double dr=(xxx1[0]-xxx[0])*(xxx1[0]-xxx[0]);
+             dr += (xxx1[1]-xxx[1])*(xxx1[1]-xxx[1]);
+             dr += (xxx1[2]-xxx[2])*(xxx1[2]-xxx[2]);
+             dr = sqrt(dr);
+             if ( dr < cutoff ) {
+               icc1[0]+=1;
+               icc[0]+=1;
+             }
+           }
+         }
+       }
+     }
+      for (int j=0;j<n_element;j++){
+        double *xx=&x[j*MAX_COORD*3];
+        int *iid=&id[j*MAX_COORD];
+        int *cc=&coord[j*MAX_COORD];
+        for (int k=0;k<natom[j];k++){
+          double *xxx=&xx[k*3];
+          int iiid=iid[k];
+          double qq=q[iiid-1];
+          int icc=cc[k];
+          out2 << iiid << " " <<element[j]<<" " <<qq<<" "<<icc<<endl;
+       }
+     }
+     out2.close();
+
+      
+   }
+
+
 }

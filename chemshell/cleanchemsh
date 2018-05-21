@@ -1,2 +1,5 @@
 #!/bin/env bash
-rm hybrid* gulp* orca* dl* path* pointcharges.xyz *.gbw slurm* jobenv* cancel.sh chemshellout
+t=$(date %s)
+mv orca1.out ${t}.out
+rm hybrid* gulp* orca* dl* path* pointcharges.xyz *.gbw slurm* jobenv* cancel.sh 
+mv ${t}.out orca1.out

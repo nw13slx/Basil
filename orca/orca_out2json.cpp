@@ -51,7 +51,9 @@ int main(int argc, char **argv){
     int *nstate=new int[2];
     double *homo=new double[2];
     double *lumo=new double[2];
-    bool read=read_orbital(In1,nstate,energy,occupancy,homo,lumo);
+    int *homo_i=new int[2];
+    int *lumo_i=new int[2];
+    bool read=read_orbital(In1,nstate,energy,occupancy,homo,lumo,homo_i,lumo_i);
     if (read==false){
       return 1;
     }else{
@@ -71,6 +73,8 @@ int main(int argc, char **argv){
     json_o<<"\"energy\":"<<atof(content[4].c_str())*Eh2eV<<","<<endl;
     json_o<<"\"homo\":["<<homo[0]<<","<<homo[1]<<"],"<<endl;
     json_o<<"\"lumo\":["<<lumo[0]<<","<<lumo[1]<<"],"<<endl;
+    json_o<<"\"homo_id\":["<<homo_i[0]<<","<<homo_i[1]<<"],"<<endl;
+    json_o<<"\"lumo_id\":["<<lumo_i[0]<<","<<lumo_i[1]<<"],"<<endl;
     json_o<<"\"gap\":["<<lumo[0]-homo[0]<<","<<lumo[1]-homo[1]<<"],"<<endl;
 
     json_o<<"\"outputfile\":\""<<argv[1]<<"\","<<endl;
