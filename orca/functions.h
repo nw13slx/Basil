@@ -37,6 +37,8 @@ using namespace std;
 //set up the buffer size for reading
 #define MAX_CHARACTER 1000
 #define MAX_COLUMN 20
+#define MAX_ELEMENT 10
+#define DEFAULT_CUTOFF 3.2
 
 const double Eh2eV=27.2113834;
 const double bohr2a=0.529177249;

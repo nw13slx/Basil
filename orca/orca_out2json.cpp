@@ -6,6 +6,7 @@
 //author: Lixin Sun nw13mifaso@gmail.com
 
 #include "functions.h"
+
 int main(int argc, char **argv){
 
     char temp[MAX_CHARACTER], * pch;
@@ -104,6 +105,11 @@ int main(int argc, char **argv){
     pattern="CARTESIAN COORDINATES (ANGSTROEM)";
     int c_pos=find_pattern(In1,pattern);
     int atomn=0;
+    double *x=new double[3000];
+    int *type=new int[1000];
+    char element[MAX_ELEMENT][10];
+    int n_element=0;
+    int eid=0;
     if (c_pos!=-1){
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
@@ -119,6 +125,21 @@ int main(int argc, char **argv){
         strcat(species,"\"");
         strcat(species,content[0].c_str());
         strcat(species,"\"");
+        x[atomn*3]=atof(content[1].c_str());
+        x[atomn*3+1]=atof(content[2].c_str());
+        x[atomn*3+2]=atof(content[3].c_str());
+        //recognize the element name
+        int elementid=-1;
+        for (int eid=0;eid<n_element;eid++){
+            if (strcmp(content[0].c_str(),element[eid])==0) elementid=eid;
+        }
+        if (elementid==-1){
+            strcpy(element[n_element],content[0].c_str());
+            elementid=n_element;
+            n_element++;
+        }
+        type[atomn]=elementid;
+
         atomn++;
         In1.getline(temp,MAX_CHARACTER);
         column=break_line(temp,content);
@@ -127,6 +148,42 @@ int main(int argc, char **argv){
       strcat(species,"],");
       json_o<<species<<endl;
       json_o<<"\"atomn\":"<<atomn<<","<<endl;
+
+      //coordination
+      double cutoff=DEFAULT_CUTOFF;
+      int *icc=new int [atomn];
+      for (int i=0;i<atomn;i++){
+        icc[i]=0;
+      }
+      for (int i=0;i<atomn;i++){
+        double *xxx=&x[i*3];
+        int t=type[i];
+        for (int j=i;j<atomn;j++){
+          double *xxx1=&x[j*3];
+          int t1=type[j];
+          if (t!=t1){
+            double dr=(xxx1[0]-xxx[0])*(xxx1[0]-xxx[0]);
+            dr += (xxx1[1]-xxx[1])*(xxx1[1]-xxx[1]);
+            dr += (xxx1[2]-xxx[2])*(xxx1[2]-xxx[2]);
+            dr = sqrt(dr);
+            if ( dr < cutoff ) {
+              icc[j]+=1;
+              icc[i]+=1;
+            }
+          }
+        }
+      }
+      json_o << "\"coord\":[";
+      for (int i=0;i<atomn;i++){
+        if (i>0){
+          json_o<<",";
+        }
+        json_o<<"\""<<icc[i]<<"\"";
+      }
+      json_o<<"],";
+      delete [] icc;
+      delete [] x;
+      delete [] type;
     }
 
     pattern="Hamiltonian:";
