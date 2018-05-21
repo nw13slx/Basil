@@ -180,7 +180,7 @@ int main(int argc, char **argv){
         }
         json_o<<"\""<<icc[i]<<"\"";
       }
-      json_o<<"],";
+      json_o<<"],"<<endl;
       delete [] icc;
       delete [] x;
       delete [] type;
