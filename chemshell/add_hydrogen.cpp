@@ -8,41 +8,7 @@
 //add h to all the atoms with region number "qm_region" and label "bd_sym"
 //
 
-#include <algorithm>
-#include <iostream>
-#include <locale>
-#include <fstream>          // file I/O suppport
-#include <cstdlib>          // support for exit()
-#include <stdio.h>
-#include <sys/timeb.h>
-#include <sys/types.h>
-#include <time.h>
-#include <malloc.h>
-#include <cmath>
-#include <iomanip>
-#include <stdlib.h>
-#include <string.h>
-#include <sstream>
-using namespace std;
-
-#include <vector>
-
-#define MAX_CHARACTER 1000
-#define MAX_COLUMN 200
-
-void parse(char * temp, int & column, string *content){
-  char temp0[MAX_CHARACTER];
-  strcpy(temp0,temp);
-  column=0;
-  char * pch;
-  pch = strtok (temp0," ");
-  while ((pch != NULL)&&(column<MAX_COLUMN)) {
-      content[column]=pch;
-      column++;
-      pch = strtok (NULL, " ");
-  }
-  pch= NULL;
-}
+#include "definition.h"
 
 // only take xyz format
 

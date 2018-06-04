@@ -1,20 +1,18 @@
 #!/usr/bin/bash
-for i in origin/chemshellout chemshellout
+home=$(pwd)
+for chem in $(find ./ -name chemshellout)
 do
-if [ -f $i ]; then
-  echo $i $(grep "Max grad" $i|cat -n |tail -n 1|awk '{print $1,$4*27.2/0.52}') $(grep "finished, energy" -i $i|tail -n 1|awk '{print $5}')
-fi
+  dir=$(dirname $chem)
+  cd $dir
+    maxgrad=$(grep "Max grad" chemshellout|cat -n |tail -n 1|awk '{print $1,$4*27.2114/0.52}') 
+    energy=$(grep "finished, energy" -i chemshellout|tail -n 1|awk '{print $5}') 
+    if grep -q "finished, energy" -i chemshellout; then
+    #  disp=" "
+    #  for j in $(find ./ -name path_active.xyz)
+    #  do
+    #    disp=$disp" $(diffxyz $j $i 0 |sort -gk 4 |tail -n 1|awk '{print $5}')"
+    #  done
+      echo $dir $maxgrad $energy $disp
+    fi
+  cd $home
 done
-
-for i in path.xyz origin/path.xyz
-do
-  if [ -f $i ]; then
-  for j in current.xyz origin/current.xyz
-  do
-  if [ -f $j ]; then
-    echo $i $j $(diffxyz $j $i 0 |sort -gk 4 |tail -n 1)
-fi
-done
-fi
-done
-

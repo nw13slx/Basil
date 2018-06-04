@@ -1,41 +1,7 @@
 
 //author: Lixin Sun nw13mifaso@gmail.com
 
-#include <algorithm>
-#include <iostream>
-#include <locale>
-#include <fstream>          // file I/O suppport
-#include <cstdlib>          // support for exit()
-#include <stdio.h>
-#include <sys/timeb.h>
-#include <sys/types.h>
-#include <time.h>
-#include <malloc.h>
-#include <cmath>
-#include <iomanip>
-#include <stdlib.h>
-#include <string.h>
-#include <sstream>
-using namespace std;
-
-#include <vector>
-
-#define MAX_CHARACTER 1000
-#define MAX_COLUMN 200
-
-void parse(char * temp, int & column, string *content){
-  char temp0[MAX_CHARACTER];
-  strcpy(temp0,temp);
-  column=0;
-  char * pch;
-  pch = strtok (temp0," ");
-  while ((pch != NULL)&&(column<MAX_COLUMN)) {
-      content[column]=pch;
-      column++;
-      pch = strtok (NULL, " ");
-  }
-  pch= NULL;
-}
+#include "definition.h"
 
 // only take xyz format
 
@@ -57,7 +23,7 @@ int main(int argc, char **argv){
 
   fin.getline(temp,MAX_CHARACTER); 
   parse(temp,column,content);
-  int natom=stoi(content[0]);
+  int natom=atoi(content[0].c_str());
 
   fin.getline(temp,MAX_CHARACTER); 
   string *sym=new string[natom];
@@ -72,9 +38,9 @@ int main(int argc, char **argv){
     fin.getline(temp,MAX_CHARACTER); 
     parse(temp,column,content);
     sym[i]=content[0];
-    x[i*3]=stof(content[1]);
-    x[i*3+1]=stof(content[2]);
-    x[i*3+2]=stof(content[3]);
+    x[i*3]=atof(content[1].c_str());
+    x[i*3+1]=atof(content[2].c_str());
+    x[i*3+2]=atof(content[3].c_str());
     if (content[0].find(qm)!=std::string::npos){
       QM[nQM]=i;
       nQM++;
@@ -85,7 +51,7 @@ int main(int argc, char **argv){
       isQM[i]=false;
     }
     if (column>4){
-      q[i]=stof(content[4]);
+      q[i]=atof(content[4].c_str());
     }
   }
   fin.close();
