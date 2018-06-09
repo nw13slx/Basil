@@ -7,6 +7,11 @@ wmj() {
     showq -l|grep "normal"|grep "Waiting"|cat -b |grep $USER
     showq  -l|grep "normal"|grep "Waiting"|tail -n 10
 }
+wmjskx() { 
+    showq |grep "Running"|grep $USER
+    showq -l|grep "skx-normal"|grep "Waiting"|cat -b |grep $USER
+    showq  -l|grep "skx-normal"|grep "Waiting"|tail -n 10
+}
 alias sdev='showq -l|grep development'
 alias sser='showq -l|grep serial'
 alias curious='showq -l |grep "Running"|sort -k 5 -n'
