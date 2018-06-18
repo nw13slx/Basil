@@ -6,8 +6,9 @@
 #include "definition.h"
 
 int main(int argc, char **argv){
-  if (argc < 2){
+  if (argc < 4){
     cout<<" FAILED: need more input arguments"<<endl;
+    cout<<"usage: bondlength  input symbol1 symbol2 cutoff"<<endl;
     return 1;
   }
   ifstream fin(argv[1]); 

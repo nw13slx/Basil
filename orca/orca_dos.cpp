@@ -25,7 +25,9 @@ int main(int argc, char **argv){
     int *nstate=new int[2];
     double *homo=new double[2];
     double *lumo=new double[2];
-    bool read=read_orbital(In1,nstate,energy,occupancy,homo,lumo);
+    int *homo_i=new int[2];
+    int *lumo_i=new int[2];
+    bool read=read_orbital(In1,nstate,energy,occupancy,homo,lumo,homo_i,lumo_i);
     if (read==false){
       return 1;
     }
@@ -37,7 +39,10 @@ int main(int argc, char **argv){
 
     //smearing
     double dE=0.1;
-    double sigma=0.05;
+    if (argc > 3){
+      dE=atof(argv[3]);
+    }
+    double sigma=dE/2.;
     double sigma2=sigma*sigma;
 
     double base=homo[0]+EMIN;

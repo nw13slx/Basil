@@ -1,0 +1,1 @@
+grep -i 'max grad' $1
