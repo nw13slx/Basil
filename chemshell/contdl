@@ -23,8 +23,8 @@ fi
 
 mkdir $folder
 
-rm *tmp* *_property.txt *.prop
-for i in $(ls dlf*  job.sh  *orca*  path* chemshellout  opt.chm   orca1_property.txt *.gbw  *.pun gulp* pointcharges.xyz  slurm* *.xyz  *.ff)
+rm *tmp* *_property.txt *.prop path_force.xyz
+for i in $(ls dlf*  job.sh  *orca*  path*xyz chemshellout  opt.chm  *.gbw  *.pun gulp* pointcharges.xyz  slurm* *.ff)
 do
 mv $i $folder
 done

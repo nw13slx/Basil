@@ -1,4 +1,3 @@
-#!/usr/bin/bash
 home=$(pwd)
 if [ -f $home/sum ]; then
   rm $home/sum
@@ -10,27 +9,29 @@ do
     maxgrad=$(grep "Max grad" chemshellout|cat -n |tail -n 1|awk '{print $1,$4*27.2114/0.52}') 
     energy=$(grep "finished, energy" -i chemshellout|tail -n 1|awk '{print $5}') 
 
-    touch s
-    ls -tnlh slurm* 2>&1 >s
-    if [ $(wc -l s|awk '{print $1}') -gt 0 ]; then
-      slurm=$(head -n 1 s|awk '{print $9}')
+    temp=temp$(date +%s)
+    touch $temp
+    ls -tnlh slurm* >$temp 2>&1
+    job="unknow"
+    if grep -q "slurm-" $temp; then
+      slurm=$(head -n 1 $temp|awk '{print $9}')
       if grep -q "DUE TO TIME LIMIT" $slurm ; then
         job="time-out"
       elif grep -q "CANCELLED" $slurm ; then
         job="cancelled"
       else
         jobid=$(echo $slurm|sed "s/slurm-//g"|sed "s/\.out//g")
-        if scontrol show job $jobid 2>&1 |grep " NodeList"|grep -q -v null ; then
-          job="running"
-        elif scontrol show job $jobid 2>&1 |grep " NodeList"|grep -q null ; then
-          job="quueing"
-        else
+        scontrol show job $jobid >$temp 2>&1
+        if ! grep -q "JobStat" $temp ; then
           job="old_job"
+        else
+          job=$(grep JobState $temp|awk '{print $1"_"$2}'|sed "s/JobState=//g"|sed "s/Reason=//g"|sed "s/_None//g")
         fi
       fi
     else
       job="unknown"
     fi
+    rm $temp
 
     #if [ -f current.xyz ]; then
     # if [[ -n $(find ./ -name "path.xyz" ) ]] ; then
@@ -60,6 +61,6 @@ do
         suc="unknown"
       fi
     fi
-    echo $dir $maxgrad $energy $disp $suc $job |tee -a $home/sum
+    echo $dir $maxgrad $energy $disp $suc $job |awk '{printf "%30s %5s %10s %20s %10s\n", $1, $2, $3,$4,$5}'|tee -a $home/sum
   cd $home
 done

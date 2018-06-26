@@ -1,0 +1,72 @@
+#!/bin/env bash
+
+if [ ! -f run.script ] ; then
+  echo "need run.script"
+  exit
+elif [ ! -f run.sh ] && [ ! -f job.sh ] ; then
+  echo "need run.sh"
+  exit
+fi
+
+if [ -f job.sh ] && [ ! -f run.sh ]; then
+  echo "rename job.sh as run.sh"
+  mv job.sh run.sh
+fi
+
+echo "create job.sh"
+cat > job.sh <<EOF
+
+round=\$(grep -n \${SLURM_JOBID} jobid |sed "s/:/ /g"|awk '{print \$1}')
+echo "--" \$round -th round \${SLURM_JOBID}|tee -a alljobout
+
+if [ \$round -eq 1 ] ; then 
+  echo "first round run"|tee -a alljobout
+  sh run.sh
+else
+  prev=\$(awk -v l=\$round 'NR==(l-1){print \$4}' jobid)
+  echo \$prev
+
+  if grep -q "DUE TO TIME LIMIT" slurm-\${prev}.out ; then
+    rm /pool001/leleslx/\$prev/*.tmp
+    rsync -av /pool001/leleslx/\$prev/ .
+    rm -rf /pool001/leleslx/\$prev/
+    if  [ \${SLURM_SUBMIT_DIR} != \$(pwd) ]; then
+      rsync -av --exclude '*.tmp' --exclude 'CHG' . \$SLURM_SUBMIT_DIR
+    fi
+  fi
+  chquicksum
+  if grep "^\." sum |grep -q suc ; then
+    echo "success!!" |tee -a alljobout
+  elif grep "^\." sum |grep -q 1st ; then
+    echo "scf-fail-1st, continue the scf run"|tee -a alljobout
+    sh run.sh
+  elif grep "^\." sum |grep -q unknown ; then
+    echo "unknown fail reason, abort all jobs"|tee -a alljobout
+  else
+    echo "scf-fail-1st, abort all jobs"|tee -a alljobout
+    contdl
+    mv \$(find ./ -name "slurm-\${SLURM_JOBID}.out") .
+    sh run.sh
+  fi
+fi
+EOF
+
+
+echo generate runfile
+sed -i "/\-\-dependency/d" run.script
+sed -i "3 i#SBATCH --dependency afterany:JOBID" run.script
+
+cp run.script run.template
+
+cp run.template run.script0
+sed -i "/\-\-dependency/d" run.script0
+sbatch run.script0 |tee jobid
+jobid=$(tail -n 1 jobid|awk '{print $4}')
+
+for i in {1..4}
+do
+  cp run.template run.script$i
+  sed -i "s/JOBID/$jobid/g" run.script$i
+  sbatch run.script$i |tee -a jobid
+  jobid=$(tail -n 1 jobid|awk '{print $4}')
+done
