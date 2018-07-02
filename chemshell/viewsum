@@ -1,0 +1,2 @@
+grep suc sum
+grep -v origin sum|grep -v suc

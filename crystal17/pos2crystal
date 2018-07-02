@@ -1,5 +1,3 @@
-echo "can only handle orthogonal cell"
-
 pos=$1
 fort34=$2 
 

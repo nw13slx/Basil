@@ -6,8 +6,9 @@
 #include "definition.h"
 
 int main(int argc, char **argv){
-  if (argc < 2){
+  if (argc < 4){
     cout<<" FAILED: need more input arguments"<<endl;
+    cout<<"usage: bondlength  input symbol1 symbol2 cutoff"<<endl;
     return 1;
   }
   ifstream fin(argv[1]); 
@@ -64,6 +65,7 @@ int main(int argc, char **argv){
 
   // QM-MM bond
   double tally_12=0;
+  double tally2_12=0;
   int n_12=0;
   for (int i=0; i<nQM; i++){
     double *xQM=&x[QM[i]*3];
@@ -80,15 +82,18 @@ int main(int argc, char **argv){
         if (r<cutoff/ANG2BOHR){
           n_12++;
           tally_12+=r;
+          tally2_12+=r*r;
         }
       }
     }
   }
   tally_12=tally_12*ANG2BOHR/double(n_12); 
-  cout<<"QM-MM "<< tally_12<<endl;
+  tally2_12=tally2_12*ANG2BOHR*ANG2BOHR/double(n_12); 
+  cout<<"QM-MM "<< tally_12<<" +/- "<<sqrt(tally2_12-tally_12*tally_12)<<endl;
 
   // QM-QM bond
   double tally_11=0;
+  double tally2_11=0;
   int n_11=0;
   for (int i=0; i<nQM; i++){
     double *xQM=&x[QM[i]*3];
@@ -105,15 +110,18 @@ int main(int argc, char **argv){
         if (r<cutoff/ANG2BOHR){
           n_11++;
           tally_11+=r;
+          tally2_11+=r*r;
         }
       }
     }
   }
   tally_11=tally_11*ANG2BOHR/double(n_11); 
-  cout<<"QM-QM "<< tally_11<<endl;
+  tally2_11=tally2_11*ANG2BOHR*ANG2BOHR/double(n_11); 
+  cout<<"QM-QM "<< tally_11<<" +/- "<<sqrt(tally2_11-tally_11*tally_11)<<endl;
 
   // MM-MM bond
   double tally_22=0;
+  double tally2_22=0;
   int n_22=0;
   for (int i=0; i<nMM; i++){
     double *xMM1=&x[MM[i]*3];
@@ -130,11 +138,13 @@ int main(int argc, char **argv){
         if (r<cutoff/ANG2BOHR){
           n_22++;
           tally_22+=r;
+          tally2_22+=r*r;
         }
       }
     }
   }
   tally_22=tally_22*ANG2BOHR/double(n_22); 
-  cout<<"MM-MM "<< tally_22<<endl;
+  tally2_22=tally2_22*ANG2BOHR*ANG2BOHR/double(n_22); 
+  cout<<"MM-MM "<< tally_22<<" +/- "<<sqrt(tally2_22-tally_22*tally_22)<<endl;
 
 }

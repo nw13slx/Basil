@@ -1,0 +1,7 @@
+cp orca1.inp hf3c.inp
+sed -i "7,14d" hf3c.inp
+sed -i "s/b3lyp/hf-3c/g" hf3c.inp
+sed -i "s/RIJCOSX//g" hf3c.inp
+insert=$(grep -n date job.sh|head -n 1|awk '{print $1}'|sed "s/:date//g")
+sed -i "$insert i\$ORCA_PATH/orca hf3c.inp > orcaout.hf3c; cp hf3c.gbw orca1.gbw" job.sh
+sbatch run.script

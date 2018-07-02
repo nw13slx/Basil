@@ -1,18 +1,99 @@
-#!/usr/bin/bash
 home=$(pwd)
+if [ -f $home/sum ]; then
+  rm $home/sum
+fi
 for chem in $(find ./ -name chemshellout)
 do
   dir=$(dirname $chem)
   cd $dir
-    maxgrad=$(grep "Max grad" chemshellout|cat -n |tail -n 1|awk '{print $1,$4*27.2114/0.52}') 
-    energy=$(grep "finished, energy" -i chemshellout|tail -n 1|awk '{print $5}') 
-    if grep -q "finished, energy" -i chemshellout; then
-    #  disp=" "
-    #  for j in $(find ./ -name path_active.xyz)
-    #  do
-    #    disp=$disp" $(diffxyz $j $i 0 |sort -gk 4 |tail -n 1|awk '{print $5}')"
-    #  done
-      echo $dir $maxgrad $energy $disp
+    if grep -q "Max grad" chemshellout; then
+      maxgrad=$(grep "Max grad" chemshellout|cat -n |tail -n 1|awk '{print $1,$4*27.2114/0.52}') 
+    else
+      maxgrad="- -" 
     fi
+    if grep -q "finished, energy" chemshellout; then
+      energy=$(grep "finished, energy" -i chemshellout|tail -n 1|awk '{print $5}') 
+    elif grep -q "Energy (     hybrid)" chemshellout; then
+      energy=$(grep "Energy (     hybrid)" chemshellout|tail -n 1 |awk '{print $4}')
+    else
+     energy="-" 
+    fi
+    temp=temp$(date +%s)
+    touch $temp
+    ls -tnlh slurm* >$temp 2>&1
+    job="unknow"
+    if grep -q "slurm-" $temp; then
+      slurm=$(head -n 1 $temp|awk '{print $9}')
+      if grep -q "DUE TO TIME LIMIT" $slurm ; then
+        job="time-out"
+      elif grep -q "CANCELLED" $slurm ; then
+        job="cancelled"
+      else
+        jobid=$(echo $slurm|sed "s/slurm-//g"|sed "s/\.out//g")
+        scontrol show job $jobid >$temp 2>&1
+        if ! grep -q "JobStat" $temp ; then
+          job="old_job"
+        else
+          job=$(grep JobState $temp|awk '{print $1"_"$2}'|sed "s/JobState=//g"|sed "s/Reason=//g"|sed "s/_None//g")
+        fi
+      fi
+    else
+      job="unknown"
+    fi
+    rm $temp
+
+    #if [ -f current.xyz ]; then
+    # if [[ -n $(find ./ -name "path.xyz" ) ]] ; then
+    #   origin=$(find -name "path.xyz" -printf '%T+ %p\n' | sort | head -1|awk '{print $2}')
+    #   disp=$(diffxyz current.xyz $origin 0.05 |sort -gk 4 |tail -n 1|awk '{print $5}')
+    # fi
+    #fi
+
+    if grep -q "finished, energy" -i chemshellout; then
+      if grep -q "Optimisation converged" -i chemshellout; then
+        suc="opt-suc"
+      elif grep -q "DL-FIND: energy/gradient evaluation failed" chemshellout; then
+        suc="scf-fail"
+      elif grep -q "Stopping: maximum number of cycles reached" chemshellout; then
+        suc="max-cycle"
+      else
+        if [ $job != "unknown" ] ; then
+          suc='-'
+        elif grep -qvi "error" chemshellout; then
+          filetime=$(ls -l --time-style +%s orca*|sort -nk6|tail -n 1|awk '{print $6}')
+          currentime=$(date +%s)
+          delta=$(echo $filetime $currentime|awk '{print $1-$2}')
+          echo $delta
+          if [ $delta -lt 100 ]; then
+            suc='RUNNING'
+          else
+            suc='time-out'
+          fi
+        else
+          suc='unkown'
+        fi
+      fi
+    else
+      if grep -q "DL-FIND: energy/gradient evaluation failed" chemshellout; then
+        suc="scf-fail-1st"
+      elif grep -q "ChemShell exiting code 0" chemshellout; then
+        suc="suc"
+      elif grep -q "ChemShell exiting code 1" chemshellout; then
+        suc="fail"
+      else
+        suc="unknown"
+      fi
+    fi
+
+    if grep -q hessian chemshellout; then
+      if grep -q "total vibrational energy" chemshellout; then
+        suc="hess-suc"
+        maxgrad="vib "$(grep "total vibrational energy" chemshellout|awk '{print $7}')
+      else
+        suc="hess-fail"
+      fi
+    fi
+
+    echo $dir $maxgrad $energy $disp $suc $job |awk '{printf "%30s %5s %15s %20s %10s %10s\n", $1, $2, $3,$4,$5,$6}'|tee -a $home/sum
   cd $home
 done
