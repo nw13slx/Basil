@@ -17,6 +17,8 @@ do
    if [ ! -f $basil_bin/$(basename $i) ]; then
      echo link $realpath $basil_bin/$(basename $i)
      ln -s $realpath $basil_bin/$(basename $i)
+   else
+     echo already installed $realpath 
    fi
 done
 cd $path/bin

@@ -64,6 +64,7 @@ int main(int argc, char **argv){
 
   // QM-QM bond
   double *xQM=&x[QM[id0]*3];
+  string sum="";
   for (int i=0; i<nQM; i++){
     string type1=type[QM[i]];
     double *xQM2=&x[QM[i]*3];
@@ -73,9 +74,25 @@ int main(int argc, char **argv){
     dx[2]=xQM[2]-xQM2[2];
     double r=sqrt((dx[0]*dx[0])+(dx[1]*dx[1])+(dx[2]*dx[2]));
     if (r<cutoff/ANG2BOHR){
-      cout<<" "<<i;
+      cout<<i<<" "<<type1<<" "<<r*ANG2BOHR<<endl;
+      sum=sum+" ";
+      sum=sum+to_string(i);
     }
   }
-  cout<<endl;
+  for (int i=0; i<nMM; i++){
+    string type1=type[MM[i]];
+    double *xMM=&x[MM[i]*3];
+    double dx[3];
+    dx[0]=xQM[0]-xMM[0];
+    dx[1]=xQM[1]-xMM[1];
+    dx[2]=xQM[2]-xMM[2];
+    double r=sqrt((dx[0]*dx[0])+(dx[1]*dx[1])+(dx[2]*dx[2]));
+    if (r<cutoff/ANG2BOHR){
+      cout<<i<<" "<<type1<<" "<<r*ANG2BOHR<<endl;
+      sum=sum+" ";
+      sum=sum+to_string(i);
+    }
+  }
+  cout<<sum<<endl;
 
 }

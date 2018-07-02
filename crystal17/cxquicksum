@@ -19,5 +19,9 @@ for i in $(find ./ -name "mpp*") $(find ./ -name "*crystalout")
       E=$(grep "SCF ENDED - CONVERGENCE ON ENERGY" $i |tail -n 1 |awk '{print $9}')
       step=$(grep "SCF ENDED - CONVERGENCE ON ENERGY" $i |tail -n 1 |awk '{print $11}')
       echo $i 'scf' $E $step
+    elif grep -q "ETOT" $i ; then
+      E=$(grep "ETOT" $i |tail -n 1 |awk '{print $4}')
+      step=$(grep "ETOT" $i |tail -n 1 |awk '{print $2}')
+      echo $i 'scf-unconv' $E $step
     fi
 done

@@ -6,9 +6,18 @@ for chem in $(find ./ -name chemshellout)
 do
   dir=$(dirname $chem)
   cd $dir
-    maxgrad=$(grep "Max grad" chemshellout|cat -n |tail -n 1|awk '{print $1,$4*27.2114/0.52}') 
-    energy=$(grep "finished, energy" -i chemshellout|tail -n 1|awk '{print $5}') 
-
+    if grep -q "Max grad" chemshellout; then
+      maxgrad=$(grep "Max grad" chemshellout|cat -n |tail -n 1|awk '{print $1,$4*27.2114/0.52}') 
+    else
+      maxgrad="- -" 
+    fi
+    if grep -q "finished, energy" chemshellout; then
+      energy=$(grep "finished, energy" -i chemshellout|tail -n 1|awk '{print $5}') 
+    elif grep -q "Energy (     hybrid)" chemshellout; then
+      energy=$(grep "Energy (     hybrid)" chemshellout|tail -n 1 |awk '{print $4}')
+    else
+     energy="-" 
+    fi
     temp=temp$(date +%s)
     touch $temp
     ls -tnlh slurm* >$temp 2>&1
@@ -50,6 +59,16 @@ do
       else
         if [ $job != "unknown" ] ; then
           suc='-'
+        elif grep -qvi "error" chemshellout; then
+          filetime=$(ls -l --time-style +%s orca*|sort -nk6|tail -n 1|awk '{print $6}')
+          currentime=$(date +%s)
+          delta=$(echo $filetime $currentime|awk '{print $1-$2}')
+          echo $delta
+          if [ $delta -lt 100 ]; then
+            suc='RUNNING'
+          else
+            suc='time-out'
+          fi
         else
           suc='unkown'
         fi
@@ -57,10 +76,24 @@ do
     else
       if grep -q "DL-FIND: energy/gradient evaluation failed" chemshellout; then
         suc="scf-fail-1st"
+      elif grep -q "ChemShell exiting code 0" chemshellout; then
+        suc="suc"
+      elif grep -q "ChemShell exiting code 1" chemshellout; then
+        suc="fail"
       else
         suc="unknown"
       fi
     fi
-    echo $dir $maxgrad $energy $disp $suc $job |awk '{printf "%30s %5s %10s %20s %10s\n", $1, $2, $3,$4,$5}'|tee -a $home/sum
+
+    if grep -q hessian chemshellout; then
+      if grep -q "total vibrational energy" chemshellout; then
+        suc="hess-suc"
+        maxgrad="vib "$(grep "total vibrational energy" chemshellout|awk '{print $7}')
+      else
+        suc="hess-fail"
+      fi
+    fi
+
+    echo $dir $maxgrad $energy $disp $suc $job |awk '{printf "%30s %5s %15s %20s %10s %10s\n", $1, $2, $3,$4,$5,$6}'|tee -a $home/sum
   cd $home
 done

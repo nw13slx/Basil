@@ -5,7 +5,7 @@ if [ $# -lt 2 ]; then
 fi
 
 home=$(pwd)
-for i in job.sh run.script *.ff opt.chm *pun
+for i in job.sh run.script *.ff opt.chm *pun ecp*
 do
 cp $1/$i $2
 done

@@ -4,21 +4,21 @@
 #include <algorithm>
 #include <iostream>
 #include <locale>
+#include <iomanip>
 #include <fstream>          // file I/O suppport
-#include <cstdlib>          // support for exit()
-#include <stdio.h>
+#include <string>
 #include <sys/timeb.h>
 #include <sys/types.h>
-#include <time.h>
+
+#include <cstdlib>          // support for exit()
+#include <cstdio>
+#include <ctime>
 #include <cmath>
 #include <malloc.h>
-#include <iomanip>
-#include <stdlib.h>
-#include <string.h>
+#include <cstring>
 #include <sstream>
 using namespace std;
 
-#include "stdlib.h"       // for random
 #include <vector>
 
 #define ANG2BOHR 0.52917721092

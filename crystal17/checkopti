@@ -1,1 +1,6 @@
+if [ $# -lt 1 ]; then
+  echo "need one argument"
+  echo "checkopti filename"
+  exit
+fi
 grep -i 'max grad' $1
