@@ -110,7 +110,7 @@ int main(int argc, char **argv){
     }
   }
   tally_11=tally_11*ANG2BOHR/double(n_11); 
-  cout<<"QM-QM "<< tally_11<<endl;
+  cout<<"QM-QM "<< tally_11<<" "<<n_11<<endl;
 
   // MM-MM bond
   double tally_22=0;

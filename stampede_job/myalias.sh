@@ -3,9 +3,9 @@ alias hw='echo hello word'
 
 #job related
 wmj() { 
-    showq |grep "Running"|grep $USER
-    showq -l|grep "normal"|grep "Waiting"|cat -b |grep $USER
-    showq  -l|grep "normal"|grep "Waiting"|tail -n 10
+   squeue -u $USER|grep "Running"|grep $USER
+   squeue -p skx-normal|grep PD|cat -n|grep $USER
+   squeue -p normal|grep PD|cat -n|grep $USER
 }
 wmjskx() { 
     showq |grep "Running"|grep $USER
