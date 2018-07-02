@@ -1,0 +1,12 @@
+if [ $# -lt 1 ]; then
+  origin=origin
+else
+  origin=$1
+fi
+mkdir $origin
+cp $(ls opta*|sort -n |tail -n 1) original.34
+mv opta* $origin
+for i in $(ls *crystal.input *.crystalout BASIS FORCES.DAT fort.12 fort.20 fort.33 fort.34 fort.9 HESSOPT.DAT INPUT OPTINFO.DAT pg_irr.dat SCFOUT.LOG slurm-* mpp*)
+do
+  mv $i $origin
+done

@@ -1,0 +1,65 @@
+#!/usr/bin/bash
+home=$(pwd)
+if [ -f $home/sum ]; then
+  rm $home/sum
+fi
+for chem in $(find ./ -name chemshellout)
+do
+  dir=$(dirname $chem)
+  cd $dir
+    maxgrad=$(grep "Max grad" chemshellout|cat -n |tail -n 1|awk '{print $1,$4*27.2114/0.52}') 
+    energy=$(grep "finished, energy" -i chemshellout|tail -n 1|awk '{print $5}') 
+
+    touch s
+    ls -tnlh slurm* 2>&1 >s
+    if [ $(wc -l s|awk '{print $1}') -gt 0 ]; then
+      slurm=$(head -n 1 s|awk '{print $9}')
+      if grep -q "DUE TO TIME LIMIT" $slurm ; then
+        job="time-out"
+      elif grep -q "CANCELLED" $slurm ; then
+        job="cancelled"
+      else
+        jobid=$(echo $slurm|sed "s/slurm-//g"|sed "s/\.out//g")
+        if scontrol show job $jobid 2>&1 |grep " NodeList"|grep -q -v null ; then
+          job="running"
+        elif scontrol show job $jobid 2>&1 |grep " NodeList"|grep -q null ; then
+          job="quueing"
+        else
+          job="old_job"
+        fi
+      fi
+    else
+      job="unknown"
+    fi
+
+    #if [ -f current.xyz ]; then
+    # if [[ -n $(find ./ -name "path.xyz" ) ]] ; then
+    #   origin=$(find -name "path.xyz" -printf '%T+ %p\n' | sort | head -1|awk '{print $2}')
+    #   disp=$(diffxyz current.xyz $origin 0.05 |sort -gk 4 |tail -n 1|awk '{print $5}')
+    # fi
+    #fi
+
+    if grep -q "finished, energy" -i chemshellout; then
+      if grep -q "Optimisation converged" -i chemshellout; then
+        suc="opt-suc"
+      elif grep -q "DL-FIND: energy/gradient evaluation failed" chemshellout; then
+        suc="scf-fail"
+      elif grep -q "Stopping: maximum number of cycles reached" chemshellout; then
+        suc="max-cycle"
+      else
+        if [ $job != "unknown" ] ; then
+          suc='-'
+        else
+          suc='unkown'
+        fi
+      fi
+    else
+      if grep -q "DL-FIND: energy/gradient evaluation failed" chemshellout; then
+        suc="scf-fail-1st"
+      else
+        suc="unknown"
+      fi
+    fi
+    echo $dir $maxgrad $energy $disp $suc $job |tee -a $home/sum
+  cd $home
+done

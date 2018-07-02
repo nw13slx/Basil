@@ -1,0 +1,19 @@
+#!/bin/env bash
+if [ $# -lt 2 ]; then
+  echo "needs two arguments"
+  exit
+fi
+
+home=$(pwd)
+for i in job.sh run.script *.ff opt.chm *pun ecp*
+do
+cp $1/$i $2
+done
+
+result=$(grep "set result_pun" opt.chm|awk '{print $3}')
+cp ${result} restart.pun
+
+sed -i "/set coords/d" opt.chm #perfect-4pot.pun
+sed -i "/set result_pun/d" opt.chm
+sed -i "1s/^/set coords restart.pun\n/" opt.chm
+sed -i "1s/^/set result_pun conti.pun\n/" opt.chm

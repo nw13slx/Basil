@@ -1,0 +1,27 @@
+for i in $(find ./ -name "mpp*") $(find ./ -name "*crystalout")
+  do
+    if   grep -q "OPT END - CONVERGED" $i ; then
+      E=$(grep "OPT END - CONVERGED" $i |awk '{print $8}')
+      step=$(grep "OPT END - CONVERGED" $i |awk '{print $10}')
+      echo $i 'suc' 'opt' $E $step
+    elif grep -q OPTGEOM $i ; then
+      E=$(grep "ETOT" $i |tail -n 1 |awk '{print $4}')
+      step=$(grep "OPTIMIZATION - POINT" $i |tail -n 1 |awk '{print $5}')
+      force=$(grep "max grad" -i $i |tail -n 1 |awk '{print $3}')
+      echo $i 'fail-opt' $E $step $force
+    elif grep -q ERROR $i; then
+      echo $i 'input error or more severe' 
+    elif grep -q "SCF ENDED - TOO MANY CYCLES" $i ; then
+      E=$(grep "ETOT" $i |tail -n 1 |awk '{print $4}')
+      step=$(grep "SCF ENDED - TOO MANY CYCLES" $i |tail -n 1 |awk '{print $11}')
+      echo $i 'fail-scf' $E $step
+    elif grep -q "SCF ENDED - CONVERGENCE ON ENERGY" $i; then
+      E=$(grep "SCF ENDED - CONVERGENCE ON ENERGY" $i |tail -n 1 |awk '{print $9}')
+      step=$(grep "SCF ENDED - CONVERGENCE ON ENERGY" $i |tail -n 1 |awk '{print $11}')
+      echo $i 'scf' $E $step
+    elif grep -q "ETOT" $i ; then
+      E=$(grep "ETOT" $i |tail -n 1 |awk '{print $4}')
+      step=$(grep "ETOT" $i |tail -n 1 |awk '{print $2}')
+      echo $i 'scf-unconv' $E $step
+    fi
+done

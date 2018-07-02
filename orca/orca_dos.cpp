@@ -15,7 +15,7 @@ int main(int argc, char **argv){
     bool Print_MO=false;
     
     if (argc<3){
-      cout<<"need two arguments: orca_dos intput output"<<endl;
+      cout<<"need two arguments: orca_dos intput output dE sigma shift"<<endl;
       return 1;
     }
     //locate the beginning of the print_MO
@@ -25,7 +25,9 @@ int main(int argc, char **argv){
     int *nstate=new int[2];
     double *homo=new double[2];
     double *lumo=new double[2];
-    bool read=read_orbital(In1,nstate,energy,occupancy,homo,lumo);
+    int *homo_i=new int[2];
+    int *lumo_i=new int[2];
+    bool read=read_orbital(In1,nstate,energy,occupancy,homo,lumo,homo_i,lumo_i);
     if (read==false){
       return 1;
     }
@@ -37,7 +39,13 @@ int main(int argc, char **argv){
 
     //smearing
     double dE=0.1;
-    double sigma=0.05;
+    if (argc > 3){
+      dE=atof(argv[3]);
+    }
+    double sigma=dE/2.;
+    if (argc > 4){
+      sigma=atof(argv[4]);
+    }
     double sigma2=sigma*sigma;
 
     double base=homo[0]+EMIN;
@@ -64,8 +72,12 @@ int main(int argc, char **argv){
     }
     cout<<"done smearing"<<endl;
 
+    double shift=homo[0];
+    if (argc>5){
+     shift=atof(argv[5]); 
+    }
     for (int i=0;i<grid;i++)
-        out<<x[i]-homo[0]<<" "<<smearing[i]<<" "<<-smearing[i+grid]<<endl;
+        out<<x[i]-shift<<" "<<smearing[i]<<" "<<-smearing[i+grid]<<endl;
 
     ofstream plot("gnuplot.dos");
     plot <<"set output \""<<argv[2]<<"-orcados.png\""<<endl;
