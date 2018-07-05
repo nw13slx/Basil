@@ -53,7 +53,7 @@ do
       if grep -q "Optimisation converged" -i chemshellout; then
         suc="opt-suc"
       elif grep -q "DL-FIND: energy/gradient evaluation failed" chemshellout; then
-        suc="scf-fail"
+        suc="gradient-fail"
       elif grep -q "Stopping: maximum number of cycles reached" chemshellout; then
         suc="max-cycle"
       else
@@ -80,6 +80,10 @@ do
         suc="suc"
       elif grep -q "ChemShell exiting code 1" chemshellout; then
         suc="fail"
+        if grep -q "the calculation is not converged" chemshellout; then
+          suc="scf-far"
+          maxgrad=$(grep "Last DIIS Error" orca1.out|awk '{print $5}'|tail -n 1)
+        fi
       else
         suc="unknown"
       fi
