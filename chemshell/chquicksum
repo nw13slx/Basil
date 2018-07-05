@@ -24,18 +24,36 @@ do
     job="unknow"
     if grep -q "slurm-" $temp; then
       slurm=$(head -n 1 $temp|awk '{print $9}')
-      if grep -q "DUE TO TIME LIMIT" $slurm ; then
-        job="time-out"
-      elif grep -q "CANCELLED" $slurm ; then
-        job="cancelled"
-      else
-        jobid=$(echo $slurm|sed "s/slurm-//g"|sed "s/\.out//g")
-        scontrol show job $jobid >$temp 2>&1
+      if [ $slurm -nt job.sh ]; then
+        if grep -q "DUE TO TIME LIMIT" $slurm ; then
+          job="time-out"
+        elif grep -q "CANCELLED" $slurm ; then
+          job="cancelled"
+        else
+          jobid=$(echo $slurm|sed "s/slurm-//g"|sed "s/\.out//g")
+          scontrol show job $jobid >$temp 2>&1
+          if ! grep -q "JobStat" $temp ; then
+            job="old_job"
+          else
+            job=$(grep JobState $temp|awk '{print $1"_"$2}'|sed "s/JobState=//g"|sed "s/Reason=//g"|sed "s/_None//g")
+          fi
+        fi
+      elif echo $(basename $(pwd)) |grep -qv "[a-z]"  ; then
+        scontrol show job $(basename $(pwd)) >$temp 2>&1
         if ! grep -q "JobStat" $temp ; then
           job="old_job"
         else
           job=$(grep JobState $temp|awk '{print $1"_"$2}'|sed "s/JobState=//g"|sed "s/Reason=//g"|sed "s/_None//g")
         fi
+      else
+        job="unknown"
+      fi
+    elif echo $(basename $(pwd)) |grep -qv "[a-z]"  ; then
+      scontrol show job $(basename $(pwd)) >$temp 2>&1
+      if ! grep -q "JobStat" $temp ; then
+        job="old_job"
+      else
+        job=$(grep JobState $temp|awk '{print $1"_"$2}'|sed "s/JobState=//g"|sed "s/Reason=//g"|sed "s/_None//g")
       fi
     else
       job="unknown"
