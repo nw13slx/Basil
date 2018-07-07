@@ -8,8 +8,8 @@ else
   mkdir energy
   mv * energy
 fi
-mkdir ecp-def2-tzvp
-cd ecp-def2-tzvp
+mkdir tzvp
+cd tzvp
 for i in opt.chm run.script job.sh run.sh *.ff 
 do
 cp ../energy/$i .
@@ -18,34 +18,6 @@ done
 if [ -f run.sh ]; then
   mv run.sh job.sh
 fi
-
-cat >ecpfile <<EOF
-NewECP Np
-N_core 18
-lmax f
-  f 5
-      1   0.7950530     -1.2827508    2
-      2   2.3249937     -8.8573627    2
-      3   9.2567439    -24.4645079    2
-      4  40.7301667    -94.1338170    2
-      5 217.0090397    -18.0000000    1
-  s 4
-      1   0.5646085     -8.5136295    2   
-      2   0.6503944     16.8993983    2   
-      3   2.6789265     14.1432597    1
-      4  10.0762958      3.0000000    0
-  p 5                                    
-      1  0.5206680       4.3716011    2   
-      2  2.5966642      29.8642273    2   
-      3  8.7336319      29.0702900    2   
-      4  8.3111333      15.5558118    1
-      5  18.1336424      5.0000000    0   
-  d 3                                   
-      1  0.3889416      -0.3201236    2   
-      2  2.2713857       0.6972213    2   
-      3  7.9748454      -1.6761296    2   
-end
-EOF
 
 mult=$(grep mult opt.chm|grep set|awk '{print $3}')
 qmq=$(grep qm_charge opt.chm|grep set|awk '{print $3}')
@@ -56,10 +28,8 @@ echo $core $result $qmq $mult
 
 cp ../energy/$result original.pun
 
-add_ecp original.pun ecp.pun Ti 3
-
 cat >ecp.chm <<EOF
-set coords ecp.pun
+set coords original.pun
 set mult $mult
 set qm_charge $qmq
 set orca_path \$env(ORCA_PATH)
@@ -83,8 +53,6 @@ set gulp_arguments   " mm_defs=TiO2.ff \\
                        use_second_derivatives=no "
 
 set orca_arguments " nproc=$core \\
-                     ecpfile=ecpfile \\
-                     ecp_q= 1.7081 \\
                      hamiltonian=dft \\
                      functional=pbe0 \\
                      basis=def2-TZVP \\

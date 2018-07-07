@@ -17,6 +17,7 @@ int main(int argc, char **argv){
   if (argc < 4 ) cutoff=3;
   else cutoff=atof(argv[3]);
   double bondlength=1.5;
+  if (argc >4 ) bondlength=atof(argv[4]);
 
   char temp[MAX_CHARACTER];
   string content[MAX_COLUMN];
@@ -118,5 +119,4 @@ int main(int argc, char **argv){
   cout<<"weight center "<<sx[0]<<" "<<sx[1]<<" "<<sx[2]<<endl;
   cout<<"distance "<<ls<<endl;
   cout<<"add atom "<<xQM[0]+sx[0]/ls*bondlength<<" "<<xQM[1]+sx[1]/ls*bondlength<<" "<<xQM[2]+sx[2]/ls*bondlength<<endl;
-
 }
