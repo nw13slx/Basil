@@ -50,11 +50,25 @@ EOF
 mult=$(grep mult opt.chm|grep set|awk '{print $3}')
 qmq=$(grep qm_charge opt.chm|grep set|awk '{print $3}')
 result=$(grep result_pun opt.chm|head -n 1 |awk '{print $3}')
+start=$(grep coords opt.chm|head -n 1 |awk '{print $3}')
+if [ -f run.script ]; then
 core=$(grep "#SBATCH -n" run.script|awk '{print $3}')
+else
+  core=20
+  fi
 
 echo $core $result $qmq $mult
 
+if [ -f ../energy/$result ]; then
+  echo "use final config"
 cp ../energy/$result original.pun
+elif [ -f ../energy/$start ]; then
+  echo "use initial config"
+cp ../energy/$start original.pun
+else
+  echo "no pun is found"
+  exit
+fi
 
 add_ecp original.pun ecp.pun Ti 3
 

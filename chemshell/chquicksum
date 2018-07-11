@@ -6,6 +6,9 @@ for chem in $(find ./ -name chemshellout)
 do
   dir=$(dirname $chem)
   cd $dir
+    QM="-"
+    MM="-"
+    gCP="-"
     if grep -q "Max grad" chemshellout; then
       maxgrad=$(grep "Max grad" chemshellout|cat -n |tail -n 1|awk '{print $1,$4*27.2114/0.52}') 
     else
@@ -70,6 +73,9 @@ do
     if grep -q "finished, energy" -i chemshellout; then
       if grep -q "Optimisation converged" -i chemshellout; then
         suc="opt-suc"
+        QM=$(grep orca chemshellout |grep -i contrib|tail -n 1|awk '{print $6}')
+        MM=$(grep gulp chemshellout |grep -i contrib|tail -n 1|awk '{print $6}')
+        gCP=$(grep gCP orca1.out|grep -v DFT|grep -v done|tail -n 1|awk '{print $3}')
       elif grep -q "DL-FIND: energy/gradient evaluation failed" chemshellout; then
         suc="gradient-fail"
       elif grep -q "Stopping: maximum number of cycles reached" chemshellout; then
@@ -96,6 +102,9 @@ do
         suc="scf-fail-1st"
       elif grep -q "ChemShell exiting code 0" chemshellout; then
         suc="suc"
+        QM=$(grep orca chemshellout |grep -i contrib|tail -n 1|awk '{print $6}')
+        MM=$(grep gulp chemshellout |grep -i contrib|tail -n 1|awk '{print $6}')
+        gCP=$(grep gCP orca1.out|grep -v DFT|grep -v done|tail -n 1|awk '{print $3}')
       elif grep -q "ChemShell exiting code 1" chemshellout; then
         suc="fail"
         if grep -q "the calculation is not converged" chemshellout; then
@@ -116,6 +125,6 @@ do
       fi
     fi
 
-    echo $dir $maxgrad $energy $disp $suc $job |awk '{printf "%30s %5s %15s %20s %10s %10s\n", $1, $2, $3,$4,$5,$6}'|tee -a $home/sum
+    echo $dir $maxgrad $energy $disp $suc $job $QM $MM $gCP |awk '{printf "%30s %5s %10.4f %15s %10s %10s %15.5f %15.5f %15.5f\n", $1, $2, $3,$4,$5,$6,$7,$8,$9}'|tee -a $home/sum
   cd $home
 done

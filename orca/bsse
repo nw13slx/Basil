@@ -13,7 +13,11 @@ else
   mkdir energy
   mv * energy
 fi
+
+if [ ! -d bsse ]; then
 mkdir bsse
+fi
+
 cd bsse
 
 cp ../energy/orca1.inp .
@@ -49,25 +53,13 @@ export PATH=~/bin:\$PATH
 date >orcaout
 orca orca1.inp >> orcaout
 date >>orcaout
-rm *tmp* 
+rm *tmp* job.sh orca1.prop run.script orca1.inp  orca1_property.txt  slurm*
 EOF
 
 cat > head <<EOF
-! NormalSCF b3lyp RIJCOSX slowconv
+! NormalSCF b3lyp slowconv def2-svp uhf
 %pal
 nprocs 20
-end
-%method
-Method DFT
-RunTyp Gradient
-end
-%basis
-Basis "def2-svp"
-Aux "def2/J"
-end
-%scf
-HFTyp uhf
-SCFMode Direct
 end
 %coords
 CTyp xyz
@@ -77,6 +69,7 @@ Units bohrs
 coords
 EOF
 
+if [ ! -d molecule-only ] ; then
 mkdir molecule-only
 cd molecule-only
 cp ../job.sh .
@@ -87,7 +80,9 @@ echo end >>orca1.inp
 echo end >>orca1.inp
 sbatch run.script
 cd ../
+fi
 
+if [ ! -d molecule-ghost ] ; then
 mkdir molecule-ghost
 cd molecule-ghost
 cp ../job.sh .
@@ -99,7 +94,23 @@ echo end >>orca1.inp
 echo end >>orca1.inp
 sbatch run.script
 cd ../
+fi
 
+#if [ ! -d molecule-5aghost ] ; then
+#mkdir molecule-ghost
+#cd molecule-ghost
+#cp ../job.sh .
+#cp ../run.script .
+#cat ../head >orca1.inp
+#awk "NR>$startline && NR<=($startline+$part1)" ../orca1.inp >>orca1.inp
+#awk "NR>($startline+$part1)" ../orca1.inp |head -n -2 |awk '{print $1":",$2,$3,$4}' >>orca1.inp
+#echo end >>orca1.inp
+#echo end >>orca1.inp
+#sbatch run.script
+#cd ../
+#fi
+
+if [ ! -d slab-only ] ; then
 mkdir slab-only
 cd slab-only
 cp ../job.sh .
@@ -110,7 +121,9 @@ sed -i "5i%pointcharges \"pointcharges.xyz\"" orca1.inp
 awk "NR>($startline+$part1)" ../orca1.inp >>orca1.inp
 sbatch run.script
 cd ../
+fi
 
+if [ ! -d slab-ghost ] ; then
 mkdir slab-ghost
 cd slab-ghost
 cp ../job.sh .
@@ -122,6 +135,7 @@ awk "NR>$startline && NR<=($startline+$part1)" ../orca1.inp |awk '{print $1":",$
 awk "NR>($startline+$part1)" ../orca1.inp >>orca1.inp
 sbatch run.script
 cd ../
+fi
 
 rm head
 rm job.sh

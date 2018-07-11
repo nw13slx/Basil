@@ -90,7 +90,7 @@ int main(int argc, char **argv){
   fout<<"molecule 1"<<endl;
   fout<<"block = coordinates records = "<<natom<<endl;
   for (int i=0;i<natom;i++){
-    fout<<type[i]<<" "<<x[i*3]<<" "<<x[i*3+1]<<" "<<x[i*3+2]<<endl;
+    fout<<type[i]<<" "<<std::setprecision(14)<<x[i*3]<<" "<<x[i*3+1]<<" "<<x[i*3+2]<<endl;
   }
   fout<<"block = atom_charges records = "<<natom<<endl;
   for (int i=0;i<natom;i++){
