@@ -1,0 +1,90 @@
+if [ $# -lt 1 ]; then
+  echo "need one argument to define the number of atoms in the adsorbed molecule "
+  exit
+fi
+if [ $# -gt 1 ]; then
+  energy=$2
+else
+  energy=energy
+fi
+
+if [ -f substrate ]; then
+  echo "error substrate is file"
+  exit
+fi
+
+if [ ! -d $energy ]; then
+  echo "folder to copy from doesn't exist"
+  exit
+fi
+  
+
+if [ ! -d substrate ]; then
+  mkdir substrate
+fi
+
+cd substrate
+
+continuechem ../$energy .
+
+for i in job.sh run.script TiO2.ff
+do
+  if [ ! -f $i ]; then
+    cp $(find ../ -name $i |head -n 1 ) .
+  fi
+done
+
+for i in $(ls *.pun|grep -v restart)
+do
+  rm $i
+done
+
+#delete the adsorbed molecules
+line=$(grep -n "block = coordinates records" restart.pun|sed "s/:/ /g"|awk '{print $1+1}')
+endline=$(echo $line $1 |awk '{print $1+$2-1}')
+sed -i "$line,$endline d" restart.pun
+natom=$(grep "block = coordinates records" restart.pun|awk -v i=$1 '{print $6-i}')
+line="$(grep "block = coordinates records" restart.pun)"
+sed -i "s/$line/block = coordinates records = $natom /g" restart.pun
+
+if grep -q "block = atom_charges records" restart.pun ; then
+  line=$(grep -n "block = atom_charges records" restart.pun|sed "s/:/ /g"|awk '{print $1+1}')
+  endline=$(echo $line $1 |awk '{print $1+$2-1}')
+  sed -i "$line,$endline d" restart.pun
+  natom=$(grep "block = atom_charges records" restart.pun|awk -v i=$1 '{print $6-i}')
+  line="$(grep "block = atom_charges records" restart.pun)"
+  sed -i "s/$line/block = atom_charges records = $natom /g" restart.pun
+fi
+
+#delete the dl-find
+if grep -q dl-find opt.chm; then
+  line=$(grep -n dl-find opt.chm|sed "s/:/ /g"|awk '{print $1}')
+  endline=$(wc -l opt.chm|awk '{print $1}')
+  sed -i "$line,$endline d" opt.chm
+  echo "energy energy=e coords=\$coords theory=hybrid : [list \$args] " >>opt.chm
+elif grep -q "energy=e" opt.chm;then
+  echo "there is already an energy line"
+else
+  echo "panic mode... I don't know what happen"
+fi
+
+
+
+cat > job.sh <<EOF
+if uname -a|grep -q el7 ;then
+  module unload chemshell gulp orca
+  module load chemshell/impi3.7.0 gulp/5.0-impi orca/impi-4.0.1
+else
+  module unload impi intel openmpi
+  module unload chemshell gulp orca
+  module load engaging/intel/2013.1.046   engaging/intel/2013_sp1.0.080
+  module load gulp/5.0-intel13 chemshell/intel13-3.7.0 orca/impi-4.0.1 nbo openmpi/2.1.3-intel13
+fi
+module list
+export PATH=~/bin:\$PATH
+
+date |tee chemshellout
+chemsh.x opt.chm |tee -a chemshellout
+date |tee -a chemshellout
+rm *tmp* gulp.inp hybrid*
+EOF
