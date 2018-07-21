@@ -16,6 +16,8 @@ int main(int argc, char **argv){
   double cutoff;
   if (argc < 4 ) cutoff=3;
   else cutoff=atof(argv[3]);
+  double bondlength=1.5;
+  if (argc >4 ) bondlength=atof(argv[4]);
 
   char temp[MAX_CHARACTER];
   string content[MAX_COLUMN];
@@ -25,6 +27,7 @@ int main(int argc, char **argv){
    * block = title records = 1
    * molecule 1
    * block = coordinates records = 3627*/
+
 
   fin.getline(temp,MAX_CHARACTER); 
   fin.getline(temp,MAX_CHARACTER); 
@@ -62,6 +65,9 @@ int main(int argc, char **argv){
   cout<<nQM<<" "<<nMM<<endl;
   fin.close();
 
+  double sx[3]={0,0,0};
+  int ns=0;
+
   // QM-QM bond
   double *xQM=&x[QM[id0]*3];
   string sum="";
@@ -69,30 +75,48 @@ int main(int argc, char **argv){
     string type1=type[QM[i]];
     double *xQM2=&x[QM[i]*3];
     double dx[3];
-    dx[0]=xQM[0]-xQM2[0];
-    dx[1]=xQM[1]-xQM2[1];
-    dx[2]=xQM[2]-xQM2[2];
+    dx[0]=xQM2[0]-xQM[0];
+    dx[1]=xQM2[1]-xQM[1];
+    dx[2]=xQM2[2]-xQM[2];
     double r=sqrt((dx[0]*dx[0])+(dx[1]*dx[1])+(dx[2]*dx[2]));
     if (r<cutoff/ANG2BOHR){
       cout<<i<<" "<<type1<<" "<<r*ANG2BOHR<<endl;
       sum=sum+" ";
       sum=sum+to_string(i);
+      if (r!=0){
+        sx[0]+=dx[0];
+        sx[1]+=dx[1];
+        sx[2]+=dx[2];
+        ns++;
+      }
     }
   }
   for (int i=0; i<nMM; i++){
     string type1=type[MM[i]];
     double *xMM=&x[MM[i]*3];
     double dx[3];
-    dx[0]=xQM[0]-xMM[0];
-    dx[1]=xQM[1]-xMM[1];
-    dx[2]=xQM[2]-xMM[2];
+    dx[0]=xMM[0]-xQM[0];
+    dx[1]=xMM[1]-xQM[1];
+    dx[2]=xMM[2]-xQM[2];
     double r=sqrt((dx[0]*dx[0])+(dx[1]*dx[1])+(dx[2]*dx[2]));
     if (r<cutoff/ANG2BOHR){
       cout<<i<<" "<<type1<<" "<<r*ANG2BOHR<<endl;
       sum=sum+" ";
       sum=sum+to_string(i);
+      if (r!=0){
+        sx[0]+=dx[0];
+        sx[1]+=dx[1];
+        sx[2]+=dx[2];
+        ns++;
+      }
     }
   }
-  cout<<sum<<endl;
-
+  sx[0]=sx[0]/double(ns);
+  sx[1]=sx[1]/double(ns);
+  sx[2]=sx[2]/double(ns);
+  double ls=sqrt(sx[0]*sx[0]+sx[1]*sx[1]+sx[2]*sx[2]);
+  cout<<"all "<<ns<<" neighbor "<<sum<<endl;
+  cout<<"weight center "<<sx[0]<<" "<<sx[1]<<" "<<sx[2]<<endl;
+  cout<<"distance "<<ls<<endl;
+  cout<<"add atom "<<xQM[0]+sx[0]/ls*bondlength<<" "<<xQM[1]+sx[1]/ls*bondlength<<" "<<xQM[2]+sx[2]/ls*bondlength<<endl;
 }

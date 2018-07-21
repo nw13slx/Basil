@@ -1,0 +1,143 @@
+name=$(basename $(pwd))
+
+if [ $# -lt 1 ]; then
+  echo "needs at least one argument"
+  exit
+fi
+if [ -f energy ]; then
+  echo "there is already an energy file"
+  exit
+elif [ -d energy ]; then
+  echo "there is already an energy folder"
+else
+  mkdir energy
+  mv * energy
+fi
+
+if [ ! -d bsse ]; then
+mkdir bsse
+fi
+
+cd bsse
+
+cp ../energy/orca1.inp .
+cp ../energy/pointcharges.xyz .
+
+
+cat >run.script <<EOF
+#!/bin/bash
+#SBATCH -J bsse_$name
+#SBATCH -N 1
+#SBATCH -n 20
+#SBATCH -p newnodes
+#SBATCH --mem=30000
+#SBATCH  --time=12:00:00
+sh job.sh
+EOF
+
+startline=$(grep -n coords orca1.inp |tail -n 1|awk '{print $1}'|sed "s/://g")
+part1=$1
+
+cat >job.sh <<EOF
+if uname -a|awk '{print \$6}'|grep -q el7 ;then
+module unload chemshell gulp orca
+module load chemshell/impi3.7.0 gulp/5.0-impi orca/impi-4.0.1
+else
+module unload intel impi chemshell gulp orca
+module load engaging/intel/2013.1.046   engaging/intel/2013_sp1.0.080
+module load gulp/5.0-intel13 chemshell/intel13-3.7.0 orca/impi-4.0.1 nbo openmpi/2.1.3-intel13
+fi
+module list
+export PATH=~/bin:\$PATH
+
+date >orcaout
+orca orca1.inp >> orcaout
+date >>orcaout
+rm *tmp* job.sh orca1.prop run.script orca1.inp  orca1_property.txt  slurm*
+EOF
+
+cat > head <<EOF
+! NormalSCF b3lyp slowconv def2-svp uhf
+%pal
+nprocs 20
+end
+%coords
+CTyp xyz
+Charge 0
+Mult 1
+Units bohrs
+coords
+EOF
+
+if [ ! -d molecule-only ] ; then
+mkdir molecule-only
+cd molecule-only
+cp ../job.sh .
+cp ../run.script .
+cat ../head >orca1.inp
+awk "NR>$startline && NR<=($startline+$part1)" ../orca1.inp >>orca1.inp
+echo end >>orca1.inp
+echo end >>orca1.inp
+sbatch run.script
+cd ../
+fi
+
+if [ ! -d molecule-ghost ] ; then
+mkdir molecule-ghost
+cd molecule-ghost
+cp ../job.sh .
+cp ../run.script .
+cat ../head >orca1.inp
+awk "NR>$startline && NR<=($startline+$part1)" ../orca1.inp >>orca1.inp
+awk "NR>($startline+$part1)" ../orca1.inp |head -n -2 |awk '{print $1":",$2,$3,$4}' >>orca1.inp
+echo end >>orca1.inp
+echo end >>orca1.inp
+sbatch run.script
+cd ../
+fi
+
+#if [ ! -d molecule-5aghost ] ; then
+#mkdir molecule-ghost
+#cd molecule-ghost
+#cp ../job.sh .
+#cp ../run.script .
+#cat ../head >orca1.inp
+#awk "NR>$startline && NR<=($startline+$part1)" ../orca1.inp >>orca1.inp
+#awk "NR>($startline+$part1)" ../orca1.inp |head -n -2 |awk '{print $1":",$2,$3,$4}' >>orca1.inp
+#echo end >>orca1.inp
+#echo end >>orca1.inp
+#sbatch run.script
+#cd ../
+#fi
+
+if [ ! -d slab-only ] ; then
+mkdir slab-only
+cd slab-only
+cp ../job.sh .
+cp ../pointcharges.xyz .
+cp ../run.script .
+cat ../head >orca1.inp
+sed -i "5i%pointcharges \"pointcharges.xyz\"" orca1.inp
+awk "NR>($startline+$part1)" ../orca1.inp >>orca1.inp
+sbatch run.script
+cd ../
+fi
+
+if [ ! -d slab-ghost ] ; then
+mkdir slab-ghost
+cd slab-ghost
+cp ../job.sh .
+cp ../pointcharges.xyz .
+cp ../run.script .
+cat ../head >orca1.inp
+sed -i "5i%pointcharges \"pointcharges.xyz\"" orca1.inp
+awk "NR>$startline && NR<=($startline+$part1)" ../orca1.inp |awk '{print $1":",$2,$3,$4}' >>orca1.inp
+awk "NR>($startline+$part1)" ../orca1.inp >>orca1.inp
+sbatch run.script
+cd ../
+fi
+
+rm head
+rm job.sh
+rm run.script
+

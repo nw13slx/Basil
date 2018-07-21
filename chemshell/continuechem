@@ -1,0 +1,45 @@
+#a code used to copy the chemshell setup from one folder to the other folder. the input file is set as the outputfile of the former folder though
+#usage: continuechem origin_folder target_folder
+
+#!/bin/env bash
+if [ $# -lt 2 ]; then
+  echo "needs two arguments"
+  exit
+fi
+
+home=$(pwd)
+if [ -f $2 ]; then
+  echo "$2 is a file. please use other name"
+  exit
+elif [ ! -d $2 ]; then
+  mkdir -p $2
+fi
+
+for i in job.sh run.script *.ff opt.chm ecp*
+do
+  if [ -f $1/$i ]; then
+    cp $1/$i $2/
+  else
+    echo "warning: $i doesn't exist"
+  fi
+done
+
+result=$(grep "set result_pun" opt.chm|awk '{print $3}')
+if [ -f $1/$result ]; then
+  cp $1/${result} $2/restart.pun
+else
+  echo "$1/$result does not exist"
+  coord=$(grep "set coords" opt.chm|awk '{print $3}')
+  if [ -f $1/$coord ]; then
+    cp $1/$coord $2/restart.pun
+    echo "use the starting pun $1/$result"
+  else
+    echo "$1/$coord does not exist"
+    echo "warning no pun file is copied"
+  fi
+fi
+
+sed -i "/set coords/d" $2/opt.chm #perfect-4pot.pun
+sed -i "/set result_pun/d" $2/opt.chm
+sed -i "1s/^/set coords restart.pun\n/" $2/opt.chm
+sed -i "1s/^/set result_pun conti.pun\n/" $2/opt.chm
