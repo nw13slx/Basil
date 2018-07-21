@@ -47,7 +47,9 @@ proc filter { centerid input output } {
 
 proc autogeneration { input } {
 
-  global active_string
+  global center_id
+  set active_string "within 15 of index $center_id"
+  set hash_coul123 {}
   global ecp_string
   global ecp_q
   global shell_Q

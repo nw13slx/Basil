@@ -15,6 +15,7 @@ class iodos:
         raise SystemExit('END: %s' % self.end)
 
   def __init__(self,control,plot):
+    self.start=control.anados
     self.end=control.end
     self._auto_terminate()
     self._cont=control
@@ -45,13 +46,14 @@ class iodos:
     else:
       self.end="cannot find poscar@"+control.path
 
-    if os.path.isfile(control.path+control.doscar) and control.doscar:
-      self._dosf=open(control.path+control.doscar)
-    elif os.path.isfile(control.path+"DOSCAR"):
-      self._dosf =open(control.path+"DOSCAR")
-    else:
-      self.end="cannot find doscar@"+control.path
-    self._auto_terminate()
+    if (self.start):
+      if os.path.isfile(control.path+control.doscar) and control.doscar:
+        self._dosf=open(control.path+control.doscar)
+      elif os.path.isfile(control.path+"DOSCAR"):
+        self._dosf =open(control.path+"DOSCAR")
+      else:
+        self.end="cannot find doscar@"+control.path
+      self._auto_terminate()
 
   def read_poscar(self):
     '''read POSCAR or CONTCAR, with or without constraints '''
@@ -98,6 +100,8 @@ class iodos:
       self._posf.close()
 
   def read_tot_dosfile(self):
+    if (not self.start):
+      return
     '''read the overall dosfile'''
     control=self._cont
     atom=self.atom
@@ -157,6 +161,8 @@ class iodos:
       dos.loc_up = dos.nedos
 
   def write_tot_dosfile(self):
+    if (not self.start):
+      return
     control=self._cont
     dos=self.dos
     matrix = np.hstack([dos.Xenergy.reshape([dos.nedos,1]),dos.dos0])
@@ -164,6 +170,8 @@ class iodos:
     del matrix
 
   def write_pdosfile(self):
+    if (not self.start):
+      return
     if not self._cont.run_pdos:
        return 0
     control=self._cont
@@ -182,6 +190,8 @@ class iodos:
     del matrix
 
   def write_peratom(self,atomi):
+    if (not self.start):
+      return
     if not self._cont.run_pdos:
        return 0
     control=self._cont
@@ -201,6 +211,8 @@ class iodos:
     self.dos.perspecies=None
 
   def read_pdos(self):
+    if (not self.start):
+      return
     if not self._cont.run_pdos:
        return 0
 
@@ -311,6 +323,8 @@ class iodos:
       pass
 
   def read_atomDOS(self):
+      if (not self.start):
+        return
       dos=self.dos
       atom=self.atom
       '''read in the dos data for each atom. I put it as a separate function, in case I have some separated data in the future '''
