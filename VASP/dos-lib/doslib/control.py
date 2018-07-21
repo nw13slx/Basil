@@ -20,6 +20,8 @@ class control_knob:
 
     self.name=""
     self.path=""
+    self.anados=True
+
     self.doscar=""
     self.poscar=""
 

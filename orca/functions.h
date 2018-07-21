@@ -12,7 +12,6 @@
 #include <sys/types.h>
 #include <time.h>
 #include <cmath>
-#include <malloc.h>
 #include <iomanip>
 #include <stdlib.h>
 #include <string.h>

@@ -301,6 +301,7 @@ class analysis:
         angle_store=[]
         Qunsort=[]
 
+        #there may be multiple references for one certain type of atoms
         #first try to find out which pattern matches the best"
         for ref in range(len(Pn)):
           angle_store+=[{}]
@@ -317,22 +318,47 @@ class analysis:
           if ((len(Pn[0])-len(Qunsort[0]))==(len(Pn[1])-len(Qunsort[1]))):
             print "competing",self.atom.positions[i]
 
+        #use the one matches the most
         ref=least_missing_id
         #sort the rest,start from the nearest remaining one
         criteria=0.9
-        while ((missing_ngh >0) and (criteria>0)):
+        change_P=True
+        P=None
+        #two ways to get it through if some neighbors are mising
+        if (change_P==False):
+          #loose the criteria
+          while ((missing_ngh >0) and (criteria>0)):
+            self.match_neigh2P(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],criteria,criteria+0.1)
+            missing_ngh=len(Pn[ref])-len(Qunsort[ref])
+            criteria-=0.05
+          if (missing_ngh > len(ngh_list[i])):
+             print "need a larger neighbor list"
+             print "not enough neighbor to build Q"
+             return None,None,None
+          elif (missing_ngh >0):
+             self.add_nearest_neigh(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],missing_ngh)
+
+          P=P_allspecies[self.atom.species[i]][ref]
+        else:
+          #change the reference
           self.match_neigh2P(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],criteria,criteria+0.1)
           missing_ngh=len(Pn[ref])-len(Qunsort[ref])
-          criteria-=0.05
-
-        if (missing_ngh > len(ngh_list[i])):
-           print "need a larger neighbor list"
-           print "not enough neighbor to build Q"
-           return None,None,None
-        elif (missing_ngh >0):
-           self.add_nearest_neigh(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],missing_ngh)
-
-        P=P_allspecies[self.atom.species[i]][ref]
+          P0=P_allspecies[self.atom.species[i]][ref]
+          if (missing_ngh==0):
+            P=P_allspecies[self.atom.species[i]][ref]
+          else:
+            print "Warning, changing reference from",len(Pn[ref]),len(Qunsort[ref]), "for atom",i
+            P=np.zeros((len(Qunsort[ref]),3))
+            Qunsort_new=[]
+            for refn in range(len(Pn)):
+              Qunsort_new+=[{}]
+            count=0
+            for Pid in range(len(P0)):
+              if (Pid in Qunsort[ref].keys()):
+                P[count,:]=P0[Pid,:]
+                Qunsort_new[ref][count]=list(Qunsort[ref][Pid])
+                count+=1
+            Qunsort=Qunsort_new
         if ( P is None):
           print "the reference input is not intact, please check Pn[",self.atom.species[i],"]"
           return None, None,None

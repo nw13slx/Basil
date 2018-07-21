@@ -17,6 +17,28 @@ proc dipole { def } {
   return [ list $dx $dy $dz ]
 }
 
+proc masscenter { centerid a } {
+  set coord0 [ lindex [ [atomselect top "index $centerid"] get {x y z} ] 0]
+  set x0 [ lindex $coord0 0]
+  set y0 [ lindex $coord0 1]
+  set z0 [ lindex $coord0 2]
+  set x [ $a get x ]
+  set y [ $a get y ]
+  set z [ $a get z ]
+  set q [ $a get charge ]
+  set n [ $a num ]
+  set tallyx 0
+  set tallyy 0
+  set tallyz 0
+  for { set i 0 } { $i < $n } { incr i } {
+    set tallyx [ expr $tallyx + [lindex $x $i ]-$x0 ]
+    set tallyy [ expr $tallyy + [lindex $y $i ]-$y0 ]
+    set tallyz [ expr $tallyz + [lindex $z $i ]-$z0 ]
+  }
+  set tally [ expr sqrt($tallyx*$tallyx +$tallyy*$tallyy+$tallyz*$tallyz) ]
+  return $tally
+}
+
 proc moment2nd { centerid a } {
   set coord0 [ lindex [ [atomselect top "index $centerid"] get {x y z} ] 0]
   set x0 [ lindex $coord0 0]
@@ -127,8 +149,10 @@ proc hash_coulomb_cross { rest sel } {
     set id1 [ lindex $index $i ] 
     for { set j 0 } { $j < $restn } { incr j } {
       set id2 [ lindex $restindex $j ] 
-      set b [ measure bond [ list $id1 $id2 ] ]
-      set pot [ expr $pot + [ lindex $q $i ]*[lindex $restq $j]/$b ] 
+      if { $id1 != $id2 } {
+        set b [ measure bond [ list $id1 $id2 ] ]
+        set pot [ expr $pot + [ lindex $q $i ]*[lindex $restq $j]/$b ] 
+      }
     }
     puts "... $id1 $pot"
     dict append coul $id1 $pot
@@ -142,7 +166,7 @@ proc sum_coulomb_cross { coul sel } {
     if { [ dict exist $coul $id ] >0 } {
       set pot [ expr $pot + [ dict get $coul $id ] ]
     } else {
-      puts "ERROR the coulombic force is not computed ahead"
+      puts "sum_coulomb_cross ERROR the coulombic force of $id is not computed ahead"
       return 0
     }
   }
