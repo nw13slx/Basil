@@ -65,7 +65,7 @@ class iodos:
       atom.boundary=np.array(boundary)*scale
       initial=lines[5].strip().split()[0][0].lower()
       if atom.species is None:
-        if ((initial>='a') and (initial<='z')): 
+        if ((initial>='a') and (initial<='z')):
           symbol=lines[5].strip().split()
           number=map(int,lines[6].strip().split())
           ntype=len(number)
@@ -129,8 +129,13 @@ class iodos:
         chunck.append(self._dosf.readline())
     data = np.loadtxt(chunck)
     dos.Xenergy = data[:,0]
-    dos.dos0 = data[:,1:3]
-    dos.dos0[:,1]=-dos.dos0[:,1]
+    if (len(data[0,:])==5):
+      dos.spin=True
+      dos.dos0 = data[:,1:3]
+      dos.dos0[:,1]=-dos.dos0[:,1]
+    else:
+      dos.spin=False
+      dos.dos0 = data[:,1]
 
     if (control.center_ef==True):
       dos.Xenergy -= dos.efermi
@@ -277,8 +282,8 @@ class iodos:
       if perspecies:
         if dos.spin:
           print "atomi",atomi,"species",species[atomi],"element",np.min(tot[:,0]),np.max(tot[:,0])
-          dos.perspecies[:,species[atomi],0] += tot[:,0] 
-          dos.perspecies[:,species[atomi],1] += tot[:,1] 
+          dos.perspecies[:,species[atomi],0] += tot[:,0]
+          dos.perspecies[:,species[atomi],1] += tot[:,1]
         else:
           dos.perspecies[:,species[atomi]] += tot
       if peratom:

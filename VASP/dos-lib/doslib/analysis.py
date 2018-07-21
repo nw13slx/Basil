@@ -245,11 +245,14 @@ class analysis:
           compare[k]=angles[j,k]
         indexk=np.argmax(compare)
         anglemin=compare[indexk]
+        #for small enough angle
         if (anglemin>criteria):
            if (indexk not in Qunsort.keys()): #(Q[ref][indexk]==[]):
+             #if this atom hasn't been counted before
              Qunsort[indexk]=[neighbor[j][DIST],neighbor[j][DX],anglemin,j]
              del neighbor[j]
            elif ((Qunsort[indexk][DIST] > neighbor[j][DIST]) and (Qunsort[indexk][ANGLE]<criteria_max)):
+             #if this atom has been counted before, and the newone is closer
              neighbor[Qunsort[indexk][ID]] = [Qunsort[indexk][DIST],Qunsort[indexk][DX]]
              Qunsort[indexk]=[neighbor[j][DIST],neighbor[j][DX],anglemin,j]
              del neighbor[j]
@@ -289,10 +292,14 @@ class analysis:
       self.atom.ngh_id=[]
       ngh_id=self.atom.ngh_id
       for i in range(self.atom.natom):
+        #for each atom
         Q+=[[]]
         Q_dagger+=[[]]
         ngh_id+=[[]]
+        #use a standard reference
         Pn=Pn_allspecies[self.atom.species[i]]
+        print Pn
+        return
         if ( Pn is None):
           print "the reference input is not intact, please check Pn[",self.atom.species[i],"]"
           return None, None,None
@@ -303,6 +310,7 @@ class analysis:
 
         #first try to find out which pattern matches the best"
         for ref in range(len(Pn)):
+          #for each reference, find out a nearest neighbor which has the same orientation
           angle_store+=[{}]
           Qunsort+=[{}]
           for j in ngh_list[i].keys():
@@ -319,20 +327,27 @@ class analysis:
 
         ref=least_missing_id
         #sort the rest,start from the nearest remaining one
-        criteria=0.9
-        while ((missing_ngh >0) and (criteria>0)):
-          self.match_neigh2P(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],criteria,criteria+0.1)
-          missing_ngh=len(Pn[ref])-len(Qunsort[ref])
-          criteria-=0.05
+        #change_P=False
+        #criteria=0.9
+        #while ((missing_ngh >0) and (criteria>0)):
+        #  self.match_neigh2P(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],criteria,criteria+0.1)
+        #  missing_ngh=len(Pn[ref])-len(Qunsort[ref])
+        #  criteria-=0.05
 
-        if (missing_ngh > len(ngh_list[i])):
-           print "need a larger neighbor list"
-           print "not enough neighbor to build Q"
-           return None,None,None
-        elif (missing_ngh >0):
-           self.add_nearest_neigh(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],missing_ngh)
+        #if (missing_ngh > len(ngh_list[i])):
+        #   print "need a larger neighbor list"
+        #   print "not enough neighbor to build Q"
+        #   return None,None,None
+        #elif (missing_ngh >0):
+        #   self.add_nearest_neigh(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],missing_ngh)
 
-        P=P_allspecies[self.atom.species[i]][ref]
+        #give up finding the nearest remaining one, change the reference instead
+        change_P=False
+        if (missing_ngh>0):
+          change_P=True
+
+        if (not change_P):
+          P=P_allspecies[self.atom.species[i]][ref]
         if ( P is None):
           print "the reference input is not intact, please check Pn[",self.atom.species[i],"]"
           return None, None,None

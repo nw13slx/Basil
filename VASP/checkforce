@@ -1,24 +1,28 @@
 natom=$(grep NIONS OUTCAR|awk '{print $12}')
 echo $natom
-line=$(echo $natom|awk '{print $1+2}')
-grep -A$line "FORCES acting on ions" OUTCAR|tail -n $natom|awk '{print $10,$11,$12}' >tempforce
+line=$(echo $natom|awk '{print $1+1}')
+grep -A$line "TOTAL-FORCE" OUTCAR|tail -n $natom|awk '{print $4,$5,$6}'|cat -n >tempforce
 if grep -qvi sel POSCAR ; then
   line=$(grep -ni sel POSCAR |sed "s/:/ /g"|awk '{print $1}')
   awk "NR>($line+1) && NR <($line+2+$natom)" POSCAR |awk '{print $4,$5,$6}' >temppos
-  paste tempforce temppos|grep -v "F" >temp
-  sort -gk1 temp|tail -n 1
+  paste tempforce temppos|grep -v "F"  >temp
+  echo "max force"
   sort -gk2 temp|tail -n 1
   sort -gk3 temp|tail -n 1
-  sort -rgk1 temp|tail -n 1
+  sort -gk4 temp|tail -n 1
+  echo "min force"
   sort -rgk2 temp|tail -n 1
   sort -rgk3 temp|tail -n 1
+  sort -rgk4 temp|tail -n 1
   rm temp temppos
 else
-  sort -gk1 tempforce|tail -n 1
+  echo "max force"
   sort -gk2 tempforce|tail -n 1
   sort -gk3 tempforce|tail -n 1
-  sort -rgk1 tempforce|tail -n 1
+  sort -gk4 tempforce|tail -n 1
+  echo "min force"
   sort -rgk2 tempforce|tail -n 1
   sort -rgk3 tempforce|tail -n 1
+  sort -rgk4 tempforce|tail -n 1
 fi
-rm tempforce
+#rm tempforce
