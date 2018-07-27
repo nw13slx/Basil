@@ -17,45 +17,57 @@ class analysis:
     fermiN=self.dos.fermiN
     nedos=self.dos.nedos
 
-    EGMIN_u=None
-    EGMIN_d=None
-    EGMAX_u=None
-    EGMAX_d=None
+    EGMIN=None
+    EGMAX=None
     foundEg=0
     finfo = open("band-info", 'w')
     finfo.write('#search between 0 %15.8f %15.8f \n' % (ef[fermiN],ef[fermiN+1]))
-    for n in range(fermiN, 0, -1):
-       if ((dos0[n,0]!=0) and (EGMIN_u is None)):
-          EGMIN_u=ef[n]
-       if ((dos0[n,1]!=0) and (EGMIN_d is None)):
-          EGMIN_d=ef[n]
-    for n in range(fermiN+2, nedos, 1):
-       if ((dos0[n,0]!=0) and (EGMAX_u is None)):
-          EGMAX_u=ef[n]
-       if ((dos0[n,1]!=0) and (EGMAX_d is None)):
-          EGMAX_d=ef[n]
-    if (EGMIN_u >EGMIN_d):
-        EGMIN = EGMIN_u
+    if dos.spin:
+      for n in range(fermiN, 0, -1):
+         if ((dos0[n,0]!=0) and (EGMIN_u is None)):
+            EGMIN_u=ef[n]
+         if ((dos0[n,1]!=0) and (EGMIN_d is None)):
+            EGMIN_d=ef[n]
+      for n in range(fermiN+2, nedos, 1):
+         if ((dos0[n,0]!=0) and (EGMAX_u is None)):
+            EGMAX_u=ef[n]
+         if ((dos0[n,1]!=0) and (EGMAX_d is None)):
+            EGMAX_d=ef[n]
+      if (EGMIN_u >EGMIN_d):
+          EGMIN = EGMIN_u
+      else:
+          EGMIN = EGMIN_d
+      if (EGMAX_u < EGMAX_d):
+          EGMAX = EGMAX_u
+      else:
+          EGMAX = EGMAX_d
+      if ((dos0[fermiN,0]!=0) and (dos0[fermiN+1,0]!=0) and (dos0[fermiN+2,0]!=0 )):
+          Eg_u=0
+      else:
+          Eg_u = EGMAX_u-EGMIN_u
+      if ((dos0[fermiN,1]!=0) and (dos0[fermiN+1,1]!=0) and (dos0[fermiN+2,1]!=0 )):
+          Eg_d=0
+      else:
+          Eg_d = EGMAX_d-EGMIN_d
+      finfo.write('#spin     %15s %15s %15s\n' % ("VBM","CBM","gap"))
+      finfo.write('spin_up   %15.8f %15.8f %15.8f\n' % (EGMIN_u,EGMAX_u,Eg_u))
+      finfo.write('spin_down %15.8f %15.8f %15.8f\n' % (EGMIN_d,EGMAX_d,Eg_d))
+      finfo.write('total     %15.8f %15.8f %15.8f\n' % (EGMIN,EGMAX,EGMAX-EGMIN))
+      finfo.close()
     else:
-        EGMIN = EGMIN_d
-    if (EGMAX_u < EGMAX_d):
-        EGMAX = EGMAX_u
-    else:
-        EGMAX = EGMAX_d
-    if ((dos0[fermiN,0]!=0) and (dos0[fermiN+1,0]!=0) and (dos0[fermiN+2,0]!=0 )):
-        Eg_u=0
-    else:
-        Eg_u = EGMAX_u-EGMIN_u
-    if ((dos0[fermiN,1]!=0) and (dos0[fermiN+1,1]!=0) and (dos0[fermiN+2,1]!=0 )):
-        Eg_d=0
-    else:
-        Eg_d = EGMAX_d-EGMIN_d
-    finfo.write('#spin     %15s %15s %15s\n' % ("VBM","CBM","gap"))
-    finfo.write('spin_up   %15.8f %15.8f %15.8f\n' % (EGMIN_u,EGMAX_u,Eg_u))
-    finfo.write('spin_down %15.8f %15.8f %15.8f\n' % (EGMIN_d,EGMAX_d,Eg_d))
-    finfo.write('total     %15.8f %15.8f %15.8f\n' % (EGMIN,EGMAX,EGMAX-EGMIN))
-    finfo.close()
-
+      for n in range(fermiN, 0, -1):
+         if ((dos0[n]!=0) and (EGMIN is None)):
+            EGMIN=ef[n]
+      for n in range(fermiN+2, nedos, 1):
+         if ((dos0[n]!=0) and (EGMAX is None)):
+            EGMAX=ef[n]
+      if ((dos0[fermiN]!=0) and (dos0[fermiN+1]!=0) and (dos0[fermiN+2]!=0 )):
+          Eg=0
+      else:
+          Eg = EGMAX-EGMIN
+      finfo.write('#spin     %15s %15s %15s\n' % ("VBM","CBM","gap"))
+      finfo.write('total     %15.8f %15.8f %15.8f\n' % (EGMIN,EGMAX,EGMAX-EGMIN))
+      finfo.close()
 
   def peak_finder(self,center,span):
     ef=self.dos.Xenergy
@@ -69,7 +81,10 @@ class analysis:
     win_down= np.argmin(abs(dos.Xenergy-window_d))
     win_up= np.argmin(abs(dos.Xenergy-window_u))
     win_span=(win_up-win_down)
-    ana_dos=dos0[win_down:win_up,0]-dos0[win_down:win_up,1]
+    if dos.spin:
+      ana_dos=dos0[win_down:win_up,0]-dos0[win_down:win_up,1]
+    else:
+      ana_dos=dos0[win_down:win_up]
 
     from scipy.signal import find_peaks_cwt
     peak=find_peaks_cwt(ana_dos,np.arange(5,20),min_snr=0.8)
@@ -77,6 +92,7 @@ class analysis:
     sigma=np.sqrt(sigma)
     dx=dos.Xenergy[1]-x0
     #print avg*dx+x0,sigma*dx
+
     return dos.Xenergy[win_down+peak],sigma*dx
 
   def peak_weight_center(self,center,span):
@@ -92,7 +108,10 @@ class analysis:
     win_down= np.argmin(abs(dos.Xenergy-window_d))
     win_up= np.argmin(abs(dos.Xenergy-window_u))
     win_span=(win_up-win_down)
-    ana_dos=dos0[win_down:win_up,0]-dos0[win_down:win_up,1]
+    if dos.spin:
+      ana_dos=dos0[win_down:win_up,0]-dos0[win_down:win_up,1]
+    else:
+      ana_dos=dos0[win_down:win_up]
 
     #assuming there is only one gaussian peak
     avg=(np.arange(win_span).dot(ana_dos))/np.sum(ana_dos)
@@ -131,14 +150,18 @@ class analysis:
     from scipy.signal import find_peaks_cwt
     midland=self.find_zero(binz,conti=int(1./dz),Th=1)*dz+zmin
     division=[zmin0-0.1]
-    print midland
-    print zmin0
+    print "separator",midland
+    print "bottom of all planes",zmin0
     for dv in midland:
       if (dv>=zmin0 and dv<=zmax0):
         division+=[dv]
     division=np.array(division)
-    print division
+    print "division",division
     nplane=len(division)
+    print "find",nplane,"planes"
+    for i in range(nplane-1):
+      print division[i+1]-division[i],
+
     #peak_atoms=find_peaks_cwt(binz,np.arange(1,7))#,min_snr=0.2)
     #print "peak",peak_atoms
     #print "peak",peak_atoms*dz+zmin

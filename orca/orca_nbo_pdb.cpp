@@ -11,40 +11,10 @@
 //
 // note: the results can be visualize by nbo.tcl
 
-#include <algorithm>
-#include <iostream>
-#include <locale>
-#include <fstream>          // file I/O suppport
-#include <cstdlib>          // support for exit()
-#include <stdio.h>
-#include <sys/timeb.h>
-#include <sys/types.h>
-#include <time.h>
-#include <cmath>
-#include <malloc.h>
-#include <iomanip>
-//#include <stdlib.h>
-#include <string>
-#include <sstream>
-using namespace std;
-
+#include "functions.h"
 #include "math.h"
 #include "stdlib.h"       // for random
 #include <vector>
-
-//set up the size of array used for storage
-#define MAX_ELEMENT 10
-#define MAX_COORD 1000
-#define MAX_ENERGYLINE 1000
-
-//set up the buffer size for reading
-#define MAX_CHARACTER 1000
-#define MAX_COLUMN 50
-
-
-void gaussian(int grid, double *x, double *y, double x0, double sigma2){
-    for (int i=0;i<grid;i++) y[i]=exp(-(x[i]-x0)*(x[i]-x0)/2./sigma2);
-}
 
 
 int split(char *temp, string * content){
@@ -149,21 +119,16 @@ int main(int argc, char **argv){
     In1.close();
 
     ifstream In2(argv[2]);
-    while (In2.good()){
-        line++;
-        In2.getline(temp,MAX_CHARACTER); 
-        column=split(temp,content);;
-        if (column == 5 ){
-            if (( content[0]=="Summary" ) && (content[1]=="of") && (content[2]=="Natural")){
-                Print_Conf=true;
-                break;
-            }
-        }
+    string pattern="Summary of Natural";
+    int beg_pos=In2.tellg();
+    int v_pos=find_pattern(In2,pattern,"contains",true);
+    if (v_pos<0){
+      cout<<"ERROR: Summary of Natural Population Analysis block not found"<<endl;
+      return 1;
+    }else{
+      Print_Conf=true;
     }
-    if ((! In2.good()) || (Print_Conf==false)){
-        cout<<"ERROR: Summary of Natural Population Analysis block not found"<<endl;
-        return 1;
-    }
+    In2.getline(temp,MAX_CHARACTER);
     In2.getline(temp,MAX_CHARACTER);
     In2.getline(temp,MAX_CHARACTER);
     In2.getline(temp,MAX_CHARACTER);
@@ -171,8 +136,16 @@ int main(int argc, char **argv){
     In2.getline(temp,MAX_CHARACTER);
     double *q=new double[natom_tot];
     for (int i=0;i<natom_tot;i++){
-        In2 >> temp>>temp>>q[i];
-        In2.getline(temp,MAX_CHARACTER);
+      In2.getline(temp,MAX_CHARACTER);
+      column=break_line(temp,content);
+      if (column==8){
+        q[i]=stof(content[2]);
+      }else if (column==7){
+        q[i]=stof(content[1]);
+      }else{
+        cout<<"???"<<column<<endl;
+        q[i]=stof(content[1]);
+      }
     }
 /*
  Summary of Natural Population Analysis:
