@@ -151,22 +151,20 @@ class analysis:
     midland=self.find_zero(binz,conti=int(1./dz),Th=1)*dz+zmin
     division=[zmin0-0.1]
     print "separator",midland
-    print "bottom of all planes",zmin0
+    #print "bottom of all planes",zmin0
     for dv in midland:
       if (dv>=zmin0 and dv<=zmax0):
         division+=[dv]
     division=np.array(division)
-    print "division",division
-    nplane=len(division)
-    print "find",nplane,"planes"
-    for i in range(nplane-1):
-      print division[i+1]-division[i],
 
-    #peak_atoms=find_peaks_cwt(binz,np.arange(1,7))#,min_snr=0.2)
-    #print "peak",peak_atoms
-    #print "peak",peak_atoms*dz+zmin
-    #division=[] #np.zeros(len(peak_atoms))
+    #print "division",division
     #nplane=len(division)
+    #print "find",nplane,"planes"
+    #for i in range(nplane-1):
+    #  print division[i+1]-division[i],
+    #print
+
+    nplane=len(division)
     #for i in range(len(peak_atoms)-1):
     #  division[i]=zmin+((peak_atoms[i]+peak_atoms[i+1])/2.)*dz
     #  print -(peak_atoms[i]-peak_atoms[i+1])*dz, -(peak_atoms[i]-peak_atoms[i+1])
@@ -198,7 +196,9 @@ class analysis:
     iszero=False
     count=0
     midland=[]
+    print "find_zero"
     for i in range(len(f)):
+      print i,f[i],
       if ((f[i]==0) and iszero==False):
         iszero=True
         count+=1
@@ -208,6 +208,9 @@ class analysis:
         iszero=False
         if (count>conti):
           midland+=[i-int(count/2.)]
+          count=0
+          print midland[len(midland)-1],
+      print iszero
     return np.array(midland)
 
   def find_ngh(self,rNN):
