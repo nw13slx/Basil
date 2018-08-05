@@ -29,10 +29,11 @@ using namespace std;
 #define MAX_ENERGYLINE 4000
 #define TEMP_ENERGYLINE 10
 
+#define MAX_COORD 1000
 
 //set up the buffer size for reading
 #define MAX_CHARACTER 1000
-#define MAX_COLUMN 20
+#define MAX_COLUMN 50
 #define MAX_ELEMENT 10
 #define DEFAULT_CUTOFF 3.2
 #define MAX_ATOMS 1000

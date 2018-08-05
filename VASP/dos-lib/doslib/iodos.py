@@ -179,7 +179,7 @@ class iodos:
     if dos.spin:
       matrix = np.hstack([dos.Xenergy.reshape([dos.nedos,1]),dos.perspecies[:,:,0],dos.perspecies[:,:,1]])
     else:
-      matrix = np.hstack([dos.Xenergy.reshape([dos.nedos,1]),dos.perspecies])
+      matrix = np.hstack([dos.Xenergy.reshape([dos.nedos,1]),dos.perspecies[:,:,0]])
     np.savetxt(control.name+'DOS-perspecies.gz',matrix,fmt='%15.8f')
     del matrix
     matrix = dos.Xenergy.reshape([dos.nedos,1])
@@ -244,7 +244,7 @@ class iodos:
        dos.spin=False
        dos.ncols=ncols
        dos.nsites=ncols-1
-       self.tally=self.tally_nonspin
+       self.tally=self.tally_nospin
        nspin=1
     else:
         seld.end="weird DOSCAR, I cannot read it..."
@@ -275,7 +275,7 @@ class iodos:
       if dos.spin:
         dos.perspecies=np.zeros((dos.nedos,atom.ntype,nspin))
       else:
-        dos.perspecies=np.zeros((dos.nedos,atom.ntype))
+        dos.perspecies=np.zeros((dos.nedos,atom.ntype,1))
     if peratom:
       self.plot.atom_start()
       self.atom_start()
@@ -297,7 +297,7 @@ class iodos:
           dos.perspecies[:,species[atomi],0] += tot[:,0]
           dos.perspecies[:,species[atomi],1] += tot[:,1]
         else:
-          dos.perspecies[:,species[atomi]] += tot
+          dos.perspecies[:,species[atomi],0] += tot[:,0]
       if peratom:
         self.plot.atom_during(atomi)
         self.atom_during(atomi)
