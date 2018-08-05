@@ -298,8 +298,6 @@ class analysis:
         ngh_id+=[[]]
         #use a standard reference
         Pn=Pn_allspecies[self.atom.species[i]]
-        print Pn
-        return
         if ( Pn is None):
           print "the reference input is not intact, please check Pn[",self.atom.species[i],"]"
           return None, None,None
@@ -381,7 +379,7 @@ class analysis:
       del Q
       return Q_dagger,G
     else:
-      #sort the neighbor and compute Q and G for each atom
+      #if there is no reference, only Q_dagger is computed
       Q=[]
       Q_dagger=[]
       if self.atom.ngh_id is not None:
@@ -401,17 +399,30 @@ class analysis:
       del Q
       return Q_dagger,None
 
-  def compute_strain_scalar(self,G_dagger):
-    volume=np.zeros(len(G_dagger[:,0,0]))
-    vonMises=np.zeros(len(G_dagger[:,0,0]))
-    for i in range(len(G_dagger)):
-      volume[i]=G_dagger[i,0,0]
-      volume[i]+=G_dagger[i,1,1]
-      volume[i]+=G_dagger[i,2,2]
-      volume[i]-=3.
-      print i,G_dagger[i][0,0],G_dagger[i][1,1],G_dagger[i][2,2],volume[i]
-      F=1/2.*(G_dagger[i,:,:]+G_dagger[i,:,:].T)
-      G_temp=F-np.array([[1,0,0],[0,1,0],[0,0,1]])*(volume[i]/3.+1)
+  def compute_strain_scalar(self,etaa=None,G_dagger=None):
+    if (G_dagger is not None):
+      l=len(G_dagger[:,0,0])
+    else:
+      l=len(etaa[:,0,0])
+    volume=np.zeros(l)
+    vonMises=np.zeros(l)
+    for i in range(l):
+      if (G_dagger is not None):
+        #eta=(G_dagger[i,:,:].dot(G_dagger[i,:,:].T)-np.array([[1,0,0],[0,1,0],[0,0,1]]))/2.
+        eta=(G_dagger[i,:,:]+G_dagger[i,:,:].T)/2.-np.array([[1,0,0],[0,1,0],[0,0,1]])
+      else:
+        eta=etaa[i,:,:]
+      volume[i]=eta[0,0]
+      volume[i]+=eta[1,1]
+      volume[i]+=eta[2,2]
+      volume[i]/=3.
+      #volume[i]-=3.
+      #print i,G_dagger[i][0,0],G_dagger[i][1,1],G_dagger[i][2,2],volume[i]
+      #F=1/2.*(eta[:,:]+eta[:,:].T)
+      #G_temp=F-np.array([[1,0,0],[0,1,0],[0,0,1]])*(volume[i]/3.+1)
+      #G_temp=G_temp.dot(G_temp)
+      #vonMises[i]=np.sqrt((G_temp[0,0]+G_temp[1,1]+G_temp[2,2])/2.)
+      G_temp=eta-np.array([[1,0,0],[0,1,0],[0,0,1]])*(volume[i])
       G_temp=G_temp.dot(G_temp)
       vonMises[i]=np.sqrt((G_temp[0,0]+G_temp[1,1]+G_temp[2,2])/2.)
     return volume, vonMises
