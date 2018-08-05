@@ -147,17 +147,18 @@ class analysis:
       z=positions[i,direction]
       idz=int(np.floor((z-zmin)/dz))
       binz[idz]+=1
-    from scipy.signal import find_peaks_cwt
-    midland=self.find_zero(binz,conti=int(1./dz),Th=1)*dz+zmin
+
+    midland=self.find_zero(binz,conti=int(0.5/dz),Th=1)*dz+zmin
     division=[zmin0-0.1]
-    print "separator",midland
-    #print "bottom of all planes",zmin0
     for dv in midland:
       if (dv>=zmin0 and dv<=zmax0):
         division+=[dv]
     division=np.array(division)
+    nplane=len(division)
 
-    #print "division",division
+    #from scipy.signal import find_peaks_cwt
+    #peak_atoms=find_peaks_cwt(binz,np.arange(1,7))#,min_snr=0.2)
+    #division=[] #np.zeros(len(peak_atoms))
     #nplane=len(division)
     #print "find",nplane,"planes"
     #for i in range(nplane-1):
@@ -167,11 +168,10 @@ class analysis:
     nplane=len(division)
     #for i in range(len(peak_atoms)-1):
     #  division[i]=zmin+((peak_atoms[i]+peak_atoms[i+1])/2.)*dz
-    #  print -(peak_atoms[i]-peak_atoms[i+1])*dz, -(peak_atoms[i]-peak_atoms[i+1])
     #division[nplane-1]=zmax
-    #print nplane
-    pid=np.array(range(natom))
+
     #for each atom, find the plane id
+    pid=np.array(range(natom))
     for i in range(natom):
       z=positions[i,direction]
       planeid=0
@@ -209,8 +209,6 @@ class analysis:
         if (count>conti):
           midland+=[i-int(count/2.)]
           count=0
-          print midland[len(midland)-1],
-      print iszero
     return np.array(midland)
 
   def find_ngh(self,rNN):
