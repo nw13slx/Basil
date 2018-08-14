@@ -15,16 +15,16 @@ elif [ ! -d $2 ]; then
   mkdir -p $2
 fi
 
-for i in job.sh run.script *.ff opt.chm ecp*
+for i in job.sh run.script *.ff *.chm ecp*
 do
-  if [ -f $1/$i ]; then
+  if ls $1/$i 1> /dev/null 2>&1; then
     cp $1/$i $2/
   else
     echo "warning: $i doesn't exist"
   fi
 done
 
-coord=$(grep "set coords" opt.chm|awk '{print $3}')
+coord=$(grep "set coords" *.chm|awk '{print $3}')
 if [ -f $1/$coord ]; then
   cp $1/$coord $2/
 else
