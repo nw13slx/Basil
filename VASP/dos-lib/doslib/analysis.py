@@ -136,7 +136,7 @@ class analysis:
 
     natom=len(positions)
     #get the seperation part for each plane
-    dz=0.1
+    dz=0.01
     buf=3
     zmin0=np.min(positions[:,direction])
     zmax0=np.max(positions[:,direction])
@@ -172,13 +172,23 @@ class analysis:
 
     #for each atom, find the plane id
     pid=np.array(range(natom))
+    weight=np.zeros(nplane)
+    newx=np.zeros(nplane)
     for i in range(natom):
       z=positions[i,direction]
       planeid=0
       while ((planeid<(nplane-1)) and (z>division[planeid])):
         planeid+=1
+      if (z>division[nplane-1]):
+        planeid+=1
+      planeid-=1
       pid[i]=int(planeid)
+      weight[planeid]+=1
+      newx[planeid]+=z
     symbol=range(nplane)
+    for i in symbol:
+      newx[i]=newx[i]/float(weight[i])
+      print i,newx[i]
 
     return pid, nplane, symbol
 
@@ -198,7 +208,6 @@ class analysis:
     midland=[]
     print "find_zero"
     for i in range(len(f)):
-      print i,f[i],
       if ((f[i]==0) and iszero==False):
         iszero=True
         count+=1
