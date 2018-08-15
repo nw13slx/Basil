@@ -1,5 +1,12 @@
 #!/bin/env bash
 
+if [ $# -lt 1 ]; then
+  echo "needs one argument"
+  exit
+fi
+
+rounds=$1
+
 if [ ! -f run.script ] ; then
   echo "need run.script"
   exit
@@ -68,7 +75,7 @@ sbatch run.script0 |tee jobid
 jobid=$(tail -n 1 jobid|awk '{print $4}')
 rm run.script0
 
-for i in {1..4}
+for i in `seq $rounds`
 do
   cp run.template run.script$i
   sed -i "s/JOBID/$jobid/g" run.script$i

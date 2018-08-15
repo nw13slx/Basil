@@ -1,0 +1,171 @@
+if [ -f energy ]; then
+  echo "there is already an energy file"
+  exit
+elif [ -d energy ]; then
+  echo "there is already an energy folder"
+  #cd energy
+else
+  mkdir energy
+  mv * energy
+fi
+mkdir tzvp
+cd tzvp
+for i in opt.chm run.script job.sh run.sh *.ff 
+do
+cp ../energy/$i .
+done
+
+if [ -f run.sh ]; then
+  mv run.sh job.sh
+fi
+
+mult=$(grep mult opt.chm|grep set|awk '{print $3}')
+qmq=$(grep qm_charge opt.chm|grep set|awk '{print $3}')
+result=$(grep result_pun opt.chm|head -n 1 |awk '{print $3}')
+core=$(grep "#SBATCH -n" run.script|awk '{print $3}')
+
+echo $core $result $qmq $mult
+
+cp ../energy/$result original.pun
+
+cat >ecp.chm <<EOF
+set coords original.pun
+set mult $mult
+set qm_charge $qmq
+set orca_path \$env(ORCA_PATH)
+
+global chemsh_default_connectivity_toler
+global chemsh_default_connectivity_scale
+set chemsh_default_connectivity_toler 0.0
+set chemsh_default_connectivity_scale 0.0
+connect coords=\$coords conn=\$coords mode=ionic
+
+
+# Get list of QM atoms and charge from input fragment
+set active_region [ get_cluster_region coords=\$coords region= {1 2 3} ]
+set qm_region [ get_cluster_region coords=\$coords region= {1 2} ]
+
+puts "QM charge is: \$qm_charge"
+
+# QM/MM settings
+set gulp_arguments   " mm_defs=TiO2.ff \\
+                       include_qm_force=yes \\
+                       use_second_derivatives=no "
+
+set orca_arguments " nproc=$core \\
+                     hamiltonian=dft \\
+                     functional=pbe0 \\
+                     basis=def2-TZVP \\
+                     auxbasis=def2/J \\
+                     use_rijcosx=yes \\
+                     bandgap=yes\\
+                     convergence=TightSCF \\
+                     extra_simpleinput=slowconv_GCP(DFT/TZ) \\
+                     executable=\${orca_path}/orca \\
+                     charge=\$qm_charge \\
+                     scftype=uhf \\
+                     mult=\$mult "
+
+set args "qm_region= [ list \$qm_region ] \\
+          mm_theory = gulp : [ list \$gulp_arguments ] \\
+          qm_theory = orca : [ list \$orca_arguments ] \\
+          electrostatics_option=polarised \\
+          calculate_connectivity=no "
+
+# Calculate the QM/MM energy
+energy \\
+  energy=e \\
+  coords=\$coords \\
+  theory=hybrid : [list \$args] 
+EOF
+
+cat >job.sh <<EOF
+if uname -a|awk '{print \$6}'|grep -q el7 ;then
+module unload chemshell orca
+module load chemshell/impi3.7.0 gulp/5.0-impi orca/impi-4.0.1
+else
+module unload impi intel
+module unload chemshell orca
+module load engaging/intel/2013.1.046   engaging/intel/2013_sp1.0.080
+module load gulp/5.0-intel13 chemshell/intel13-3.7.0 orca/impi-4.0.1 nbo openmpi/2.1.3-intel13
+fi
+module list
+
+date |tee chemshellout
+chemsh.x ecp.chm |tee -a chemshellout
+date |tee -a chemshellout
+rm *tmp* gulp* hybrid*
+EOF
+
+rm opt.chm
+
+cat >TiO2.ff <<EOF
+#region 1-3
+buckingham
+Ti3    Ti1   0 0.1 0 0 12
+Ti3    O1      5260.5 0.21998 31.459 0 12  
+Ti1    O3      5260.5 0.21998 31.459 0 12  
+O1       O3      22840 0.20524 0.014834 0 12 
+lennard 12  6
+Ti1 O3 102.39  0.000000  0.000 12.000
+Ti3 O1 102.39  0.000000  0.000 12.000
+#region 1-4
+buckingham
+Ti4    Ti1   0 0.1 0 0 12
+Ti4    O1      5260.5 0.21998 31.459 0 12  
+Ti1    O4      5260.5 0.21998 31.459 0 12  
+O1       O4      22840 0.20524 0.014834 0 12 
+lennard 12  6
+Ti1 O4 102.39  0.000000  0.000 12.000
+Ti4 O1 102.39  0.000000  0.000 12.000
+#region 2-2
+buckingham
+Ti2    Ti2  0 0.1 0 0 12
+#region 2-3
+buckingham
+Ti2    O3      5260.5 0.21998 31.459 0 12  
+Ti2    Ti3   0 0.1 0 0 12
+lennard 12  6
+Ti2 O3 102.39  0.000000  0.000 12.000
+Ti3 O2 102.39  0.000000  0.000 12.000
+#region 2-4
+buckingham
+Ti2    O4      5260.5 0.21998 31.459 0 12  
+Ti2    Ti4   0 0.1 0 0 12
+lennard 12  6
+Ti2 O4 102.39  0.000000  0.000 12.000
+Ti4 O2 102.39  0.000000  0.000 12.000
+#region 3-3
+buckingham
+Ti3    Ti3   0 0.1 0 0 12
+Ti3    O3      5260.5 0.21998 31.459 0 12  
+O3       O3      22840 0.20524 0.014834 0 12 
+lennard 12  6
+Ti3 O3 102.39  0.000000  0.000 12.000
+#region 3-4
+buckingham
+Ti4   Ti3   0 0.1 0 0 12
+Ti4    O3      5260.5 0.21998 31.459 0 12  
+Ti3    O4      5260.5 0.21998 31.459 0 12  
+O3       O4      22840 0.20524 0.014834 0 12 
+lennard 12  6
+Ti3 O4 102.39  0.000000  0.000 12.000
+Ti4 O3 102.39  0.000000  0.000 12.000
+coulomb
+Ti4 core Ti4 core 0.0  100.0
+Ti4 core O4  core 0.0  100.0
+Ti4 core O4  core 0.0  100.0
+O4 core  O4  core 0.0  100.0
+O4 core  O4  core 0.0  100.0
+O4 core  O4  core 0.0  100.0
+Ti4 core F5 core  0.0  100.0
+O4 core  F5 core  0    100
+O4 core  F5 core  0    100
+F5 core  F5 core  0.0  100.0
+# GULP CONTROL PARAMETERS
+xtol opt   6.000000
+gtol opt   6.000000
+ftol opt   8.000000
+stepmx     1.00
+accuracy 4
+EOF

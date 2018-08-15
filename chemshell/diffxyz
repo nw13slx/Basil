@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/bin/bash
 file1=$1
 file2=$2
 thred=$3

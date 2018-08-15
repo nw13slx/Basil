@@ -64,6 +64,8 @@ int main(int argc, char **argv){
   fin.close();
 
   // QM-MM bond
+  double bmax=0;
+  double bmin=100;
   double tally_12=0;
   double tally2_12=0;
   int n_12=0;
@@ -83,15 +85,21 @@ int main(int argc, char **argv){
           n_12++;
           tally_12+=r;
           tally2_12+=r*r;
+          if (bmin>r)
+            bmin=r;
+          if (bmax<r)
+            bmax=r;
         }
       }
     }
   }
   tally_12=tally_12*ANG2BOHR/double(n_12); 
   tally2_12=tally2_12*ANG2BOHR*ANG2BOHR/double(n_12); 
-  cout<<"QM-MM "<< tally_12<<" +/- "<<sqrt(tally2_12-tally_12*tally_12)<<endl;
+  cout<<"QM-MM "<< tally_12<<" +/- "<<sqrt(tally2_12-tally_12*tally_12)<<" [ "<<bmin*ANG2BOHR<<" , "<<bmax*ANG2BOHR<<" ]"<<endl;
 
   // QM-QM bond
+  bmin=100;
+  bmax=0;
   double tally_11=0;
   double tally2_11=0;
   int n_11=0;
@@ -111,18 +119,24 @@ int main(int argc, char **argv){
           n_11++;
           tally_11+=r;
           tally2_11+=r*r;
+          if (bmin>r)
+            bmin=r;
+          if (bmax<r)
+            bmax=r;
         }
       }
     }
   }
   tally_11=tally_11*ANG2BOHR/double(n_11); 
   tally2_11=tally2_11*ANG2BOHR*ANG2BOHR/double(n_11); 
-  cout<<"QM-QM "<< tally_11<<" +/- "<<sqrt(tally2_11-tally_11*tally_11)<<endl;
+  cout<<"QM-QM "<< tally_11<<" +/- "<<sqrt(tally2_11-tally_11*tally_11)<<" [ "<<bmin*ANG2BOHR<<" , "<<bmax*ANG2BOHR<<" ]"<<endl;
 
   // MM-MM bond
   double tally_22=0;
   double tally2_22=0;
   int n_22=0;
+  bmin=100;
+  bmax=0;
   for (int i=0; i<nMM; i++){
     double *xMM1=&x[MM[i]*3];
     string type1=type[MM[i]];
@@ -139,12 +153,16 @@ int main(int argc, char **argv){
           n_22++;
           tally_22+=r;
           tally2_22+=r*r;
+          if (r>bmax)
+            bmax=r;
+          if (r<bmin)
+            bmin=r;
         }
       }
     }
   }
   tally_22=tally_22*ANG2BOHR/double(n_22); 
   tally2_22=tally2_22*ANG2BOHR*ANG2BOHR/double(n_22); 
-  cout<<"MM-MM "<< tally_22<<" +/- "<<sqrt(tally2_22-tally_22*tally_22)<<endl;
+  cout<<"MM-MM "<< tally_22<<" +/- "<<sqrt(tally2_22-tally_22*tally_22)<<" [ "<<bmin*ANG2BOHR<<" , "<<bmax*ANG2BOHR<<" ]"<<endl;
 
 }

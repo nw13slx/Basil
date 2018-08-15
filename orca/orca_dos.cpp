@@ -9,6 +9,11 @@
 
 int main(int argc, char **argv){
 
+   //set up the final plotting region
+   //the fermi level is shfited to zero
+   double EMIN=-150;
+   double EMAX=150;
+
     char temp[MAX_CHARACTER], * pch;
     string *content=new string[MAX_COLUMN];
     int column, line=0;

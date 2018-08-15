@@ -6,6 +6,9 @@ for chem in $(find ./ -name chemshellout)
 do
   dir=$(dirname $chem)
   cd $dir
+    QM="-"
+    MM="-"
+    gCP="-"
     if grep -q "Max grad" chemshellout; then
       maxgrad=$(grep "Max grad" chemshellout|cat -n |tail -n 1|awk '{print $1,$4*27.2114/0.52}') 
     else
@@ -24,18 +27,36 @@ do
     job="unknow"
     if grep -q "slurm-" $temp; then
       slurm=$(head -n 1 $temp|awk '{print $9}')
-      if grep -q "DUE TO TIME LIMIT" $slurm ; then
-        job="time-out"
-      elif grep -q "CANCELLED" $slurm ; then
-        job="cancelled"
-      else
-        jobid=$(echo $slurm|sed "s/slurm-//g"|sed "s/\.out//g")
-        scontrol show job $jobid >$temp 2>&1
+      if [ $slurm -nt job.sh ]; then
+        if grep -q "DUE TO TIME LIMIT" $slurm ; then
+          job="time-out"
+        elif grep -q "CANCELLED" $slurm ; then
+          job="cancelled"
+        else
+          jobid=$(echo $slurm|sed "s/slurm-//g"|sed "s/\.out//g")
+          scontrol show job $jobid >$temp 2>&1
+          if ! grep -q "JobStat" $temp ; then
+            job="old_job"
+          else
+            job=$(grep JobState $temp|awk '{print $1"_"$2}'|sed "s/JobState=//g"|sed "s/Reason=//g"|sed "s/_None//g")
+          fi
+        fi
+      elif echo $(basename $(pwd)) |grep -qv "[a-z]"  ; then
+        scontrol show job $(basename $(pwd)) >$temp 2>&1
         if ! grep -q "JobStat" $temp ; then
           job="old_job"
         else
           job=$(grep JobState $temp|awk '{print $1"_"$2}'|sed "s/JobState=//g"|sed "s/Reason=//g"|sed "s/_None//g")
         fi
+      else
+        job="unknown"
+      fi
+    elif echo $(basename $(pwd)) |grep -qv "[a-z]"  ; then
+      scontrol show job $(basename $(pwd)) >$temp 2>&1
+      if ! grep -q "JobStat" $temp ; then
+        job="old_job"
+      else
+        job=$(grep JobState $temp|awk '{print $1"_"$2}'|sed "s/JobState=//g"|sed "s/Reason=//g"|sed "s/_None//g")
       fi
     else
       job="unknown"
@@ -52,8 +73,11 @@ do
     if grep -q "finished, energy" -i chemshellout; then
       if grep -q "Optimisation converged" -i chemshellout; then
         suc="opt-suc"
+        QM=$(grep orca chemshellout |grep -i contrib|tail -n 1|awk '{print $6}')
+        MM=$(grep gulp chemshellout |grep -i contrib|tail -n 1|awk '{print $6}')
+        gCP=$(grep gCP orca1.out|grep -v DFT|grep -v done|tail -n 1|awk '{print $3}')
       elif grep -q "DL-FIND: energy/gradient evaluation failed" chemshellout; then
-        suc="scf-fail"
+        suc="gradient-fail"
       elif grep -q "Stopping: maximum number of cycles reached" chemshellout; then
         suc="max-cycle"
       else
@@ -78,8 +102,15 @@ do
         suc="scf-fail-1st"
       elif grep -q "ChemShell exiting code 0" chemshellout; then
         suc="suc"
+        QM=$(grep orca chemshellout |grep -i contrib|tail -n 1|awk '{print $6}')
+        MM=$(grep gulp chemshellout |grep -i contrib|tail -n 1|awk '{print $6}')
+        gCP=$(grep gCP orca1.out|grep -v DFT|grep -v done|tail -n 1|awk '{print $3}')
       elif grep -q "ChemShell exiting code 1" chemshellout; then
         suc="fail"
+        if grep -q "the calculation is not converged" chemshellout; then
+          suc="scf-far"
+          maxgrad=$(grep "Last DIIS Error" orca1.out|awk '{print $5}'|tail -n 1)
+        fi
       else
         suc="unknown"
       fi
@@ -88,12 +119,13 @@ do
     if grep -q hessian chemshellout; then
       if grep -q "total vibrational energy" chemshellout; then
         suc="hess-suc"
-        maxgrad="vib "$(grep "total vibrational energy" chemshellout|awk '{print $7}')
+        maxgrad=$(grep "total vibrational energy" chemshellout|awk '{print $7}')
+        energy=$(grep "total ZPE" chemshellout|awk '{printf "%10.7f\n",$3*3.8088e-7}')
       else
         suc="hess-fail"
       fi
     fi
 
-    echo $dir $maxgrad $energy $disp $suc $job |awk '{printf "%30s %5s %15s %20s %10s %10s\n", $1, $2, $3,$4,$5,$6}'|tee -a $home/sum
+    echo $dir $maxgrad $energy $disp $suc $job $QM $MM $gCP |awk '{printf "%30s %5s %10.6f %15s %10s %10s %15.5f %15.5f %15.5f\n", $1, $2, $3,$4,$5,$6,$7,$8,$9}'|tee -a $home/sum
   cd $home
 done

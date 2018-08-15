@@ -14,31 +14,41 @@
 
 set K 167101.001981787
 
+set hash_coul123 {}
 set hash_coul234 {}
 set hash_coul14  0
 
-proc objective { centerid rmin t_ele buffer QMi sel sel_id unsel rest } {
+proc objective { centerid rmin t_ele buffer QMi QMo sel sel_id unsel rest } {
 
-  ##case 1, use self coulombic energy
-  #return [ expr [ coulomb $sel $sel ] + [ coulomb_cross $QMi $sel ] ]
+  #case 1, use self coulombic energy
+  #global hash_coul123
+  #if { [ dict size $hash_coul123 ] == 0 } {
+  #  set hash_coul123 [ hash_coulomb_cross $QMi $QMo ]
+  #}
+  #return [ expr [ sum_coulomb_cross $hash_coul123 $sel_id ] + [ coulomb $sel ] ]
 
   ##case 2, interaction energy
   #global hash_coul234
   #global hash_coul14
   #if { [ dict size $hash_coul ] == 0 } {
-  #  set hash_coul [ hash_coulomb_cross $rest $QMo ]
+  #  set hash_coul234 [ hash_coulomb_cross $rest $QMo ]
   #  set hash_coul14 [ coulomb_cross $QMi $rest ]
   #}
   #return [ expr [ sum_coulomb_cross $hash_coul234 $sel_id ] + [ coulomb_cross $QMi $unsel ] + [ coulomb_cross $sel $unsel] +$hash_coul14 + 
   
   ##case 3, total coordination
-  #return [ count_coordination "index $sel_id $QM1_sel $QM2_sel "] ]
+  #return [ total_coordination "index $sel_id $QM1_sel $QM2_sel "] ]
   
   #case 4, 2nd order momentum
   return [ moment2nd $centerid $sel ]
+
+  #case 5, weight center
+  #return [ masscenter $centerid $sel ]
 }
 
 proc autoselectQM { centerid rmin t_ele buffer T attempt} {
+  global hash_coul123
+  set hash_coul123 {}
 
   global K
 
@@ -106,7 +116,7 @@ proc autoselectQM { centerid rmin t_ele buffer T attempt} {
         set sel_id [ list [lindex $id_QMo $i] [lindex $id_QMo $j] ]
         set select [ atomselect top "index $sel_id "]
         set unselect [ atomselect top "index $id_QMo and not index $sel_id" ] 
-        set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+        set pot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
         if { $minpot >$pot } {
           set minpot $pot
           set minsel $sel_id
@@ -133,7 +143,7 @@ proc autoselectQM { centerid rmin t_ele buffer T attempt} {
       set sel_id [ list [lindex $id_QMo $i] ]
       set select [ atomselect top "index $sel_id "]
       set unselect [ atomselect top "index $id_QMo and not index $sel_id" ] 
-      set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+      set pot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
       if { $minpot >$pot } {
         set minpot $pot
         set minsel $sel_id
@@ -174,7 +184,7 @@ proc autoselectQM { centerid rmin t_ele buffer T attempt} {
   set select [ atomselect top "index $sel_id "]
   set unselect [ atomselect top "index $unsel_id "]
   set sel_id0 $sel_id
-  set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+  set pot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
   puts "initial gues: $pot "
   puts $fo_info "initial gues: $pot "
  
@@ -195,7 +205,7 @@ proc autoselectQM { centerid rmin t_ele buffer T attempt} {
 
     set select [ atomselect top "index $sel_id "]
     set unselect [ atomselect top "index $unsel_id "]
-    set newpot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+    set newpot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
     puts "initial gues: $pot "
 
     set accept 0
@@ -258,6 +268,8 @@ proc autoselectQM { centerid rmin t_ele buffer T attempt} {
   
 
 proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
+  global hash_coul123
+  set hash_coul123 {}
 
   global K
   global debug
@@ -359,7 +371,7 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
         set sel_id [ list [lindex $id_QMo $i] [lindex $id_QMo $j] ]
         set select [ atomselect top "index $sel_id" ]
         set unselect [ atomselect top "index $id_QMo and not (index $sel_id)" ]
-        set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+        set pot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
         if { $minpot >$pot } {
           set minpot $pot
           set minsel $sel_id
@@ -386,7 +398,7 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
       set sel_id [ list [lindex $id_QMo $i] ]
       set select [ atomselect top "index $sel_id" ]
       set unselect [ atomselect top "index $id_QMo and not (index $sel_id)" ]
-      set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+      set pot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
       if { $minpot >$pot } {
         set minpot $pot
         set minsel $sel_id
@@ -433,7 +445,7 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
   set sel_id0 $sel_id
   set select   [ atomselect top "index $sel_id" ]
   set unselect [ atomselect top "index $unsel_id" ]
-  set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+  set pot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
 
   puts "initial gues: $pot "
   puts $fo_info "initial gues: $pot "
@@ -456,7 +468,7 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
 
     set select   [ atomselect top "index $sel_id" ]
     set unselect [ atomselect top "index $unsel_id" ]
-    set newpot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+    set newpot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
 
     set accept 0
 
@@ -526,6 +538,9 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
 }
 
 proc autoselectQM3 { centerid QM1_def t_ele buffer coord T attempt } {
+
+  global hash_coul123
+  set hash_coul123 {}
 
   global K
   global debug
@@ -619,7 +634,7 @@ proc autoselectQM3 { centerid QM1_def t_ele buffer coord T attempt } {
         set sel_id [ list [lindex $id_QMo $i] [lindex $id_QMo $j] ]
         set select   [ atomselect top "index $sel_id" ]
         set unselect [ atomselect top "index $id_QMo and not index $sel_id" ]
-        set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+        set pot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
         if { $minpot >$pot } {
           set minpot $pot
           set minsel $sel_id
@@ -646,7 +661,7 @@ proc autoselectQM3 { centerid QM1_def t_ele buffer coord T attempt } {
       set sel_id [ list [lindex $id_QMo $i] ]
       set select   [ atomselect top "index $sel_id" ]
       set unselect [ atomselect top "index $id_QMo and not index $sel_id" ]
-      set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+      set pot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
       if { $minpot >$pot } {
         set minpot $pot
         set minsel $sel_id
@@ -689,7 +704,7 @@ proc autoselectQM3 { centerid QM1_def t_ele buffer coord T attempt } {
   set unselect [ atomselect top "index $unsel_id" ]
   set rest [ atomselect top " (not index $id_QMo $id_QMi) and within 10 of index $centerid " ]
   set rmin 0
-  set pot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+  set pot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
 
   puts "initial gues: $pot "
   puts $fo_info "initial gues: $pot "
@@ -712,7 +727,7 @@ proc autoselectQM3 { centerid QM1_def t_ele buffer coord T attempt } {
 
     set select   [ atomselect top "index $sel_id" ]
     set unselect [ atomselect top "index $unsel_id" ]
-    set newpot [ objective $centerid $rmin $t_ele $buffer $QMi $select $sel_id $unselect $rest ]
+    set newpot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
 
     set accept 0
 

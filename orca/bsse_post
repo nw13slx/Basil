@@ -1,0 +1,9 @@
+quicksumorca > t
+rm t
+E1=$(grep "molecule-only" sum|awk '{print $2}')
+E2=$(grep "molecule-ghost" sum|awk '{print $2}')
+dEmol=$(echo $E1 $E2|awk '{print ($1-$2)}')
+E1=$(grep "slab-only" sum|awk '{print $2}')
+E2=$(grep "slab-ghost" sum|awk '{print $2}')
+dEslab=$(echo $E1 $E2|awk '{print ($1-$2)}')
+echo $dEmol $dEslab |awk '{print $1,$2,$1+$2}'

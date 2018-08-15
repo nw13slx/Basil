@@ -17,45 +17,57 @@ class analysis:
     fermiN=self.dos.fermiN
     nedos=self.dos.nedos
 
-    EGMIN_u=None
-    EGMIN_d=None
-    EGMAX_u=None
-    EGMAX_d=None
+    EGMIN=None
+    EGMAX=None
     foundEg=0
     finfo = open("band-info", 'w')
     finfo.write('#search between 0 %15.8f %15.8f \n' % (ef[fermiN],ef[fermiN+1]))
-    for n in range(fermiN, 0, -1):
-       if ((dos0[n,0]!=0) and (EGMIN_u is None)):
-          EGMIN_u=ef[n]
-       if ((dos0[n,1]!=0) and (EGMIN_d is None)):
-          EGMIN_d=ef[n]
-    for n in range(fermiN+2, nedos, 1):
-       if ((dos0[n,0]!=0) and (EGMAX_u is None)):
-          EGMAX_u=ef[n]
-       if ((dos0[n,1]!=0) and (EGMAX_d is None)):
-          EGMAX_d=ef[n]
-    if (EGMIN_u >EGMIN_d):
-        EGMIN = EGMIN_u
+    if dos.spin:
+      for n in range(fermiN, 0, -1):
+         if ((dos0[n,0]!=0) and (EGMIN_u is None)):
+            EGMIN_u=ef[n]
+         if ((dos0[n,1]!=0) and (EGMIN_d is None)):
+            EGMIN_d=ef[n]
+      for n in range(fermiN+2, nedos, 1):
+         if ((dos0[n,0]!=0) and (EGMAX_u is None)):
+            EGMAX_u=ef[n]
+         if ((dos0[n,1]!=0) and (EGMAX_d is None)):
+            EGMAX_d=ef[n]
+      if (EGMIN_u >EGMIN_d):
+          EGMIN = EGMIN_u
+      else:
+          EGMIN = EGMIN_d
+      if (EGMAX_u < EGMAX_d):
+          EGMAX = EGMAX_u
+      else:
+          EGMAX = EGMAX_d
+      if ((dos0[fermiN,0]!=0) and (dos0[fermiN+1,0]!=0) and (dos0[fermiN+2,0]!=0 )):
+          Eg_u=0
+      else:
+          Eg_u = EGMAX_u-EGMIN_u
+      if ((dos0[fermiN,1]!=0) and (dos0[fermiN+1,1]!=0) and (dos0[fermiN+2,1]!=0 )):
+          Eg_d=0
+      else:
+          Eg_d = EGMAX_d-EGMIN_d
+      finfo.write('#spin     %15s %15s %15s\n' % ("VBM","CBM","gap"))
+      finfo.write('spin_up   %15.8f %15.8f %15.8f\n' % (EGMIN_u,EGMAX_u,Eg_u))
+      finfo.write('spin_down %15.8f %15.8f %15.8f\n' % (EGMIN_d,EGMAX_d,Eg_d))
+      finfo.write('total     %15.8f %15.8f %15.8f\n' % (EGMIN,EGMAX,EGMAX-EGMIN))
+      finfo.close()
     else:
-        EGMIN = EGMIN_d
-    if (EGMAX_u < EGMAX_d):
-        EGMAX = EGMAX_u
-    else:
-        EGMAX = EGMAX_d
-    if ((dos0[fermiN,0]!=0) and (dos0[fermiN+1,0]!=0) and (dos0[fermiN+2,0]!=0 )):
-        Eg_u=0
-    else:
-        Eg_u = EGMAX_u-EGMIN_u
-    if ((dos0[fermiN,1]!=0) and (dos0[fermiN+1,1]!=0) and (dos0[fermiN+2,1]!=0 )):
-        Eg_d=0
-    else:
-        Eg_d = EGMAX_d-EGMIN_d
-    finfo.write('#spin     %15s %15s %15s\n' % ("VBM","CBM","gap"))
-    finfo.write('spin_up   %15.8f %15.8f %15.8f\n' % (EGMIN_u,EGMAX_u,Eg_u))
-    finfo.write('spin_down %15.8f %15.8f %15.8f\n' % (EGMIN_d,EGMAX_d,Eg_d))
-    finfo.write('total     %15.8f %15.8f %15.8f\n' % (EGMIN,EGMAX,EGMAX-EGMIN))
-    finfo.close()
-
+      for n in range(fermiN, 0, -1):
+         if ((dos0[n]!=0) and (EGMIN is None)):
+            EGMIN=ef[n]
+      for n in range(fermiN+2, nedos, 1):
+         if ((dos0[n]!=0) and (EGMAX is None)):
+            EGMAX=ef[n]
+      if ((dos0[fermiN]!=0) and (dos0[fermiN+1]!=0) and (dos0[fermiN+2]!=0 )):
+          Eg=0
+      else:
+          Eg = EGMAX-EGMIN
+      finfo.write('#spin     %15s %15s %15s\n' % ("VBM","CBM","gap"))
+      finfo.write('total     %15.8f %15.8f %15.8f\n' % (EGMIN,EGMAX,EGMAX-EGMIN))
+      finfo.close()
 
   def peak_finder(self,center,span):
     ef=self.dos.Xenergy
@@ -69,7 +81,10 @@ class analysis:
     win_down= np.argmin(abs(dos.Xenergy-window_d))
     win_up= np.argmin(abs(dos.Xenergy-window_u))
     win_span=(win_up-win_down)
-    ana_dos=dos0[win_down:win_up,0]-dos0[win_down:win_up,1]
+    if dos.spin:
+      ana_dos=dos0[win_down:win_up,0]-dos0[win_down:win_up,1]
+    else:
+      ana_dos=dos0[win_down:win_up]
 
     from scipy.signal import find_peaks_cwt
     peak=find_peaks_cwt(ana_dos,np.arange(5,20),min_snr=0.8)
@@ -77,6 +92,7 @@ class analysis:
     sigma=np.sqrt(sigma)
     dx=dos.Xenergy[1]-x0
     #print avg*dx+x0,sigma*dx
+
     return dos.Xenergy[win_down+peak],sigma*dx
 
   def peak_weight_center(self,center,span):
@@ -92,7 +108,10 @@ class analysis:
     win_down= np.argmin(abs(dos.Xenergy-window_d))
     win_up= np.argmin(abs(dos.Xenergy-window_u))
     win_span=(win_up-win_down)
-    ana_dos=dos0[win_down:win_up,0]-dos0[win_down:win_up,1]
+    if dos.spin:
+      ana_dos=dos0[win_down:win_up,0]-dos0[win_down:win_up,1]
+    else:
+      ana_dos=dos0[win_down:win_up]
 
     #assuming there is only one gaussian peak
     avg=(np.arange(win_span).dot(ana_dos))/np.sum(ana_dos)
@@ -117,7 +136,7 @@ class analysis:
 
     natom=len(positions)
     #get the seperation part for each plane
-    dz=0.1
+    dz=0.01
     buf=3
     zmin0=np.min(positions[:,direction])
     zmax0=np.max(positions[:,direction])
@@ -128,36 +147,48 @@ class analysis:
       z=positions[i,direction]
       idz=int(np.floor((z-zmin)/dz))
       binz[idz]+=1
-    from scipy.signal import find_peaks_cwt
-    midland=self.find_zero(binz,conti=int(1./dz),Th=1)*dz+zmin
+
+    midland=self.find_zero(binz,conti=int(0.5/dz),Th=1)*dz+zmin
     division=[zmin0-0.1]
-    print midland
-    print zmin0
     for dv in midland:
       if (dv>=zmin0 and dv<=zmax0):
         division+=[dv]
     division=np.array(division)
-    print division
     nplane=len(division)
+
+    #from scipy.signal import find_peaks_cwt
     #peak_atoms=find_peaks_cwt(binz,np.arange(1,7))#,min_snr=0.2)
-    #print "peak",peak_atoms
-    #print "peak",peak_atoms*dz+zmin
     #division=[] #np.zeros(len(peak_atoms))
     #nplane=len(division)
+    #print "find",nplane,"planes"
+    #for i in range(nplane-1):
+    #  print division[i+1]-division[i],
+    #print
+
+    nplane=len(division)
     #for i in range(len(peak_atoms)-1):
     #  division[i]=zmin+((peak_atoms[i]+peak_atoms[i+1])/2.)*dz
-    #  print -(peak_atoms[i]-peak_atoms[i+1])*dz, -(peak_atoms[i]-peak_atoms[i+1])
     #division[nplane-1]=zmax
-    #print nplane
-    pid=np.array(range(natom))
+
     #for each atom, find the plane id
+    pid=np.array(range(natom))
+    weight=np.zeros(nplane)
+    newx=np.zeros(nplane)
     for i in range(natom):
       z=positions[i,direction]
       planeid=0
       while ((planeid<(nplane-1)) and (z>division[planeid])):
         planeid+=1
+      if (z>division[nplane-1]):
+        planeid+=1
+      planeid-=1
       pid[i]=int(planeid)
+      weight[planeid]+=1
+      newx[planeid]+=z
     symbol=range(nplane)
+    for i in symbol:
+      newx[i]=newx[i]/float(weight[i])
+      print i,newx[i]
 
     return pid, nplane, symbol
 
@@ -175,6 +206,7 @@ class analysis:
     iszero=False
     count=0
     midland=[]
+    print "find_zero"
     for i in range(len(f)):
       if ((f[i]==0) and iszero==False):
         iszero=True
@@ -185,6 +217,7 @@ class analysis:
         iszero=False
         if (count>conti):
           midland+=[i-int(count/2.)]
+          count=0
     return np.array(midland)
 
   def find_ngh(self,rNN):
@@ -245,11 +278,14 @@ class analysis:
           compare[k]=angles[j,k]
         indexk=np.argmax(compare)
         anglemin=compare[indexk]
+        #for small enough angle
         if (anglemin>criteria):
            if (indexk not in Qunsort.keys()): #(Q[ref][indexk]==[]):
+             #if this atom hasn't been counted before
              Qunsort[indexk]=[neighbor[j][DIST],neighbor[j][DX],anglemin,j]
              del neighbor[j]
            elif ((Qunsort[indexk][DIST] > neighbor[j][DIST]) and (Qunsort[indexk][ANGLE]<criteria_max)):
+             #if this atom has been counted before, and the newone is closer
              neighbor[Qunsort[indexk][ID]] = [Qunsort[indexk][DIST],Qunsort[indexk][DX]]
              Qunsort[indexk]=[neighbor[j][DIST],neighbor[j][DX],anglemin,j]
              del neighbor[j]
@@ -289,9 +325,11 @@ class analysis:
       self.atom.ngh_id=[]
       ngh_id=self.atom.ngh_id
       for i in range(self.atom.natom):
+        #for each atom
         Q+=[[]]
         Q_dagger+=[[]]
         ngh_id+=[[]]
+        #use a standard reference
         Pn=Pn_allspecies[self.atom.species[i]]
         if ( Pn is None):
           print "the reference input is not intact, please check Pn[",self.atom.species[i],"]"
@@ -301,8 +339,10 @@ class analysis:
         angle_store=[]
         Qunsort=[]
 
+        #there may be multiple references for one certain type of atoms
         #first try to find out which pattern matches the best"
         for ref in range(len(Pn)):
+          #for each reference, find out a nearest neighbor which has the same orientation
           angle_store+=[{}]
           Qunsort+=[{}]
           for j in ngh_list[i].keys():
@@ -317,22 +357,47 @@ class analysis:
           if ((len(Pn[0])-len(Qunsort[0]))==(len(Pn[1])-len(Qunsort[1]))):
             print "competing",self.atom.positions[i]
 
+        #use the one matches the most
         ref=least_missing_id
         #sort the rest,start from the nearest remaining one
         criteria=0.9
-        while ((missing_ngh >0) and (criteria>0)):
+        change_P=True
+        P=None
+        #two ways to get it through if some neighbors are mising
+        if (change_P==False):
+          #loose the criteria
+          while ((missing_ngh >0) and (criteria>0)):
+            self.match_neigh2P(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],criteria,criteria+0.1)
+            missing_ngh=len(Pn[ref])-len(Qunsort[ref])
+            criteria-=0.05
+          if (missing_ngh > len(ngh_list[i])):
+             print "need a larger neighbor list"
+             print "not enough neighbor to build Q"
+             return None,None,None
+          elif (missing_ngh >0):
+             self.add_nearest_neigh(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],missing_ngh)
+
+          P=P_allspecies[self.atom.species[i]][ref]
+        else:
+          #change the reference
           self.match_neigh2P(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],criteria,criteria+0.1)
           missing_ngh=len(Pn[ref])-len(Qunsort[ref])
-          criteria-=0.05
-
-        if (missing_ngh > len(ngh_list[i])):
-           print "need a larger neighbor list"
-           print "not enough neighbor to build Q"
-           return None,None,None
-        elif (missing_ngh >0):
-           self.add_nearest_neigh(ngh_list[i],Pn[ref],angle_store[ref],Qunsort[ref],missing_ngh)
-
-        P=P_allspecies[self.atom.species[i]][ref]
+          P0=P_allspecies[self.atom.species[i]][ref]
+          if (missing_ngh==0):
+            P=P_allspecies[self.atom.species[i]][ref]
+          else:
+            print "Warning, changing reference from",len(Pn[ref]),len(Qunsort[ref]), "for atom",i
+            P=np.zeros((len(Qunsort[ref]),3))
+            Qunsort_new=[]
+            for refn in range(len(Pn)):
+              Qunsort_new+=[{}]
+            count=0
+            for Pid in range(len(P0)):
+              if (Pid in Qunsort[ref].keys()):
+                P[count,:]=P0[Pid,:]
+                Qunsort_new[ref][count]=list(Qunsort[ref][Pid])
+                count+=1
+            Qunsort=Qunsort_new
         if ( P is None):
           print "the reference input is not intact, please check Pn[",self.atom.species[i],"]"
           return None, None,None
@@ -347,7 +412,7 @@ class analysis:
       del Q
       return Q_dagger,G
     else:
-      #sort the neighbor and compute Q and G for each atom
+      #if there is no reference, only Q_dagger is computed
       Q=[]
       Q_dagger=[]
       if self.atom.ngh_id is not None:
@@ -367,17 +432,30 @@ class analysis:
       del Q
       return Q_dagger,None
 
-  def compute_strain_scalar(self,G_dagger):
-    volume=np.zeros(len(G_dagger[:,0,0]))
-    vonMises=np.zeros(len(G_dagger[:,0,0]))
-    for i in range(len(G_dagger)):
-      volume[i]=G_dagger[i,0,0]
-      volume[i]+=G_dagger[i,1,1]
-      volume[i]+=G_dagger[i,2,2]
-      volume[i]-=3.
-      print i,G_dagger[i][0,0],G_dagger[i][1,1],G_dagger[i][2,2],volume[i]
-      F=1/2.*(G_dagger[i,:,:]+G_dagger[i,:,:].T)
-      G_temp=F-np.array([[1,0,0],[0,1,0],[0,0,1]])*(volume[i]/3.+1)
+  def compute_strain_scalar(self,etaa=None,G_dagger=None):
+    if (G_dagger is not None):
+      l=len(G_dagger[:,0,0])
+    else:
+      l=len(etaa[:,0,0])
+    volume=np.zeros(l)
+    vonMises=np.zeros(l)
+    for i in range(l):
+      if (G_dagger is not None):
+        #eta=(G_dagger[i,:,:].dot(G_dagger[i,:,:].T)-np.array([[1,0,0],[0,1,0],[0,0,1]]))/2.
+        eta=(G_dagger[i,:,:]+G_dagger[i,:,:].T)/2.-np.array([[1,0,0],[0,1,0],[0,0,1]])
+      else:
+        eta=etaa[i,:,:]
+      volume[i]=eta[0,0]
+      volume[i]+=eta[1,1]
+      volume[i]+=eta[2,2]
+      volume[i]/=3.
+      #volume[i]-=3.
+      #print i,G_dagger[i][0,0],G_dagger[i][1,1],G_dagger[i][2,2],volume[i]
+      #F=1/2.*(eta[:,:]+eta[:,:].T)
+      #G_temp=F-np.array([[1,0,0],[0,1,0],[0,0,1]])*(volume[i]/3.+1)
+      #G_temp=G_temp.dot(G_temp)
+      #vonMises[i]=np.sqrt((G_temp[0,0]+G_temp[1,1]+G_temp[2,2])/2.)
+      G_temp=eta-np.array([[1,0,0],[0,1,0],[0,0,1]])*(volume[i])
       G_temp=G_temp.dot(G_temp)
       vonMises[i]=np.sqrt((G_temp[0,0]+G_temp[1,1]+G_temp[2,2])/2.)
     return volume, vonMises
