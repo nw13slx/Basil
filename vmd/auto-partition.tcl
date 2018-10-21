@@ -74,7 +74,7 @@ proc autogeneration { input } {
     set definition [ lrange $items 2 $last ]
     set def [join $definition ]
   
-    selectQM "$def" "$active_string" "$ecp_string" $ecp_q $shell_Q "$lab" $scheme 
+    selectQM "$def" "$active_string" "$ecp_string" $ecp_q $shell_Q "$center_id-$lab" $scheme 
     puts "$lab $def"
   }
 }
