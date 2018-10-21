@@ -108,6 +108,7 @@ int main(int argc, char **argv){
     double *x=new double[3000];
     int *type=new int[1000];
     char element[MAX_ELEMENT][10];
+    bool iselement[1000];
     int n_element=0;
     int eid=0;
     if (c_pos!=-1){
@@ -139,6 +140,12 @@ int main(int argc, char **argv){
             n_element++;
         }
         type[atomn]=elementid;
+        char * ecp1, * q1;
+        ecp1=(char *) strstr(content[0].c_str(),">");
+        q1=(char *) strstr(content[0].c_str(),"Q");
+        if (ecp1!=NULL) iselement[atomn]=false;
+        else if (q1!=0) iselement[atomn]=false;
+        else iselement[atomn]=true;
 
         atomn++;
         In1.getline(temp,MAX_CHARACTER);
@@ -336,14 +343,23 @@ int main(int argc, char **argv){
       In1.getline(temp,MAX_CHARACTER);
       In1.getline(temp,MAX_CHARACTER);
       for (int i=0;i<atomn;i++){
-        In1.getline(temp,MAX_CHARACTER);
-        break_line(temp,content);
-        if (i>0) {
-          strcat(nbo_q,", ");
-          strcat(nbo_s,", ");
+        if (iselement[i]){
+          In1.getline(temp,MAX_CHARACTER);
+          break_line(temp,content);
+          if (i>0) {
+            strcat(nbo_q,", ");
+            strcat(nbo_s,", ");
+          }
+          strcat(nbo_q,content[2].c_str());
+          strcat(nbo_s,content[7].c_str());
+        } else{
+          if (i>0) {
+            strcat(nbo_q,", ");
+            strcat(nbo_s,", ");
+          }
+          strcat(nbo_q,"0");
+          strcat(nbo_s,"0");
         }
-        strcat(nbo_q,content[2].c_str());
-        strcat(nbo_s,content[7].c_str());
       }
       json_o<<nbo_q<<"],"<<endl;
       json_o<<nbo_s<<"],"<<endl;

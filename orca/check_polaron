@@ -4,5 +4,5 @@ data = json.load(open(sys.argv[1]))
 n=data['atomn']
 spin=data['mulliken_spin']
 for i in range(n):
-  if (abs(spin[i])>0.3):
+  if (abs(spin[i])>0.1):
     print i,spin[i]

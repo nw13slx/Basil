@@ -8,7 +8,7 @@
 int main(int argc, char **argv){
   if (argc < 3){
     cout<<" FAILED: need more input arguments"<<endl;
-    cout<<"usage: bondlength  input symbol1 symbol2 cutoff"<<endl;
+    cout<<"usage: find_neighbor input centeratom cutoff bondlength"<<endl;
     return 1;
   }
   ifstream fin(argv[1]); 
@@ -18,6 +18,7 @@ int main(int argc, char **argv){
   else cutoff=atof(argv[3]);
   double bondlength=1.5;
   if (argc >4 ) bondlength=atof(argv[4]);
+  bondlength/=ANG2BOHR;
 
   char temp[MAX_CHARACTER];
   string content[MAX_COLUMN];
@@ -69,7 +70,7 @@ int main(int argc, char **argv){
   int ns=0;
 
   // QM-QM bond
-  double *xQM=&x[QM[id0]*3];
+  double *xQM=&x[id0*3];
   string sum="";
   for (int i=0; i<nQM; i++){
     string type1=type[QM[i]];
@@ -118,5 +119,5 @@ int main(int argc, char **argv){
   cout<<"all "<<ns<<" neighbor "<<sum<<endl;
   cout<<"weight center "<<sx[0]<<" "<<sx[1]<<" "<<sx[2]<<endl;
   cout<<"distance "<<ls<<endl;
-  cout<<"add atom "<<xQM[0]+sx[0]/ls*bondlength<<" "<<xQM[1]+sx[1]/ls*bondlength<<" "<<xQM[2]+sx[2]/ls*bondlength<<endl;
+  cout<<"add atom "<<xQM[0]-sx[0]/ls*bondlength<<" "<<xQM[1]-sx[1]/ls*bondlength<<" "<<xQM[2]-sx[2]/ls*bondlength<<endl;
 }

@@ -56,6 +56,30 @@ int main(int argc, char **argv){
     parse(temp,column,content);
     q[i]=atof(content[0].c_str());
   }
+  fin.getline(temp,MAX_CHARACTER);
+  int nshell=0;
+  double * shellx, *shellq;
+  int * core;
+  string * shelltype;
+  if (fin.good()){
+    parse(temp,column,content);
+    nshell=atoi(content[5].c_str());
+    shellx=new double [3*nshell];
+    shellq=new double [nshell];
+    core=new int [nshell];
+    shelltype=new string[natom];
+    for (int i=0;i<nshell;i++){
+      fin.getline(temp,MAX_CHARACTER); 
+      parse(temp,column,content);
+      shelltype[i]=content[0];
+      shellx[i*3]=atof(content[1].c_str());
+      shellx[i*3+1]=atof(content[2].c_str());
+      shellx[i*3+2]=atof(content[3].c_str());
+      shellq[i]=atof(content[4].c_str());
+      cout<<std::fixed<<std::setprecision(9) << shellq[i]<<" "<<content[4]<<endl;
+      core[i]=atoi(content[5].c_str());
+    }
+  }
   cout<<"nQM nMM ";
   cout<<nQM<<" "<<nMM<<endl;
   fin.close();
@@ -95,6 +119,13 @@ int main(int argc, char **argv){
   fout<<"block = atom_charges records = "<<natom<<endl;
   for (int i=0;i<natom;i++){
     fout<<q[i]<<endl;
+  }
+  if (nshell>0){
+    fout<<"block = shells records = "<<nshell<<endl;
+    for (int i=0;i<nshell;i++){
+      fout<<shelltype[i]<<" "<<std::setprecision(14)<<shellx[i*3]<<" "<<shellx[i*3+1]<<" "<<shellx[i*3+2];
+      fout<<" "<<std::setprecision(15)<<shellq[i]<<" "<<core[i]<<endl;
+    }
   }
   fout.close();
   delete [] x;

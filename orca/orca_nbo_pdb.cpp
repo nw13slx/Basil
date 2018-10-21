@@ -56,12 +56,12 @@ int main(int argc, char **argv){
     line++;
 
     string element[10];
-    double energy[MAX_ENERGYLINE];
     int n_element=0;
 
     double *x=new double [MAX_ELEMENT*MAX_COORD*3];
     int *id=new int [MAX_ELEMENT*MAX_COORD];
     int *natom=new int [MAX_ELEMENT];
+    double *qtype=new double [MAX_ELEMENT*MAX_COORD];
     for (int i=0;i<MAX_ELEMENT;i++) natom[i]=0;
     
     double boundary[6]={1000,0,1000,0,1000,0};
@@ -74,13 +74,18 @@ int main(int argc, char **argv){
       if (column>7 && content[0][0]!='*' && content[0][0]!='>'){
         string ele;
         //second column is the label
+        double qq=-50;
         if (content[1][0]=='Q'){
-            if (atof(content[2].c_str())>0) ele=" Qp ";
-            else ele=" Qn ";
+            qq=atof(content[2].c_str());
+            if (qq>0) ele=" q+ ";
+            else ele=" q- ";
         } else if ( content[1].find_first_of(">")!=string::npos){
+            qq=atof(content[2].c_str());
             content[1].erase(content[1].length()-1,1);
-            ele=content[1]+"po";
-        }else ele=content[1]+"  ";
+            ele=content[1]+"qp";
+        }else {
+          ele=content[1]+"  ";
+        }
         while (ele.length()<4)
            ele=" "+ele;
         if (ele.length()>4)
@@ -98,6 +103,7 @@ int main(int argc, char **argv){
         }
 
         double *xx=&x[elementid*MAX_COORD*3+natom[elementid]*3];
+        qtype[natom_tot]=qq;
         natom_tot++;
         id[elementid*MAX_COORD+natom[elementid]]=natom_tot;
 
@@ -136,15 +142,19 @@ int main(int argc, char **argv){
     In2.getline(temp,MAX_CHARACTER);
     double *q=new double[natom_tot];
     for (int i=0;i<natom_tot;i++){
-      In2.getline(temp,MAX_CHARACTER);
-      column=break_line(temp,content);
-      if (column==8){
-        q[i]=stof(content[2]);
-      }else if (column==7){
-        q[i]=stof(content[1]);
+      if (qtype[i]>-50){
+        q[i]=qtype[i];
       }else{
-        cout<<"???"<<column<<endl;
-        q[i]=stof(content[1]);
+        In2.getline(temp,MAX_CHARACTER);
+        column=break_line(temp,content);
+        if (column==8){
+          q[i]=atof(content[2].c_str());
+        }else if (column==7){
+          q[i]=atof(content[1].c_str());
+        }else{
+          cout<<"???"<<column<<endl;
+          q[i]=atof(content[1].c_str());
+        }
       }
     }
 /*

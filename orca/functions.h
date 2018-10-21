@@ -10,14 +10,13 @@
 #include <sys/timeb.h>
 #include <sys/types.h>
 #include <time.h>
-#include <cmath>
 #include <iomanip>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sstream>
 using namespace std;
 
-#include "math.h"
 #include "stdlib.h"       // for random
 
 #include <vector>
