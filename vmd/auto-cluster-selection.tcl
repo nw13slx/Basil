@@ -278,7 +278,8 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
 
   #first label all cation
   set QM1 [ atomselect top "not type $t_ele and within $rmin of index $centerid" ]
-  set QM2 [ atomselect top "type $t_ele and within $rmin of index $centerid" ]
+  set shrink [expr $rmin -1]
+  set QM2 [ atomselect top "type $t_ele and within $shrink of index $centerid" ]
   set id_QM1 [ $QM1 get index ]
   set id_QM2 [ $QM2 get index ]
   set n_QM1 [ $QM1 num ]
