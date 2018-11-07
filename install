@@ -9,7 +9,7 @@ basil_src=./
 mkdir -p $basil_bin
 
 current=$(pwd)
-for i in $(find $basil_src -type f -executable -print|grep -v ".git")
+for i in $(find $basil_src -type f -executable -print|grep -v ".git"|grep -v install)
 do
    cd $(dirname $i)
    realpath=$(pwd)/$(basename $i)
