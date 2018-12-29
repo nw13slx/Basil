@@ -35,6 +35,18 @@ $zmin $zmax
 ITEM: ATOMS id q type  x y z 
 EOF
 
-paste ${tmp}_q ${tmp}_coord |awk -v ang=0.52917721092 '{print $1, $2, $3*ang,$4*ang,$5*ang}'|cat -n>> $out
+#need to handle the shell
+#otherwise the charge on core atom is wrong
+if grep -q "shells" $file ;then
+  nshell=$(grep "block = shells records" $file|awk '{print $6}')
+  echo "shell" $nshell
+  grep -A$nshell "block = shells records" $file|tail -n $nshell|awk '{print $6,$5}'|sort -n >  ${tmp}_shell
+  awk '{if (NR==1) {p=-1} else{ p=s } s=$1; if (s>(p+1)) {for (i=1;i<(s-p);i++) {printf "%d %d\n",p+i,0;} printf "%d %20.8f\n",$1,$2} else {print $1,$2}}' ${tmp}_shell > ${tmp}_sq
+  paste ${tmp}_q ${tmp}_sq |awk '{printf "%20.8f\n",$1+$3}' >${tmp}_tq
+  mv ${tmp}_tq ${tmp}_q
+  rm ${tmp}_sq ${tmp}_shell
+fi
+
+paste ${tmp}_q ${tmp}_coord |awk -v ang=0.52917721092 '{print $1, $2, $3*ang,$4*ang,$5*ang}'|cat -n >> $out
 
 rm ${tmp}_q ${tmp}_coord ${tmp}_x
