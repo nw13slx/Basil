@@ -1,7 +1,7 @@
 //average the local potential file along certain direction
 //usage: average_loc input output direction<1-3>
 
-//revised from a source code called vtotav.f. don't remember where did I find the code...
+//revised from a source code called vtotav.f. don't remember where I found the code...
 //author: Lixin Sun nw13mifaso@gmail.com
 
 #include <algorithm>
