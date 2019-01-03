@@ -72,6 +72,23 @@ proc total_coordination { buffer a } {
   return $tot
 }
 
+proc type_coordination { buffer a t_element} {
+  set type [ $a get type ]
+  set index [ $a get index ]
+  set n [ $a num ]
+  set buffer 3
+  set tot 0
+  for { set i 0 } { $i < $n } { incr i } {
+    set id [ lindex $index $i ]
+    set t [ lindex $type $i ]
+    if { $t == $t_element  } {
+      set ngh [ atomselect top "(not type $t) and (index $index) and (within $buffer of index $id)" ]
+      set tot [ expr $tot+[$ngh num]]
+    } 
+  }
+  return $tot
+}
+
 proc count_undercoord { buffer a c } {
   set type [ $a get type ]
   set index [ $a get index ]

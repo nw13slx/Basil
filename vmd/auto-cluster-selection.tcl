@@ -5,29 +5,29 @@
 #example: autoselectQM[n] 950 7.5 O 3 1000 5 10000
 #argument 1: center atom
 #argument 2: inner radius
-#argument 3: buffer thickness
+#argument 3: bond_distance
 #argument 4: temperature
 #argument 5: number of attempts
 
-#autoselectQM0 centerid rmin t_ele buffer T attempt defi
+#autoselectQM0 centerid rmin t_ele bond_distance T attempt defi
 #    user definition of cation, 
 #    and anion that is at least 3-fold coordinated with cations
 
-#autoselectQM1 centerid rmin t_ele buffer T attempt
+#autoselectQM1 centerid rmin t_ele bond_distance T attempt
 #    spherical selection of cations
 #    anion coordination >= 3
 
-#autoselectQM2 centerid rmin t_ele buffer T attempt
+#autoselectQM2 centerid rmin t_ele bond_distance T attempt
 #    spherical selection of cations, 
 #    but they are connected with each other with at least 2 fold coordination
 #    initial anion selection has to be at least 2 fold coordinated with cations
 
-#autoselectQM3 centerid QM1_def t_ele buffer coord T attempt
+#autoselectQM3 centerid QM1_def t_ele bond_distance coord T attempt
 #    cation selection follow the QM1_def
 #    initial anion selection only keeps the one that has a coordination number larger than "coord"
 
-#autoselectQM_cube  centerid rmin t_ele buffer T attempt 
-#    cation selection: +- rmin from the x,y,z of the center atoms
+#autoselectQM4  centerid rmin t_ele bond_distance T attempt 
+#    cation selection: square region that is +- rmin from the x,y,z of the center atoms
 #    anion selection: coordination > 1
 
 set K 167101.001981787
@@ -36,14 +36,14 @@ set hash_coul123 {}
 set hash_coul234 {}
 set hash_coul14  0
 
-proc objective { centerid rmin t_ele buffer QMi QMo sel sel_id unsel rest } {
+proc objective { centerid rmin t_ele bond_distance QMi QMo sel sel_id unsel rest } {
 
   #case 1, use reverse of self coulombic energy -E_coul
-  global hash_coul123
-  if { [ dict size $hash_coul123 ] == 0 } {
-    set hash_coul123 [ hash_coulomb_cross $QMi $QMo ]
-  }
-  return [ expr - [ sum_coulomb_cross $hash_coul123 $sel_id ] - [ coulomb $sel ] ]
+  #global hash_coul123
+  #if { [ dict size $hash_coul123 ] == 0 } {
+  #  set hash_coul123 [ hash_coulomb_cross $QMi $QMo ]
+  #}
+  #return [ expr - [ sum_coulomb_cross $hash_coul123 $sel_id ] - [ coulomb $sel ] ]
 
   ##case 2, interaction energy
   #global hash_coul234
@@ -55,17 +55,22 @@ proc objective { centerid rmin t_ele buffer QMi QMo sel sel_id unsel rest } {
   #return [ expr [ sum_coulomb_cross $hash_coul234 $sel_id ] + [ coulomb_cross $QMi $unsel ] + [ coulomb_cross $sel $unsel] +$hash_coul14 + 
   
   ##case 3, total coordination
-  #return [ total_coordination "index $sel_id $QM1_sel $QM2_sel "] ]
+  #set everything [atomselect top "index [$QMo get index] [$QMi get index] $sel_id"]
+  #return [ total_coordination 2.2 $everything ]
   
-  ##case 4, 2nd order momentum
-  #return [ moment2nd $centerid $sel ]
+  #case 4, 2nd order momentum
+  return [ moment2nd $centerid $sel ]
 
   #case 5, weight center
   #return [ masscenter $centerid $sel ]
+    
+  ##case 6, total coordination and 2nd order momentum
+  #set everything [atomselect top "index [$QMo get index] [$QMi get index] $sel_id"]
+  #return [ expr -([ type_coordination 2.2 $everything "Ti"]) + ([ moment2nd $centerid $sel ]) ]
 }
 
 #user definition of cation, and anion that is at least 3-fold coordinated with cations
-proc autoselectQM0 { centerid rmin t_ele buffer T attempt defi} {
+proc autoselectQM0 { centerid rmin t_ele bond_distance T attempt defi} {
   set QM1 [ atomselect top "not type $t_ele and $defi" ]
   set QM2 [ atomselect top "type $t_ele and within 2.2 of (not type $t_ele and $defi)" ]
   set id_QM1 [ $QM1 get index ]
@@ -76,7 +81,7 @@ proc autoselectQM0 { centerid rmin t_ele buffer T attempt defi} {
   #remove the dangling oxygen
   set QM2_sel {}
   foreach id2 $id_QM2 {
-    set ngh [ atomselect top "(not type $t_ele) and ($defi) and (within 2.2 of index $id2)" ]
+    set ngh [ atomselect top "(not type $t_ele) and (index $id_QM1) and (within 2.2 of index $id2)" ]
     set n_ngh [ $ngh num ]
     if { $n_ngh >2  } {
       lappend QM2_sel $id2
@@ -85,22 +90,22 @@ proc autoselectQM0 { centerid rmin t_ele buffer T attempt defi} {
   
   #set up the inner sphere
   set QMi [ atomselect top "index $QM2_sel $id_QM1" ]
-  set command_string "autoselectQM0 $centerid $rmin $t_ele $buffer $T $attempt $defi"
-  QMselection $centerid $rmin $t_ele $buffer $T $attempt $QMi "$command_string"
+  set command_string "autoselectQM0 $centerid $rmin $t_ele $bond_distance $T $attempt $defi"
+  QMselection $centerid $rmin $t_ele $bond_distance $T $attempt $QMi "$command_string"
 }
 
 #spherical selection of cations
 #anion coordination >= 3
-proc autoselectQM1 { centerid rmin t_ele buffer T attempt} {
+proc autoselectQM1 { centerid rmin t_ele bond_distance T attempt} {
   #set up the inner sphere
   set QMi [ atomselect top "within $rmin of index $centerid" ]
-  set command_string "autoselectQM1 $centerid $rmin $t_ele $buffer $T $attempt"
-  QMselection $centerid $rmin $t_ele $buffer $T $attempt $QMi "$command_string"
+  set command_string "autoselectQM1 $centerid $rmin $t_ele $bond_distance $T $attempt"
+  QMselection $centerid $rmin $t_ele $bond_distance $T $attempt $QMi "$command_string"
 }
 
 #spherical selection of cations, but they are connected with each other with at least 2 fold coordination
 #initial anion selection has to be at least 2 fold coordinated with cations
-proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
+proc autoselectQM2 { centerid rmin t_ele bond_distance T attempt } {
   #first label all cation
   set QM1 [ atomselect top "not type $t_ele and within $rmin of index $centerid" ]
   set n_QM1 [ $QM1 num ]
@@ -129,7 +134,7 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
   #remove the dangling oxygen
   set QM2_sel {}
   foreach id2 $id_QM2 {
-    set ngh [ atomselect top "(not type $t_ele) and (within $rmin of index $centerid) and (within 2.2 of index $id2)" ]
+    set ngh [ atomselect top "(not type $t_ele) and (index $id_QM1) and (within 2.2 of index $id2)" ]
     set n_ngh [ $ngh num ]
     if { $n_ngh >1  } {
       lappend QM2_sel $id2
@@ -138,14 +143,14 @@ proc autoselectQM2 { centerid rmin t_ele buffer T attempt } {
   
   #set up the inner sphere
   set QMi [ atomselect top "index $QM2_sel $QM1_sel" ]
-  set command_string "autoselectQM2 $centerid $rmin $t_ele $buffer $T $attempt"
-  QMselection $centerid $rmin $t_ele $buffer $T $attempt $QMi "$command_string"
+  set command_string "autoselectQM2 $centerid $rmin $t_ele $bond_distance $T $attempt"
+  QMselection $centerid $rmin $t_ele $bond_distance $T $attempt $QMi "$command_string"
 }
 
 
 #cation selection follow the QM1_def
 #initial anion selection only keeps the one that has a coordination number larger than "coord"
-proc autoselectQM3 { centerid QM1_def t_ele buffer coord T attempt } {
+proc autoselectQM3 { centerid QM1_def t_ele bond_distance coord T attempt } {
 
   global hash_coul123
   set hash_coul123 {}
@@ -158,14 +163,14 @@ proc autoselectQM3 { centerid QM1_def t_ele buffer coord T attempt } {
   set n_QM1 [ $QM1 num ]
   puts "label all cation $QM1_sel"
 
-  set QM2 [ atomselect top "type $t_ele and within $buffer of (index $QM1_sel)" ]
+  set QM2 [ atomselect top "type $t_ele and within $bond_distance of (index $QM1_sel)" ]
   set id_QM2 [ $QM2 get index ]
   set n_QM2 [ $QM2 num ]
 
   set QM2_sel {}
   for { set i 0 } { $i < $n_QM2 } { incr i } {
     set id [ lindex $id_QM2 $i ]
-    set ngh [ atomselect top "(not type $t_ele) and (index $QM1_sel) and (within $buffer of index $id)" ]
+    set ngh [ atomselect top "(not type $t_ele) and (index $QM1_sel) and (within $bond_distance of index $id)" ]
     set n_ngh [ $ngh num ]
     if { $n_ngh >= $coord  } {
       lappend QM2_sel $id
@@ -175,14 +180,14 @@ proc autoselectQM3 { centerid QM1_def t_ele buffer coord T attempt } {
 
   #set up the inner sphere
   set QMi [ atomselect top "index $QM1_sel $QM2_sel" ]
-  set command_string "autoselectQM0 $centerid \"$QM1_def\" $t_ele $buffer $coord $T $attempt $defi"
-  QMselection $centerid $rmin $t_ele $buffer $T $attempt $QMi "$command_string"
+  set command_string "autoselectQM0 $centerid \"$QM1_def\" $t_ele $bond_distance $coord $T $attempt $defi"
+  QMselection $centerid $rmin $t_ele $bond_distance $T $attempt $QMi "$command_string"
 
 }
 
 #cation selection: +- rmin from the x,y,z of the center atoms
 #anion selection: coordination > 1
-proc autoselectQM_cube { centerid rmin t_ele buffer T attempt } {
+proc autoselectQM4 { centerid rmin t_ele bond_distance T attempt } {
   global hash_coul123
   set hash_coul123 {}
 
@@ -195,8 +200,8 @@ proc autoselectQM_cube { centerid rmin t_ele buffer T attempt } {
   set cy [ $centerAtom get y ]
   set cz [ $centerAtom get z ]
   set QM1 [ atomselect top "not type $t_ele and abs(x-$cx)<$rmin and abs(y-$cy)<$rmin and abs(z-$cz)<$rmin" ]
-  set QM2 [ atomselect top "type $t_ele and abs(x-$cx)<$rmin and abs(y-$cy)<$rmin and abs(z-$cz)<$rmin" ]
   set id_QM1 [ $QM1 get index ]
+  set QM2 [ atomselect top "type $t_ele and within $bond_distance of (index $id_QM1)" ]
   set id_QM2 [ $QM2 get index ]
   set n_QM1 [ $QM1 num ]
   set n_QM2 [ $QM2 num ]
@@ -204,7 +209,7 @@ proc autoselectQM_cube { centerid rmin t_ele buffer T attempt } {
   #remove the dangling oxygen
   set QM2_sel {}
   foreach id2 $id_QM2 {
-    set ngh [ atomselect top "(not type $t_ele) and (within $rmin of index $centerid) and (within $buffer of index $id2)" ]
+    set ngh [ atomselect top "(not type $t_ele) and (index $id_QM1) and (within $bond_distance of index $id2)" ]
     set n_ngh [ $ngh num ]
     if { $n_ngh >1  } {
       lappend QM2_sel $id2
@@ -214,7 +219,7 @@ proc autoselectQM_cube { centerid rmin t_ele buffer T attempt } {
   #remove the dangling cation
   set QM1_sel {}
   foreach id1 $id_QM1 {
-    set ngh [ atomselect top "(index $QM2_sel) and (within $buffer of index $id1)" ]
+    set ngh [ atomselect top "(index $QM2_sel) and (within $bond_distance of index $id1)" ]
     set n_ngh [ $ngh num ]
     if { $n_ngh >1  } {
       lappend QM1_sel $id1
@@ -225,13 +230,16 @@ proc autoselectQM_cube { centerid rmin t_ele buffer T attempt } {
 
   #set up the inner sphere
   set QMi [ atomselect top "index $QM2_sel $QM1_sel" ]
-  set command_string "autoselectQM_cube $centerid $rmin $t_ele $buffer $T $attempt"
-  QMselection $centerid $rmin $t_ele $buffer $T $attempt $QMi "$command_string"
+  set command_string "autoselectQM4 $centerid $rmin $t_ele $bond_distance $T $attempt"
+  QMselection $centerid $rmin $t_ele $bond_distance $T $attempt $QMi "$command_string"
 
 }
 
 
-proc QMselection { centerid rmin t_ele buffer T attempt QMi command_string} {
+proc QMselection { centerid rmin t_ele bond_distance T attempt QMi command_string} {
+
+  set nspace [expr [string first " " $command_string] -1]
+  set stype [string range $command_string $nspace $nspace ]
   global hash_coul123
   set hash_coul123 {}
 
@@ -251,17 +259,19 @@ proc QMselection { centerid rmin t_ele buffer T attempt QMi command_string} {
   }
   puts "$stat netcharge $Q_QMi"
 
-  set fo_info [ open [format "$stat-$T.autoinfo" ] "w"]
-  set fo_config [ open [format "$stat-$T.config" ] "w"]
+  set fo_info [ open [format "$stype-$stat-$T.autoinfo" ] "w"]
+  if { $debug == "t" } {
+      set fo_config [ open [format "$stype-$stat-$T.config" ] "w"]
+  }
   #repeats the argument
   puts "original command: $command_string"
-  puts "QMselection $centerid $rmin $t_ele $buffer $T $attempt $QMi"
+  puts "QMselection $centerid $rmin $t_ele $bond_distance $T $attempt $QMi"
   puts $fo_info "original command: $command_string"
-  puts $fo_info "QMselection $centerid $rmin $t_ele $buffer $T $attempt $QMi"
+  puts $fo_info "QMselection $centerid $rmin $t_ele $bond_distance $T $attempt $QMi"
   puts $fo_info "$stat netcharge $Q_QMi"
 
   #set outer sphere
-  set QMo [ atomselect top "type $t_ele and (not index $id_QMi ) and (within $buffer of (index $id_QMi))" ]
+  set QMo [ atomselect top "type $t_ele and (not index $id_QMi ) and (within $bond_distance of (index $id_QMi))" ]
   set n_QMo [ $QMo num ]
   set id_QMo [ $QMo get index ]
   set rest [ atomselect top " (not index $id_QMo $id_QMi) and within 10 of index $centerid " ]
@@ -308,7 +318,7 @@ proc QMselection { centerid rmin t_ele buffer T attempt QMi command_string} {
         set sel_id [ list [lindex $id_QMo $i] [lindex $id_QMo $j] ]
         set select [ atomselect top "index $sel_id" ]
         set unselect [ atomselect top "index $id_QMo and not (index $sel_id)" ]
-        set pot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
+        set pot [ objective $centerid $rmin $t_ele $bond_distance $QMi $QMo $select $sel_id $unselect $rest ]
         if { $minpot >$pot } {
           set minpot $pot
           set minsel $sel_id
@@ -322,7 +332,9 @@ proc QMselection { centerid rmin t_ele buffer T attempt QMi command_string} {
     puts $fo_info "index $minsel $id_QMi" 
 
     close $fo_info
-    close $fo_config
+    if { $debug == "t" } {
+      close $fo_config
+    }
     return
   }
 
@@ -335,7 +347,7 @@ proc QMselection { centerid rmin t_ele buffer T attempt QMi command_string} {
       set sel_id [ list [lindex $id_QMo $i] ]
       set select [ atomselect top "index $sel_id" ]
       set unselect [ atomselect top "index $id_QMo and not (index $sel_id)" ]
-      set pot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
+      set pot [ objective $centerid $rmin $t_ele $bond_distance $QMi $QMo $select $sel_id $unselect $rest ]
       if { $minpot >$pot } {
         set minpot $pot
         set minsel $sel_id
@@ -348,7 +360,9 @@ proc QMselection { centerid rmin t_ele buffer T attempt QMi command_string} {
     puts $fo_info "index $minsel $id_QMi" 
 
     close $fo_info
-    close $fo_config
+    if { $debug == "t" } {
+        close $fo_config
+    }
     return
   }
 
@@ -382,7 +396,7 @@ proc QMselection { centerid rmin t_ele buffer T attempt QMi command_string} {
   set sel_id0 $sel_id
   set select   [ atomselect top "index $sel_id" ]
   set unselect [ atomselect top "index $unsel_id" ]
-  set pot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
+  set pot [ objective $centerid $rmin $t_ele $bond_distance $QMi $QMo $select $sel_id $unselect $rest ]
 
   puts "initial gues: $pot "
   puts $fo_info "initial gues: $pot "
@@ -405,7 +419,7 @@ proc QMselection { centerid rmin t_ele buffer T attempt QMi command_string} {
 
     set select   [ atomselect top "index $sel_id" ]
     set unselect [ atomselect top "index $unsel_id" ]
-    set newpot [ objective $centerid $rmin $t_ele $buffer $QMi $QMo $select $sel_id $unselect $rest ]
+    set newpot [ objective $centerid $rmin $t_ele $bond_distance $QMi $QMo $select $sel_id $unselect $rest ]
 
     set accept 0
 
@@ -449,11 +463,9 @@ proc QMselection { centerid rmin t_ele buffer T attempt QMi command_string} {
     }
 
     if { $tmp % 100 == 0 } {
-      puts "$tmp $minpot $pot"
-      puts $fo_info "$tmp $minpot $pot"
+      puts "step $tmp $minpot $pot"
+      puts $fo_info "step $tmp $minpot $pot"
     }
-
-
     incr tmp
   }
 
@@ -464,14 +476,24 @@ proc QMselection { centerid rmin t_ele buffer T attempt QMi command_string} {
   puts "index $sel_id0 $id_QMi" 
   puts $fo_info "final potential $pot "
   puts $fo_info "index $sel_id0 $id_QMi" 
+  set ncation [  [atomselect top "(not type $t_ele) and index $sel_id0 $id_QMi"] num ]
+  set nanion [  [atomselect top "(type $t_ele) and index $sel_id0 $id_QMi"] num ]
+  puts "Ti$ncation O$nanion"
+  puts $fo_info "Ti$ncation O$nanion"
 
   puts "minimum potential $minpot "
   puts "index $minsel $id_QMi" 
   puts $fo_info "minimum potential $minpot "
   puts $fo_info "index $minsel $id_QMi" 
+  set ncation [  [atomselect top "(not type $t_ele) and index $minsel $id_QMi"] num ]
+  set nanion [  [atomselect top "(type $t_ele) and index $minsel $id_QMi"] num ]
+  puts "Ti$ncation O$nanion"
+  puts $fo_info "Ti$ncation O$nanion"
 
   close $fo_info
-  close $fo_config
+  if { $debug == "t" } {
+     close $fo_config
+  }  
 }
 
 

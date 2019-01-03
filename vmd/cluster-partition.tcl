@@ -303,11 +303,11 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   addbond_group "($QM_string) and (type $pQ_type)" "($QM_string) and (type $nQ_type)" 0 3
   addbond_group "($region2)" "($QM_string) and (type $nQ_type)" 0 3
 
-  color Type {T} cyan
+  #color Type {T} cyan
 
   mol delrep 0 top
 
-  mol color Type
+  #mol color Type
 
   mol representation Points 1.0
   mol material Opaque
@@ -331,7 +331,7 @@ proc selectQM { QM_string active_string ecp_string ecp_q shell_Q name scheme } {
   mol material Transparent
   mol representation CPK 1.00000 0.000000 32.000000 12.000000
   mol selection "$region2"
-  mol color colorid 16
+  #mol color colorid 16
   mol addrep top
 }
   

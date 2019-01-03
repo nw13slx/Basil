@@ -48,8 +48,7 @@ proc filter { centerid input output } {
 proc autogeneration { input } {
 
   global center_id
-  set active_string "within 15 of index $center_id"
-  set hash_coul123 {}
+  global active_string
   global ecp_string
   global ecp_q
   global shell_Q
@@ -74,8 +73,8 @@ proc autogeneration { input } {
     set definition [ lrange $items 2 $last ]
     set def [join $definition ]
   
+    puts "selectQM \"$def\" \"$active_string\" \"$ecp_string\" $ecp_q $shell_Q \"$center_id-$lab\" $scheme "
     selectQM "$def" "$active_string" "$ecp_string" $ecp_q $shell_Q "$center_id-$lab" $scheme 
-    puts "$lab $def"
   }
 }
 
