@@ -22,7 +22,7 @@
 #    but they are connected with each other with at least 2 fold coordination
 #    initial anion selection has to be at least 2 fold coordinated with cations
 
-#autoselectQM3 centerid QM1_def t_ele bond_distance coord T attempt
+#autoselectQM3 centerid rmin QM1_def t_ele bond_distance coord T attempt
 #    cation selection follow the QM1_def
 #    initial anion selection only keeps the one that has a coordination number larger than "coord"
 
@@ -150,7 +150,7 @@ proc autoselectQM2 { centerid rmin t_ele bond_distance T attempt } {
 
 #cation selection follow the QM1_def
 #initial anion selection only keeps the one that has a coordination number larger than "coord"
-proc autoselectQM3 { centerid QM1_def t_ele bond_distance coord T attempt } {
+proc autoselectQM3 { centerid rmin QM1_def t_ele bond_distance coord T attempt } {
 
   global hash_coul123
   set hash_coul123 {}
@@ -161,7 +161,7 @@ proc autoselectQM3 { centerid QM1_def t_ele bond_distance coord T attempt } {
   set QM1 [ atomselect top "not type $t_ele and ($QM1_def)" ]
   set QM1_sel [ $QM1 get index ]
   set n_QM1 [ $QM1 num ]
-  puts "label all cation $QM1_sel"
+  puts "label all $n_QM1 cation $QM1_sel"
 
   set QM2 [ atomselect top "type $t_ele and within $bond_distance of (index $QM1_sel)" ]
   set id_QM2 [ $QM2 get index ]
@@ -180,7 +180,7 @@ proc autoselectQM3 { centerid QM1_def t_ele bond_distance coord T attempt } {
 
   #set up the inner sphere
   set QMi [ atomselect top "index $QM1_sel $QM2_sel" ]
-  set command_string "autoselectQM0 $centerid \"$QM1_def\" $t_ele $bond_distance $coord $T $attempt $defi"
+  set command_string "autoselectQM0 $centerid $rmin \"$QM1_def\" $t_ele $bond_distance $coord $T $attempt "
   QMselection $centerid $rmin $t_ele $bond_distance $T $attempt $QMi "$command_string"
 
 }
