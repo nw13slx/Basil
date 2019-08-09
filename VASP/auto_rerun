@@ -1,0 +1,34 @@
+# script use for automatic terminate the vasp and restart from the previous run
+
+# 12 hours wall time, set the stop time as 10 hours
+wall=10
+core=64
+
+
+# load module
+module load impi vasp/5.4.4
+
+# a background script to time for the job
+cat >b.sh <<EOF
+sleep ${wall}h
+echo LSTOP=T >STOPCAR
+EOF
+sh b.sh &
+
+# check whether there is already a previous run
+if [ -f version ]; then
+  version=$(cat version)
+  continuevasp origin$version
+else
+  echo 0 > version
+fi
+
+# run vasp
+date > vasp.out
+mpirun -np $core vasp_std >> vasp.out
+date >> vasp.out
+
+# write downw the vrsion
+version=$(cat version)
+let "version+=1"
+echo $version >version
