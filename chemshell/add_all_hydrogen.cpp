@@ -8,10 +8,12 @@
 int main(int argc, char **argv){
   if (argc < 3){
     cout<<" FAILED: need more input arguments"<<endl;
+    cout<<" arguments: exec input.xyz output.xyz string_to_mark_qm_zone"<<endl;
     return 1;
   }
+
   
-  ifstream fin(argv[1]); 
+  ifstream fin(argv[1]);  // input format xyz
   ofstream fout(argv[2]); 
   //qm region number
   string qm(argv[3]);
@@ -21,10 +23,11 @@ int main(int argc, char **argv){
   string content[MAX_COLUMN];
   int column, line=0;
 
+  int natom;
+  fin >> natom;
   fin.getline(temp,MAX_CHARACTER); 
-  parse(temp,column,content);
-  int natom=atoi(content[0].c_str());
 
+  // skip comment line
   fin.getline(temp,MAX_CHARACTER); 
   string *sym=new string[natom];
   double * x= new double [3*natom];
@@ -55,7 +58,8 @@ int main(int argc, char **argv){
     }
   }
   fin.close();
-  cout<<nQM<<" "<<nMM<<endl;
+  cout<<"read all atoms"<<endl;
+  cout<<"nQM: "<<nQM<<" nMM:"<<nMM<<endl;
 
   int nh=0;
   double *h=new double[nQM*9];
