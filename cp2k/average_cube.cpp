@@ -29,7 +29,7 @@ using namespace std;
 #define MAX_COLUMN 200
 
 int main(int argc, char **argv){
-  if (argc < 3){
+  if (argc < 4){
     cout<<" FAILED: need more input arguments"<<endl;
     cout<<" exec input output direction" <<endl;
     return 1;
@@ -43,6 +43,12 @@ int main(int argc, char **argv){
     return 1;
   } 
   ider -=1;
+  cout<<"average over ";
+  switch (ider) {
+      case 0: cout<<"x"<<endl; break;
+      case 1: cout<<"y"<<endl; break;
+      case 2: cout<<"z"<<endl; break;
+  }
 
   char temp[MAX_CHARACTER], * pch,content[MAX_COLUMN][MAX_CHARACTER];
   int column, line=0;
@@ -55,66 +61,52 @@ int main(int argc, char **argv){
   cout << "number of atoms " <<natom<<endl;;
 
   int nlocal, ng[3];
-  fin >> ng[0];
+  double ls[3][3];
+  fin >> ng[0] >> ls[0][0] >> ls[0][1] >> ls[0][2];
   fin.getline(temp,MAX_CHARACTER); 
-  fin >> ng[1];
+  fin >> ng[1] >> ls[1][0] >> ls[1][1] >> ls[1][2];
   fin.getline(temp,MAX_CHARACTER); 
-  fin >> ng[2];
+  fin >> ng[2] >> ls[2][0] >> ls[2][1] >> ls[2][2];
   fin.getline(temp,MAX_CHARACTER); 
   cout << "number of grids " << ng[0]<< " "<<ng[1]<<" "<<ng[2]<<endl;
   nlocal = ng[0]*ng[1]*ng[2];
   cout << "number of values " << nlocal<<endl;
 
   cout<< "read ions"<<endl;
+  double xx[3];
+  double xmin=10000, xmax=-10000;
   for (int i=0;i<natom;i++){
+    fin >> temp >> temp >> xx[0] >> xx[1] >> xx[2];
     fin.getline(temp,MAX_CHARACTER); 
+    if (xx[ider] > xmax) xmax=xx[ider];
+    if (xx[ider] < xmin) xmin=xx[ider];
   }
   
   cout<< "read density"<<endl;
-  double * vlocal=new double[nlocal];
-  for (int i=0;i<nlocal;i++) {
-      fin >>vlocal[i];
-  }
+  double vlocal[ng[0]][ng[1]][ng[2]];
   cout<<"finished reading density"<<endl;
+  for (int ix=0; ix<ng[0]; ix++)
+    for (int iy=0; iy<ng[1]; iy++)
+      for (int iz=0; iz<ng[2]; iz++)
+          fin >> vlocal[ix][iy][iz];
 
   double *vav = new double [ng[ider]];
   fill(vav, vav+ng[ider], 0);
 
   cout<< "sum across direction "<<ider<<endl;
   double scale=1./float(nlocal/ng[ider]);
-  if (ider == 0) {
-    for (int ix=0; ix<ng[0]; ix++){
-      for (int iz=0; iz<ng[2]; iz++){
-        for (int iy=0; iy<ng[1]; iy++){
-          int ipl=ix+(iy+iz*ng[1])*ng[0];
-          vav[ix] += vlocal[ipl]*scale;
-        }
+  int index[3];
+  for (index[0]=0; index[0]<ng[0]; index[0]++){
+    for (index[1]=0; index[1]<ng[1]; index[1]++){
+      for (index[2]=0; index[2]<ng[2]; index[2]++){
+        vav[index[ider]] += vlocal[index[0]][index[1]][index[2]]*scale;
       }
     }
-  }else if ( ider == 1){
-    for (int iy=0; iy<ng[1]; iy++){
-      for (int iz=0; iz<ng[2]; iz++){
-        for (int ix=0; ix<ng[0]; ix++){
-          int ipl=ix+(iy+iz*ng[1])*ng[0];
-          vav[iy] += vlocal[ipl]*scale;
-        }
-      }
-    }
-  }else if (ider==2){
-    for (int iz=0; iz<ng[2]; iz++){
-      for (int iy=0; iy<ng[1]; iy++){
-        for (int ix=0; ix<ng[0]; ix++){
-          int ipl=ix+(iy+iz*ng[1])*ng[0];
-          vav[iz] += vlocal[ipl]*scale;
-        }
-      }
-    }
-  }else { 
-   cout<<"FAILED: ider should be 1-3"<<endl;
-   return 1;
-  } 
+  }
 
-  fout<<ng[ider]<<" "<<ider+1<<endl;
+  fout<<"# "<<xmin<<" "<<xmax<<endl;
+  fout<<"# "<<ls[ider][0]<<" "<<ls[ider][1]<<" "<<ls[ider][2]<<endl;
+  fout<<"# "<<ng[ider]<<" "<<ider+1<<endl;
   for (int i=0; i<ng[ider];i++){
     fout<<i<<" "<<vav[i]<<endl;
   }
