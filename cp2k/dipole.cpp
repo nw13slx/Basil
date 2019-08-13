@@ -31,12 +31,12 @@ using namespace std;
 int main(int argc, char **argv){
   if (argc < 4){
     cout<<" FAILED: need more input arguments"<<endl;
-    cout<<" exec input output direction" <<endl;
+    cout<<" exec input direction reference" <<endl;
     return 1;
   }
   ifstream fin(argv[1]); 
-  ofstream fout(argv[2]); 
-  int idir=atoi(argv[3]);
+  int idir=atoi(argv[2]);
+  int ref = atoi(argv[3]);
 
   if (idir<1 || idir >3){
     cout<<" FAILD: direction has to be 1-3 for x-z"<<endl;
@@ -94,24 +94,34 @@ int main(int argc, char **argv){
   fill(vav, vav+ng[idir], 0);
 
   cout<< "sum across direction "<<idir<<endl;
-  double scale=1./float(nlocal/ng[idir]);
+  double monopole=0;
   int index[3];
   for (index[0]=0; index[0]<ng[0]; index[0]++){
     for (index[1]=0; index[1]<ng[1]; index[1]++){
       for (index[2]=0; index[2]<ng[2]; index[2]++){
-        vav[index[idir]] += vlocal[index[0]][index[1]][index[2]]*scale;
+        vav[index[idir]] += vlocal[index[0]][index[1]][index[2]];
+        monopole +=  vlocal[index[0]][index[1]][index[2]];
       }
     }
   }
 
   double grid_size[3];
-  grid_size[0] = sqrt(ls[0][0]*ls[0][0]+ls[0][1]*ls[0][1]+ls[0][2]*ls[0][2])*0.529177;
-  grid_size[1] = sqrt(ls[1][0]*ls[1][0]+ls[1][1]*ls[1][1]+ls[1][2]*ls[1][2])*0.529177;
-  grid_size[2] = sqrt(ls[2][0]*ls[2][0]+ls[2][1]*ls[2][1]+ls[2][2]*ls[2][2])*0.529177;
-  fout<<"# "<<xmin<<" "<<xmax<<endl;
-  fout<<"# "<<ls[idir][0]<<" "<<ls[idir][1]<<" "<<ls[idir][2]<<" "<<grid_size[idir]<<endl;
-  fout<<"# "<<ng[idir]<<" "<<idir+1<<endl;
-  for (int i=0; i<ng[idir];i++){
-    fout<<i*grid_size[idir]<<" "<<vav[i]<<endl;
+  double hartree2eV = 0.529177;
+  grid_size[0] = sqrt(ls[0][0]*ls[0][0]+ls[0][1]*ls[0][1]+ls[0][2]*ls[0][2]);
+  grid_size[1] = sqrt(ls[1][0]*ls[1][0]+ls[1][1]*ls[1][1]+ls[1][2]*ls[1][2]);
+  grid_size[2] = sqrt(ls[2][0]*ls[2][0]+ls[2][1]*ls[2][1]+ls[2][2]*ls[2][2]);
+  cout<<"grid size "<<grid_size[0]<<" "<<grid_size[1]<<" "<<grid_size[2]<<endl;
+  double volume = grid_size[0]*grid_size[1]*grid_size[2];
+  double dipole=0, dipole2=0;
+  for (int i=ref; i<ng[idir]; i++){
+      dipole += grid_size[idir]*(i-ref)*vav[i];
   }
+  cout<<"part1 "<<dipole<<" "<<dipole*volume*hartree2eV<<endl;
+  for (int i=0; i<ref;i++){
+      dipole += grid_size[idir]*(i-ref+ng[idir])*vav[i];
+      dipole2 += grid_size[idir]*(i-ref+ng[idir])*vav[i];
+  }
+  cout<<"part2 "<<dipole2<<" "<<dipole2*volume*hartree2eV<<endl;
+  cout<<dipole<<" "<<dipole*volume*hartree2eV<<endl;
+  cout<<"sum e "<<monopole<<" *volume "<<volume<<" ="<<monopole*volume<<endl;
 }

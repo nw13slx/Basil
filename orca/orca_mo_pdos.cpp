@@ -268,7 +268,7 @@ int main(int argc, char **argv){
 
     //smearing
 
-    double dE=0.1;
+    double dE=0.05;
     double sigma=0.05;
     double sigma2=sigma*sigma;
 
@@ -286,6 +286,8 @@ int main(int argc, char **argv){
     for (int i=0;i<grid;i++) x[i]=base+i*dE;
 
     if (shift_fermi==true) eshift=efermi;
+    cout<< "smearing and shift " << eshift << endl;
+    
     for (int spin=0; spin<2; spin++){
       double *smearing_spin=smearing+spin*n_element*MAX_M*grid;
       double *tally_spin=tally+spin*MAX_ELEMENT*MAX_M*MAX_ENERGYLINE;
@@ -294,7 +296,7 @@ int main(int argc, char **argv){
       for (int i=0;i<n_energy[spin];i++){
         if ((p_energy[i]-eshift)>=EMIN && (p_energy[i]-eshift) <=EMAX){
           double *tally_energy=tally_spin+i;
-          gaussian(grid, x, spreadE,p_energy[i],sigma2);
+          gaussian(grid, x, spreadE, p_energy[i], sigma2);
           for (int igrid=0; igrid < grid; igrid++){
             dos_spin[igrid]+=spreadE[igrid];
           }
@@ -322,10 +324,10 @@ int main(int argc, char **argv){
           for (int j=0;j<n_element;j++){
             double *smearing_element=smearing_spin+j*MAX_M*grid;
             for (int k=0;k<MAX_M;k++){
-                out<<((spin==0)?1:-1)*smearing_element[k*grid]<<" ";
+                out<<(spin*2-1)*smearing_element[k*grid]<<" ";
             }
           }
-          out<<((spin==0)?1:-1)*dos[spin*grid+i]<<" ";
+          out<<(spin*2-1)*dos[spin*grid+i]<<" ";
         }
         out<<endl;
     }
