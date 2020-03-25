@@ -18,11 +18,36 @@ java scripts and lines that can be compile with pandoc
 """
 
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 from os import getcwd
+
+def iterprint(item, header=''):
+    """
+    print the tree structure of the html
+    """
+
+    if (item.name is None):
+        return
+    print(f"{header}-", item.name)
+    runchild = False
+    if (item.children is not None):
+        if (len(list(item.children))>1):
+            runchild = True
+        elif (len(list(item.children))>0):
+            child = list(item.children)[0]
+            if (child.name is not None):
+                runchild = True
+
+    if (runchild):
+        for child in item.children:
+                iterprint(child, header=header+'| ')
+        print(f"{header}*", item.name)
 
 def plotlyhtml2markdown(basename):
     with open(f"{basename}.html") as fin:
         soup = BeautifulSoup(fin, features="lxml")
+
+    iterprint(soup)
 
     nscript = 0
     print("<html>")
@@ -34,8 +59,8 @@ def plotlyhtml2markdown(basename):
                     print(item.contents[0], file=fout)
                 item.contents[0]=" "
                 item.attrs["src"]=f"{getcwd()}/{basename}_{nscript}.js"
+                nscript += 1
                 print(item)
-                # print(len(item.contents))
             else:
                 print(item)
         elif (item.name is not None):
