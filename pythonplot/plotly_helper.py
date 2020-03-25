@@ -1,25 +1,9 @@
 #!/bin/env python
-"""
-convert a html output from plotly to
-java scripts and lines that can be compile with pandoc
-
-1.   use this to output plots to html
-
-| plotly.offline.plot(fig, filename=f'{k}.html')
-
-2.   and then convert it
-
-| plotlyhtml2markdown(f'{k}.html')
-
-3.   paste the output lines to markdown file and compile with pandoc
-
-| pandoc --from markdown-markdown_in_html_blocks+raw_html --wrap=auto --mathjax --mathml -c pandoc.css -s --toc --toc-depth=3 $prefix.md -o $prefix.html
-
-"""
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
-from os import getcwd
+from os import getcwd, remove
+from plotly.offline import plot
 
 def iterprint(item, header=''):
     """
@@ -43,11 +27,32 @@ def iterprint(item, header=''):
                 iterprint(child, header=header+'| ')
         print(f"{header}*", item.name)
 
-def plotlyhtml2markdown(basename):
+def html2markdown(fig, basename):
+    """
+    convert a html output from plotly to
+    java scripts and lines that can be compile with pandoc
+
+    1.   generate plotly.graph_objects.Figure object
+
+    2.   and then convert it
+
+    | plotlyhtml2markdown(figure, basename)
+
+    3.   paste the output lines to markdown file and compile with pandoc
+
+    | pandoc --from markdown-markdown_in_html_blocks+raw_html --wrap=auto \
+            --mathjax --mathml -c pandoc.css -s --toc --toc-depth=3 $prefix.md -o $prefix.html
+
+    Args:
+        fig (plotly.graph_objects.Figure): plotly figure
+        basename (str): prefix of output js scripts
+    """
+
+    plot(fig, filename=f'{basename}.html')
     with open(f"{basename}.html") as fin:
         soup = BeautifulSoup(fin, features="lxml")
 
-    iterprint(soup)
+    # iterprint(soup)
 
     nscript = 0
     print("<html>")
@@ -66,3 +71,36 @@ def plotlyhtml2markdown(basename):
         elif (item.name is not None):
             print(item)
     print("</html>")
+
+    remove(f'{basename}.html')
+
+# layout setting for vline hover
+
+vlinehover = dict(xaxis=dict(
+                   showline=True,
+                   showgrid=True,
+                   showticklabels=True,
+                   linewidth=2,
+                   mirror=True,
+                   showspikes = True,
+                   spikemode  = 'across',
+                   spikesnap = 'data',
+                   spikecolor = 'black',
+                   spikethickness = 0.5,
+                   spikedash='dot'
+               ),
+               yaxis=dict(
+                           showline=True,
+                   showgrid=True,
+                   showticklabels=True,
+                   linewidth=2,
+                   mirror=True,
+               ),
+               showlegend=True,
+               hovermode='x',
+               spikedistance =  -1,
+               font=dict(
+                   family="STIXGeneral",
+                   size=18
+                   )
+              )
