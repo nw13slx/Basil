@@ -4,6 +4,9 @@ from bs4 import BeautifulSoup
 from bs4.element import Tag
 from os import getcwd, remove
 from plotly.offline import plot
+from plotly.graph_objects import Scatter
+
+import numpy as np
 
 def iterprint(item, header=''):
     """
@@ -48,7 +51,7 @@ def html2markdown(fig, basename):
         basename (str): prefix of output js scripts
     """
 
-    plot(fig, filename=f'{basename}.html')
+    plot(fig, filename=f'{basename}.html', auto_open=True)
     with open(f"{basename}.html") as fin:
         soup = BeautifulSoup(fin, features="lxml")
 
@@ -72,7 +75,7 @@ def html2markdown(fig, basename):
             print(item)
     print("</html>")
 
-    remove(f'{basename}.html')
+    # remove(f'{basename}.html')
 
 # layout setting for vline hover
 
@@ -104,3 +107,21 @@ vlinehover = dict(xaxis=dict(
                    size=18
                    )
               )
+
+def error_fill_layout(x, y, yerr, color="#"):
+    """
+    for given x, y, and std, output the layout needed for go.Scatter
+    """
+
+    c = color[1:]
+    dec = tuple(int(c[i:i+2], 16) for i in (0, 2, 4))
+
+    x = np.hstack([x[:], x[::-1]])
+    yerr = np.hstack([y-yerr, y[::-1]+yerr[::-1]])
+
+    return Scatter(x=x, y=yerr, fill='toself',
+                   fillcolor=f'rgba({dec[0]}, {dec[1]}, {dec[2]}, 0.25)',
+                   line_color=f'rgba({dec[0]}, {dec[1]}, {dec[2]}, 0.75)',
+                   line_width=0.5,
+                   showlegend=False,
+                   hoverinfo='skip')
