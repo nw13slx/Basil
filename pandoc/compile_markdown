@@ -2,11 +2,11 @@ for file in $(ls *.md)
 do
     prefix=$(echo $file|sed "s/\.md//g")
     if [[ ! -f $prefix.html  ]]; then
-        pandoc --from markdown-markdown_in_html_blocks+raw_html --wrap=auto --mathjax --mathml -c pandoc.css -s --toc --toc-depth=3 $prefix.md -o $prefix.html
+        pandoc --from markdown-markdown_in_html_blocks+raw_html --wrap=auto --mathjax --mathml -c pandoc.css -s --toc -N --toc-depth=3 $prefix.md -o $prefix.html
         echo "first time compile $prefix"
     fi
     if [[ $prefix.md -nt $prefix.html ]]; then
         echo "compile $prefix"
-        pandoc --from markdown-markdown_in_html_blocks+raw_html --wrap=auto --mathml --mathjax -c pandoc.css -s --toc --toc-depth=3 $prefix.md -o $prefix.html
+        pandoc --from markdown-markdown_in_html_blocks+raw_html --wrap=auto --mathml --mathjax -c pandoc.css -s --toc -N --toc-depth=3 $prefix.md -o $prefix.html
     fi
 done
