@@ -1,0 +1,44 @@
+<script>
+var slideIndex;
+
+// the array of all containers
+let containers = Array.from(document.querySelectorAll(".w3-display-container"));
+
+// for each conteiner
+containers.forEach(c =>{
+  // get the array of images in this container
+  let images = Array.from(c.querySelectorAll(".mySlides"));
+  //the left button for this container
+  let left = c.querySelector(".w3-display-left");
+  //the right button for this container
+  let right = c.querySelector(".w3-display-right");
+
+  slideIndex = 0;//set the first slide
+  plusDivs(0,images);
+
+
+  // events for the this left and right buttons
+  left.addEventListener("click", ()=>{plusDivs(-1,images)})
+  right.addEventListener("click", ()=>{plusDivs(1,images)})
+})
+
+
+function showDivs(x) {
+  if (slideIndex > x.length-1) {slideIndex = 0}
+  if (slideIndex < 0) {slideIndex = x.length-1}
+
+  //All the slides are display="none"
+  for (let i = 0; i < x.length; i++) {
+     x[i].style.display = "none";
+  }
+  // the current slide is display = "block";
+  x[slideIndex].style.display = "block";
+
+}
+
+function plusDivs(n,x) {
+  // increment the value for the slideIndex and show the slide
+  slideIndex += n;
+  showDivs(x);
+}
+</script>
