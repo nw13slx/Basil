@@ -6,33 +6,52 @@ into html script for photo gallery,  accompanied with javascript slide
 
 pandoc --filter slideshow.py --from markdown-markdown_in_html_blocks+raw_html --wrap=auto --mathml --mathjax -c pandoc.css -s --toc -N --toc-depth=3 $prefix.md --include-after-body slide  -o $prefix.html
 
-the javascript should be
+the javascript comes from enxaneta @ https://stackoverflow.com/a/52677453/8974431
 
 ~~~~
 <script>
- var slideIndex = [1,1];
- var slideId = ["mySlides1", "mySlides2"]
- showSlides(1, 0);
- showSlides(1, 1);
+var slideIndex;
 
- function plusSlides(n, no) {
-   showSlides(slideIndex[no] += n, no);
- }
+// the array of all containers
+let containers = Array.from(document.querySelectorAll(".w3-display-container"));
 
- function showSlides(n, no) {
-   var i;
-   var x = "mySlides"+str(no+1); //document.getElementsByClassName(slideId[no]);
-   if (n > x.length) {slideIndex[no] = 1}
-   if (n < 1) {slideIndex[no] = x.length}
-   for (i = 0; i < x.length; i++) {
+// for each conteiner
+containers.forEach(c =>{
+  // get the array of images in this container
+  let images = Array.from(c.querySelectorAll(".mySlides"));
+  //the left button for this container
+  let left = c.querySelector(".w3-display-left");
+  //the right button for this container
+  let right = c.querySelector(".w3-display-right");
+
+  slideIndex = 0;//set the first slide
+  plusDivs(0,images);
+
+
+  // events for the this left and right buttons
+  left.addEventListener("click", ()=>{plusDivs(-1,images)})
+  right.addEventListener("click", ()=>{plusDivs(1,images)})
+})
+
+
+function showDivs(x) {
+  if (slideIndex > x.length-1) {slideIndex = 0}
+  if (slideIndex < 0) {slideIndex = x.length-1}
+
+  //All the slides are display="none"
+  for (let i = 0; i < x.length; i++) {
      x[i].style.display = "none";
-   }
-   x[slideIndex[no]-1].style.display = "block";
- }
- function currentSlide(n, no) {
-   slideIndex[no] = n;
-   showSlides(n, no);
- }
+  }
+  // the current slide is display = "block";
+  x[slideIndex].style.display = "block";
+
+}
+
+function plusDivs(n,x) {
+  // increment the value for the slideIndex and show the slide
+  slideIndex += n;
+  showDivs(x);
+}
 </script>
 ~~~~
 
@@ -40,8 +59,7 @@ the javascript should be
 
 from pandocfilters import toJSONFilter, Emph, Para, RawBlock
 
-
-def behead(key, value, format, meta):
+def slideshow(key, value, format, meta):
     if key == 'Para' :
         stop = False
         ids = 0
@@ -59,42 +77,45 @@ def behead(key, value, format, meta):
             prefix = value[markid+2]['c']
             suffix = value[markid+4]['c']
             n = int(value[markid+6]['c'])
-            return RawBlock("html", create_slide_div(prefix, suffix, n))
+            nlist = []
+            if (len(value)>=(markid+8)):
+                for idx in range(markid+6, lv, 2):
+                    nlist += [(value[idx]['c'])]
+                n = -1
+            return RawBlock("html", create_slide_div(prefix, suffix, n, nlist))
 
 
-def create_slide_div(prefix, suffix, n):
-    global slide_counter
-    slide_counter += 1
-    headblock = ''' <div class="slideshow-container"> \n'''
-    block1 = '''    <div class="mySlides{counter} fade">
-      <div class="numbertext">{i} / {n}</div>
-      <img src={prefix}{i}.{suffix} style="width:100%">
-      <div class="text"> </div>
-    </div> \n'''
-    block2 = ''' <a class="prev" onclick="plusSlides(-1, {count})">❮</a>
-    <a class="next" onclick="plusSlides(1, {count})">❯</a>
+def create_slide_div(prefix, suffix, n, nlist):
+
+    fout = open("local_write", "a+")
+    print("start", file=fout)
+    print(nlist, n, file=fout)
+
+    if (n==0):
+        return " "
+
+    headblock = '''<div class="w3-display-container"> \n'''
+    block1 = ''' <img class="mySlides" src="{prefix}{i}{suffix}" style="width:80%"> \n'''
+    block2 = ''' <button class="w3-display-left">&#10094;</button>
+    <button class="w3-display-right">&#10095;</button>
     </div>
-    <div style="text-align:center"> \n'''
-    block3 = '''<span class="dot" onclick="currentSlide({i}, {count})"></span> '''
+    <div style="text-align:center"> \n </div> \n</div>'''
+
+    if (n>0):
+        nlist = range(1, n+1)
+
+    print(nlist, n, file=fout)
 
     newstring = headblock
-    for i in range(n):
-        block = block1.format(i=i+1, n=n, prefix=prefix,
-                suffix=suffix, counter=slide_counter)
+    for i in nlist:
+        block = block1.format(i=i, prefix=prefix,
+                suffix=suffix)
         newstring = newstring + block
 
-    newstring = newstring + block2.format(count=slide_counter-1)
-    for i in range(n):
-        block = block3.format(i=i+1, count=slide_counter-1)
-        newstring = newstring + block
-    newstring = newstring + '''
-</div>
-</div>
-'''
+    newstring = newstring + block2
     return newstring
 
 if __name__ == "__main__":
-  slide_counter=0
-  toJSONFilter(behead)
+  toJSONFilter(slideshow)
 
 
