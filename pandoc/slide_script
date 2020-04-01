@@ -1,5 +1,4 @@
 <script>
-var slideIndex;
 
 // the array of all containers
 let containers = Array.from(document.querySelectorAll(".w3-display-container"));
@@ -13,7 +12,6 @@ containers.forEach(c =>{
   //the right button for this container
   let right = c.querySelector(".w3-display-right");
 
-  slideIndex = 0;//set the first slide
   plusDivs(0,images);
 
 
@@ -23,22 +21,30 @@ containers.forEach(c =>{
 })
 
 
-function showDivs(x) {
-  if (slideIndex > x.length-1) {slideIndex = 0}
-  if (slideIndex < 0) {slideIndex = x.length-1}
+function showDivs(x, idx) {
+  if (idx > x.length-1) {idx = 0}
+  if (idx < 0) {idx = x.length-1}
 
   //All the slides are display="none"
   for (let i = 0; i < x.length; i++) {
      x[i].style.display = "none";
   }
   // the current slide is display = "block";
-  x[slideIndex].style.display = "block";
+  x[idx].style.display = "block";
 
 }
 
 function plusDivs(n,x) {
+
+  //find the current one
+  var idx = 0;
+  for (let i = 0; i < x.length; i++) {
+      if ( x[i].style.display == "block"){
+          idx = i
+      }
+  }
   // increment the value for the slideIndex and show the slide
-  slideIndex += n;
-  showDivs(x);
+  idx += n;
+  showDivs(x, idx);
 }
 </script>

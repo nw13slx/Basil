@@ -13,7 +13,6 @@ def slideshow(key, value, format, meta):
 
     ~~~~
     <script>
-    var slideIndex;
 
     // the array of all containers
     let containers = Array.from(document.querySelectorAll(".w3-display-container"));
@@ -27,7 +26,6 @@ def slideshow(key, value, format, meta):
       //the right button for this container
       let right = c.querySelector(".w3-display-right");
 
-      slideIndex = 0;//set the first slide
       plusDivs(0,images);
 
 
@@ -37,30 +35,38 @@ def slideshow(key, value, format, meta):
     })
 
 
-    function showDivs(x) {
-      if (slideIndex > x.length-1) {slideIndex = 0}
-      if (slideIndex < 0) {slideIndex = x.length-1}
+    function showDivs(x, idx) {
+      if (idx > x.length-1) {idx = 0}
+      if (idx < 0) {idx = x.length-1}
 
       //All the slides are display="none"
       for (let i = 0; i < x.length; i++) {
          x[i].style.display = "none";
       }
       // the current slide is display = "block";
-      x[slideIndex].style.display = "block";
+      x[idx].style.display = "block";
 
     }
 
     function plusDivs(n,x) {
+
+      //find the current one
+      var idx = 0;
+      for (let i = 0; i < x.length; i++) {
+          if ( x[i].style.display == "block"){
+              idx = i
+          }
+      }
       // increment the value for the slideIndex and show the slide
-      slideIndex += n;
-      showDivs(x);
+      idx += n;
+      showDivs(x, idx);
     }
     </script>
     ~~~~
 
     """
 
-    if key == 'Para' :
+    if key in ['Para', 'Plain'] :
         stop = False
         ids = 0
         markid = -1
@@ -95,7 +101,7 @@ def create_slide_div(prefix, suffix, n, nlist):
         return " "
 
     headblock = '''<div class="w3-display-container"> \n'''
-    block1 = ''' <img class="mySlides" src="{prefix}{i}{suffix}" style="width:80%"> \n'''
+    block1 = ''' <img class="mySlides" src="{prefix}{i}{suffix}" style="width:100%"> \n'''
     block2 = ''' <button class="w3-display-left">&#10094;</button>
     <button class="w3-display-right">&#10095;</button>
     </div>
