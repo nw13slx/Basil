@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pandocfilters import toJSONFilter, Emph, Para, RawBlock
+from pandocfilters import toJSONFilter, Image, Para, RawBlock, Str
 
 def slideshow(key, value, format, meta):
     """
@@ -71,10 +71,13 @@ def slideshow(key, value, format, meta):
         ids = 0
         markid = -1
         lv = len(value)
+        case = {'&slideshow':1, '&loopimage':2}
+        caseid = -1
         while(not stop and ids < lv and markid <0):
             if (value[ids]['t'] == 'Str'):
-                if (value[ids]['c'] == '&slideshow'):
+                if (value[ids]['c'] in case):
                     markid = ids
+                    caseid = case[value[ids]['c']]
             elif (value[ids]['t'] != 'Space'):
                 stop = True
             ids += 1
@@ -82,16 +85,43 @@ def slideshow(key, value, format, meta):
             lv = len(value)
             prefix = value[markid+2]['c']
             suffix = value[markid+4]['c']
-            n = int(value[markid+6]['c'])
-            nlist = []
-            if (len(value)>=(markid+8)):
-                for idx in range(markid+6, lv, 2):
-                    nlist += [(value[idx]['c'])]
-                n = -1
-            return RawBlock("html", create_slide_div(prefix, suffix, n, nlist))
+            if (caseid == 1):
+                percent = value[markid+6]['c']
+                nlist = []
+                if (len(value)>=(markid+10)):
+                    for idx in range(markid+8, lv, 2):
+                        nlist += [(value[idx]['c'])]
+                    n = -1
+                else:
+                    n = int(value[markid+8]['c'])
+                return RawBlock("html", create_slide_div(prefix, suffix, percent, n, nlist))
+            elif (caseid == 2):
+                nlist = []
+                if (len(value)>=(markid+8)):
+                    for idx in range(markid+6, lv, 2):
+                        nlist += [(value[idx]['c'])]
+                    n = -1
+                else:
+                    n = int(value[markid+6]['c'])
+                return Para(create_image_div(prefix, suffix, n, nlist))
+
+def create_image_div(prefix, suffix, n, nlist):
+
+    if (n==0):
+        return " "
+    elif (n>0):
+        nlist = range(1, n+1)
+        alln = n
+    else:
+        alln = "-"
+
+    value = []
+    for i in nlist:
+        value += [Image(["",[],[]],[Str(f"{i}")],[f"{prefix}{i}{suffix}","fig:"])]
+    return value
 
 
-def create_slide_div(prefix, suffix, n, nlist):
+def create_slide_div(prefix, suffix, percent, n, nlist):
 
     fout = open("local_write", "a+")
     print("start", file=fout)
@@ -101,21 +131,31 @@ def create_slide_div(prefix, suffix, n, nlist):
         return " "
 
     headblock = '''<div class="w3-display-container"> \n'''
-    block1 = ''' <img class="mySlides" src="{prefix}{i}{suffix}" style="width:100%"> \n'''
-    block2 = ''' <button class="w3-display-left">&#10094;</button>
+    block1 = '''<div class="mySlides"> <figure> '''\
+            '''<img src="{prefix}{i}{suffix}" style="width:{percent}%">'''\
+            '''<figcaption> {i}/{n} </figcaption>'''\
+            ''' </figure></div>\n'''
+    block2 = ''' <button class="w3-display-first">&#10094;&#10094;</button>
+    <button class="w3-display-left">&#10094;</button>
+    <button class="w3-display-plays">&#9654;</button>
     <button class="w3-display-right">&#10095;</button>
+    <button class="w3-display-last">&#10095;&#10095;</button>
     </div>
     <div style="text-align:center"> \n </div> \n</div>'''
 
     if (n>0):
         nlist = range(1, n+1)
+        alln = n
+    else:
+        alln = "-"
 
     print(nlist, n, file=fout)
 
     newstring = headblock
     for i in nlist:
         block = block1.format(i=i, prefix=prefix,
-                suffix=suffix)
+                suffix=suffix, percent=percent,
+                n=alln)
         newstring = newstring + block
 
     newstring = newstring + block2
