@@ -1,0 +1,9 @@
+all copied from lammps/tools/python/pizza and updated to python3
+
+This directory contains Python scripts for common LAMMPS
+post-processing tasks.
+
+If you have suggestions or contributions for additional scripts or
+functionality that could be added, built on the Pizza.py modules (as
+explained below), send email to Steve Plimpton (sjplimp at
+sandia.gov).
