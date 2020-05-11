@@ -168,7 +168,7 @@ class log:
         vecs = []
         for i in range(len(keys)):
             vecs.append(self.nlen * [0])
-            for j in xrange(self.nlen):
+            for j in range(self.nlen):
                 vecs[i][j] = self.data[j][map[i]]
 
         if len(keys) == 1:
@@ -199,8 +199,8 @@ class log:
             map = range(self.nvec)
 
         f = open(filename, "w")
-        for i in xrange(self.nlen):
-            for j in xrange(len(map)):
+        for i in range(self.nlen):
+            for j in range(len(map)):
                 print(self.data[i][map[j]], file=f)
             print("", file=f)
         f.close()
