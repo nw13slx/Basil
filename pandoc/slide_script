@@ -1,0 +1,78 @@
+<script>
+
+// the array of all containers
+let containers = Array.from(document.querySelectorAll(".w3-display-container"));
+
+// for each conteiner
+containers.forEach(c =>{
+  // get the array of images in this container
+  let images = Array.from(c.querySelectorAll(".mySlides"));
+
+  //add buttons
+  let left = c.querySelector(".w3-display-left");
+  let right = c.querySelector(".w3-display-right");
+  let first = c.querySelector(".w3-display-first");
+  let last = c.querySelector(".w3-display-last");
+  let plays = c.querySelector(".w3-display-plays");
+
+  plusDivs(0,images);
+
+  // events for the this left and right buttons
+  first.addEventListener("click", ()=>{showDivs(images, 0)})
+  left.addEventListener("click", ()=>{plusDivs(-1,images)})
+  plays.addEventListener("click", ()=>{showSlides(0,images, 20)})
+  right.addEventListener("click", ()=>{plusDivs(1,images)})
+  last.addEventListener("click", ()=>{showDivs(images, -1)})
+})
+
+
+function showDivs(x, idx) {
+  if (idx > x.length-1) {idx = 0}
+  if (idx < 0) {idx = x.length-1}
+
+  //All the slides are display="none"
+  for (let i = 0; i < x.length; i++) {
+     x[i].style.display = "none";
+  }
+  // the current slide is display = "block";
+  x[idx].style.display = "block";
+
+}
+
+function showSlides(idx, x, timeout) {
+  if (idx == 0) {
+    for (let i = 1; i < x.length; i++) {
+       x[i].style.display = "none";
+    }
+    x[0].style.display = "block";
+    setTimeout(function(){showSlides(idx+1, x, timeout);}, timeout);
+  }else if (idx < x.length) {
+    x[idx-1].style.display = "none";
+    x[idx].style.display = "block";
+    setTimeout(function(){showSlides(idx+1, x, timeout);}, timeout);
+  } else{
+    for (let i = 0; i < x.length; i++) {
+       x[i].style.display = "none";
+    }
+    x[x.length-1].style.display = "block";
+  }
+}
+
+
+function plusDivs(n,x) {
+
+  //find the current one
+  var idx = 0;
+  for (let i = 0; i < x.length; i++) {
+      if ( x[i].style.display == "block"){
+          idx = i
+      }
+  }
+  // increment the value for the slideIndex and show the slide
+  idx += n;
+  showDivs(x, idx);
+}
+
+
+</script>
+
