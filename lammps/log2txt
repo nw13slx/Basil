@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Script:  log2txt.py
 # Purpose: extract thermo info from LAMMPS log file
@@ -23,6 +23,8 @@ if len(sys.argv) < 3:
     columns = []
 else:
     columns = sys.argv[3:]
+
+print(f"converge {logfile} to {datafile}")
 
 lg = log(logfile)
 if columns == []:

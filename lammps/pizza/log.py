@@ -8,9 +8,11 @@
 
 # log tool
 
-import glob
+import numpy as np
 import re
 import sys
+
+from glob import glob
 from os import popen
 from operator import itemgetter, attrgetter
 from sys import stdout
@@ -91,7 +93,7 @@ class log:
         words = list[0].split()
         self.flist = []
         for word in words:
-            self.flist += glob.glob(word)
+            self.flist += glob(word)
         if len(self.flist) == 0 and len(list) == 1:
             raise RuntimeError("no log file specified")
 
@@ -180,10 +182,10 @@ class log:
 
     def write(self, filename, *keys):
         if len(keys):
-            map = []
+            index_map = []
             for key in keys:
                 if self.ptr.has_key(key):
-                    map.append(self.ptr[key])
+                    index_map.append(self.ptr[key])
                 else:
                     count = 0
                     for i in range(self.nvec):
@@ -191,19 +193,19 @@ class log:
                             count += 1
                             index = i
                     if count == 1:
-                        map.append(index)
+                        index_map.append(index)
                     else:
                         raise RuntimeError(
                             f"unique log vector {key} not found")
         else:
-            map = range(self.nvec)
+            index_map = range(self.nvec)
 
-        f = open(filename, "w")
-        for i in range(self.nlen):
-            for j in range(len(map)):
-                print(self.data[i][map[j]], file=f)
-            print("", file=f)
-        f.close()
+        if (len(index_map)>0):
+            index_map = np.array(index_map)
+            with open(filename, "w") as f:
+                data = np.array(self.data)
+                for i in range(self.nlen):
+                    print(" ".join(map(str, data[i][index_map])), file=f)
 
     # --------------------------------------------------------------------
 
