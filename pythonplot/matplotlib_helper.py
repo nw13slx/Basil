@@ -1,4 +1,9 @@
 import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+import matplotlib.cm as cmx
+plt.switch_backend('agg')
+from matplotlib.colors import LinearSegmentedColormap
 
 def set_font():
     matplotlib.rcParams['mathtext.fontset'] = 'stix'
