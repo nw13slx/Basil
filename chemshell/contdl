@@ -1,14 +1,33 @@
 #!/bin/env bash
 if [ $# -lt 1 ]; then
-  echo "need 1 argument: contdl target_folder"
-  exit
+  echo "use origin as prefix"
+  if [ -d origin ]; then
+    mv origin origin0
+  fi
+  touch oo
+  ls -d ./*/ |grep "\.\/origin" >oo
+  if [ $(wc -l oo |awk '{print $1}') -gt 0 ]; then
+    sed -i "s|./origin||g" oo
+    sed -i "s|/| |g" oo
+    startn=$(sort -n oo |tail -n 1)
+    let "startn=startn+1"
+    folder=origin$startn
+    echo $folder
+  else
+    folder=origin0
+  fi
+  rm oo
+else
+  folder=$1
 fi
-folder=$1
 
 mkdir $folder
 
-rm *tmp*
-mv * $folder
+rm *tmp* *_property.txt *.prop path_force.xyz
+for i in $(ls dlf*  job.sh  *orca*  path*xyz chemshellout  opt.chm  *.gbw  *.pun gulp* pointcharges.xyz  slurm* *.ff)
+do
+mv $i $folder
+done
 
 
 for i in orca1.gbw ecpfile *.ff job.sh 

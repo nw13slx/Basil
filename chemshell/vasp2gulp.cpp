@@ -1,41 +1,7 @@
 
 //author: Lixin Sun nw13mifaso@gmail.com
 
-#include <algorithm>
-#include <iostream>
-#include <locale>
-#include <fstream>          // file I/O suppport
-#include <cstdlib>          // support for exit()
-#include <stdio.h>
-#include <sys/timeb.h>
-#include <sys/types.h>
-#include <time.h>
-#include <cmath>
-#include <malloc.h>
-#include <iomanip>
-#include <stdlib.h>
-#include <string.h>
-#include <sstream>
-using namespace std;
-
-#include "math.h"
-#include "stdlib.h"       // for random
-#include <vector>
-
-#define MAX_CHARACTER 1000
-#define MAX_COLUMN 200
-
-void parse(char * temp, int & column, string *content){
-  column=0;
-  char * pch;
-  pch = strtok (temp," ");
-  while ((pch != NULL)&&(column<MAX_COLUMN)) {
-      content[column]=pch;
-      column++;
-      pch = strtok (NULL, " ");
-  }
-  pch= NULL;
-}
+#include "definition.h"
 
 int main(int argc, char **argv){
   if (argc < 2){

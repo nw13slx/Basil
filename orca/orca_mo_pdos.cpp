@@ -2,70 +2,37 @@
 //output of ORCA. The density of state will be decomposed
 //to different element and different angular momentum , s p d f
 //this is called PDOS in the solid state dft community
-//usage: MO <inputfile name> <outputfile name> 
+//usage: orca_mo_pdos <inputfile name> <outputfile name> <optional: shift value / "fermi" >
 //author: Lixin Sun nw13mifaso@gmail.com
 
-#include <algorithm>
-#include <iostream>
-#include <locale>
-#include <fstream>          // file I/O suppport
-#include <cstdlib>          // support for exit()
-#include <stdio.h>
-#include <sys/timeb.h>
-#include <sys/types.h>
-#include <time.h>
-#include <cmath>
-#include <malloc.h>
-#include <iomanip>
-#include <stdlib.h>
-#include <string.h>
-#include <sstream>
-using namespace std;
-
-#include "math.h"
-#include "stdlib.h"       // for random
-#include <vector>
+#include "functions.h"
 
 //set up the size of array used for storage
 #define MAX_ELEMENT 10
 #define MAX_M   6
-#define MAX_ENERGYLINE 4000
 #define TEMP_ENERGYLINE 10
 
 //set up the final plotting region
 //the fermi level is shfited to zero
-#define EMIN -30
-#define EMAX 15
-
-//set up the buffer size for reading
-#define MAX_CHARACTER 1000
-#define MAX_COLUMN 20
-
-const double Eh2eV=27.2113834;
-
-bool isxyz(char c){
-    if ((c=='x')||(c=='y')||(c=='z')) return true;
-    else return false;
-}
-
-bool isdigit1(char c){
-    if ((c>='0')&&(c<='9')) return true;
-    else return false;
-}
-
-void gaussian(int grid, double *x, double *y, double x0, double sigma2){
-    for (int i=0;i<grid;i++) y[i]=exp(-(x[i]-x0)*(x[i]-x0)/2./sigma2);
-}
-
-bool contain_alphabet(char * c){
-    for (int i=0;i<strlen(c);i++){
-        if (((c[i]>='a')&&(c[i]<='z'))||((c[i]>='A')&&(c[i]<='Z')))
-            return true;
-    }
-    return false;
-}
+#define EMIN -5000
+#define EMAX 100
 
 int main(int argc, char **argv){
+    bool shift=false;
+    bool shift_fermi=false;
+    double eshift=0;
+    if (argc >3 ){
+      if (strcmp(argv[3],"fermi")==0){
+        shift=true;
+        shift_fermi=true;
+      }else {
+        shift_fermi=false;
+        eshift=atof(argv[3]);
+      }
+    }else{
+      shift=false;
+      eshift=0;
+    }
 
     char temp[MAX_CHARACTER], * pch,content[MAX_COLUMN][MAX_CHARACTER];
     int column, line=0;
@@ -266,7 +233,6 @@ int main(int argc, char **argv){
 
 
     ofstream out(argv[2]);
-    // output the raw pdos without smearing
     int line_pdos=2;
     out<<"# efermi:"<<efermi;
     for (int spin=0; spin<2; spin++){
@@ -302,7 +268,7 @@ int main(int argc, char **argv){
 
     //smearing
 
-    double dE=0.1;
+    double dE=0.05;
     double sigma=0.05;
     double sigma2=sigma*sigma;
 
@@ -319,15 +285,18 @@ int main(int argc, char **argv){
     double x[grid];
     for (int i=0;i<grid;i++) x[i]=base+i*dE;
 
+    if (shift_fermi==true) eshift=efermi;
+    cout<< "smearing and shift " << eshift << endl;
+    
     for (int spin=0; spin<2; spin++){
       double *smearing_spin=smearing+spin*n_element*MAX_M*grid;
       double *tally_spin=tally+spin*MAX_ELEMENT*MAX_M*MAX_ENERGYLINE;
       double *p_energy=energy+spin*MAX_ENERGYLINE;
       double *dos_spin=dos+spin*grid;
       for (int i=0;i<n_energy[spin];i++){
-        if ((p_energy[i]-efermi)>=EMIN && (p_energy[i]-efermi) <=EMAX){
+        if ((p_energy[i]-eshift)>=EMIN && (p_energy[i]-eshift) <=EMAX){
           double *tally_energy=tally_spin+i;
-          gaussian(grid, x, spreadE,p_energy[i],sigma2);
+          gaussian(grid, x, spreadE, p_energy[i], sigma2);
           for (int igrid=0; igrid < grid; igrid++){
             dos_spin[igrid]+=spreadE[igrid];
           }
@@ -348,17 +317,17 @@ int main(int argc, char **argv){
     cout<<"done smearing"<<endl;
 
     for (int i=0;i<grid;i++){
-        out<<x[i]-efermi<<" ";
+        out<<x[i]-eshift<<" ";
         double *smearing_energy=&smearing[i];
         for (int spin=0; spin<2; spin++){
           double *smearing_spin=smearing_energy+spin*n_element*MAX_M*grid;
           for (int j=0;j<n_element;j++){
             double *smearing_element=smearing_spin+j*MAX_M*grid;
             for (int k=0;k<MAX_M;k++){
-                out<<((spin==0)?1:-1)*smearing_element[k*grid]<<" ";
+                out<<(spin*2-1)*smearing_element[k*grid]<<" ";
             }
           }
-          out<<((spin==0)?1:-1)*dos[spin*grid+i]<<" ";
+          out<<(spin*2-1)*dos[spin*grid+i]<<" ";
         }
         out<<endl;
     }

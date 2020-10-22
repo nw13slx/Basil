@@ -11,40 +11,10 @@
 //
 // note: the results can be visualize by nbo.tcl
 
-#include <algorithm>
-#include <iostream>
-#include <locale>
-#include <fstream>          // file I/O suppport
-#include <cstdlib>          // support for exit()
-#include <stdio.h>
-#include <sys/timeb.h>
-#include <sys/types.h>
-#include <time.h>
-#include <cmath>
-#include <malloc.h>
-#include <iomanip>
-//#include <stdlib.h>
-#include <string>
-#include <sstream>
-using namespace std;
-
+#include "functions.h"
 #include "math.h"
 #include "stdlib.h"       // for random
 #include <vector>
-
-//set up the size of array used for storage
-#define MAX_ELEMENT 10
-#define MAX_COORD 1000
-#define MAX_ENERGYLINE 1000
-
-//set up the buffer size for reading
-#define MAX_CHARACTER 1000
-#define MAX_COLUMN 50
-
-
-void gaussian(int grid, double *x, double *y, double x0, double sigma2){
-    for (int i=0;i<grid;i++) y[i]=exp(-(x[i]-x0)*(x[i]-x0)/2./sigma2);
-}
 
 
 int split(char *temp, string * content){
@@ -86,12 +56,12 @@ int main(int argc, char **argv){
     line++;
 
     string element[10];
-    double energy[MAX_ENERGYLINE];
     int n_element=0;
 
     double *x=new double [MAX_ELEMENT*MAX_COORD*3];
     int *id=new int [MAX_ELEMENT*MAX_COORD];
     int *natom=new int [MAX_ELEMENT];
+    double *qtype=new double [MAX_ELEMENT*MAX_COORD];
     for (int i=0;i<MAX_ELEMENT;i++) natom[i]=0;
     
     double boundary[6]={1000,0,1000,0,1000,0};
@@ -104,13 +74,18 @@ int main(int argc, char **argv){
       if (column>7 && content[0][0]!='*' && content[0][0]!='>'){
         string ele;
         //second column is the label
+        double qq=-50;
         if (content[1][0]=='Q'){
-            if (stod(content[2])>0) ele=" Qp ";
-            else ele=" Qn ";
+            qq=atof(content[2].c_str());
+            if (qq>0) ele=" q+ ";
+            else ele=" q- ";
         } else if ( content[1].find_first_of(">")!=string::npos){
+            qq=atof(content[2].c_str());
             content[1].erase(content[1].length()-1,1);
-            ele=content[1]+"po";
-        }else ele=content[1]+"  ";
+            ele=content[1]+"qp";
+        }else {
+          ele=content[1]+"  ";
+        }
         while (ele.length()<4)
            ele=" "+ele;
         if (ele.length()>4)
@@ -128,12 +103,13 @@ int main(int argc, char **argv){
         }
 
         double *xx=&x[elementid*MAX_COORD*3+natom[elementid]*3];
+        qtype[natom_tot]=qq;
         natom_tot++;
         id[elementid*MAX_COORD+natom[elementid]]=natom_tot;
 
-        xx[0]=stod(content[5])*0.52917721092;
-        xx[1]=stod(content[6])*0.52917721092;
-        xx[2]=stod(content[7])*0.52917721092;
+        xx[0]=atof(content[5].c_str())*0.52917721092;
+        xx[1]=atof(content[6].c_str())*0.52917721092;
+        xx[2]=atof(content[7].c_str())*0.52917721092;
         natom[elementid]++;
 
         if (xx[0]<boundary[0]) boundary[0]=xx[0];
@@ -149,21 +125,16 @@ int main(int argc, char **argv){
     In1.close();
 
     ifstream In2(argv[2]);
-    while (In2.good()){
-        line++;
-        In2.getline(temp,MAX_CHARACTER); 
-        column=split(temp,content);;
-        if (column == 5 ){
-            if (( content[0]=="Summary" ) && (content[1]=="of") && (content[2]=="Natural")){
-                Print_Conf=true;
-                break;
-            }
-        }
+    string pattern="Summary of Natural";
+    int beg_pos=In2.tellg();
+    int v_pos=find_pattern(In2,pattern,"contains",true);
+    if (v_pos<0){
+      cout<<"ERROR: Summary of Natural Population Analysis block not found"<<endl;
+      return 1;
+    }else{
+      Print_Conf=true;
     }
-    if ((! In2.good()) || (Print_Conf==false)){
-        cout<<"ERROR: Summary of Natural Population Analysis block not found"<<endl;
-        return 1;
-    }
+    In2.getline(temp,MAX_CHARACTER);
     In2.getline(temp,MAX_CHARACTER);
     In2.getline(temp,MAX_CHARACTER);
     In2.getline(temp,MAX_CHARACTER);
@@ -171,8 +142,20 @@ int main(int argc, char **argv){
     In2.getline(temp,MAX_CHARACTER);
     double *q=new double[natom_tot];
     for (int i=0;i<natom_tot;i++){
-        In2 >> temp>>temp>>q[i];
+      if (qtype[i]>-50){
+        q[i]=qtype[i];
+      }else{
         In2.getline(temp,MAX_CHARACTER);
+        column=break_line(temp,content);
+        if (column==8){
+          q[i]=atof(content[2].c_str());
+        }else if (column==7){
+          q[i]=atof(content[1].c_str());
+        }else{
+          cout<<"???"<<column<<endl;
+          q[i]=atof(content[1].c_str());
+        }
+      }
     }
 /*
  Summary of Natural Population Analysis:
@@ -200,4 +183,60 @@ int main(int argc, char **argv){
       }
     }
     out<<"END"<<endl;
+    out.close();
+
+   if (argc>5){
+     int *coord=new int [MAX_ELEMENT*MAX_COORD];
+     for (int i=0;i<(MAX_ELEMENT*MAX_COORD); i++){
+       coord[i]=0;
+     }
+
+     ofstream out2(argv[4]);
+     double cutoff=atof(argv[5]);
+     for (int j=0;j<n_element;j++){
+       double *xx=&x[j*MAX_COORD*3];
+       int *iid=&id[j*MAX_COORD];
+       int *cc=&coord[j*MAX_COORD];
+       for (int k=0;k<natom[j];k++){
+         double *xxx=&xx[k*3];
+         int iiid=id[k];
+         int *icc=&cc[k];
+         for (int j1=j+1;j1<n_element;j1++){
+           double *xx1=&x[j1*MAX_COORD*3];
+           int *iid1=&id[j1*MAX_COORD];
+           int *cc1=&coord[j1*MAX_COORD];
+           for (int k1=0;k1<natom[j1];k1++){
+             double *xxx1=&xx1[k1*3];
+             int *icc1=&cc1[k1];
+             int iiid1=iid1[k1];
+             double dr=(xxx1[0]-xxx[0])*(xxx1[0]-xxx[0]);
+             dr += (xxx1[1]-xxx[1])*(xxx1[1]-xxx[1]);
+             dr += (xxx1[2]-xxx[2])*(xxx1[2]-xxx[2]);
+             dr = sqrt(dr);
+             if ( dr < cutoff ) {
+               icc1[0]+=1;
+               icc[0]+=1;
+             }
+           }
+         }
+       }
+     }
+      for (int j=0;j<n_element;j++){
+        double *xx=&x[j*MAX_COORD*3];
+        int *iid=&id[j*MAX_COORD];
+        int *cc=&coord[j*MAX_COORD];
+        for (int k=0;k<natom[j];k++){
+          double *xxx=&xx[k*3];
+          int iiid=iid[k];
+          double qq=q[iiid-1];
+          int icc=cc[k];
+          out2 << iiid << " " <<element[j]<<" " <<qq<<" "<<icc<<endl;
+       }
+     }
+     out2.close();
+
+      
+   }
+
+
 }

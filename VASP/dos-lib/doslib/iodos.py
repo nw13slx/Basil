@@ -15,6 +15,7 @@ class iodos:
         raise SystemExit('END: %s' % self.end)
 
   def __init__(self,control,plot):
+    self.start=control.anados
     self.end=control.end
     self._auto_terminate()
     self._cont=control
@@ -45,13 +46,14 @@ class iodos:
     else:
       self.end="cannot find poscar@"+control.path
 
-    if os.path.isfile(control.path+control.doscar) and control.doscar:
-      self._dosf=open(control.path+control.doscar)
-    elif os.path.isfile(control.path+"DOSCAR"):
-      self._dosf =open(control.path+"DOSCAR")
-    else:
-      self.end="cannot find doscar@"+control.path
-    self._auto_terminate()
+    if (self.start):
+      if os.path.isfile(control.path+control.doscar) and control.doscar:
+        self._dosf=open(control.path+control.doscar)
+      elif os.path.isfile(control.path+"DOSCAR"):
+        self._dosf =open(control.path+"DOSCAR")
+      else:
+        self.end="cannot find doscar@"+control.path
+      self._auto_terminate()
 
   def read_poscar(self):
     '''read POSCAR or CONTCAR, with or without constraints '''
@@ -65,7 +67,7 @@ class iodos:
       atom.boundary=np.array(boundary)*scale
       initial=lines[5].strip().split()[0][0].lower()
       if atom.species is None:
-        if ((initial>='a') and (initial<='z')): 
+        if ((initial>='a') and (initial<='z')):
           symbol=lines[5].strip().split()
           number=map(int,lines[6].strip().split())
           ntype=len(number)
@@ -98,6 +100,8 @@ class iodos:
       self._posf.close()
 
   def read_tot_dosfile(self):
+    if (not self.start):
+      return
     '''read the overall dosfile'''
     control=self._cont
     atom=self.atom
@@ -129,8 +133,13 @@ class iodos:
         chunck.append(self._dosf.readline())
     data = np.loadtxt(chunck)
     dos.Xenergy = data[:,0]
-    dos.dos0 = data[:,1:3]
-    dos.dos0[:,1]=-dos.dos0[:,1]
+    if (len(data[0,:])==5):
+      dos.spin=True
+      dos.dos0 = data[:,1:3]
+      dos.dos0[:,1]=-dos.dos0[:,1]
+    else:
+      dos.spin=False
+      dos.dos0 = data[:,1]
 
     if (control.center_ef==True):
       dos.Xenergy -= dos.efermi
@@ -152,6 +161,8 @@ class iodos:
       dos.loc_up = dos.nedos
 
   def write_tot_dosfile(self):
+    if (not self.start):
+      return
     control=self._cont
     dos=self.dos
     matrix = np.hstack([dos.Xenergy.reshape([dos.nedos,1]),dos.dos0])
@@ -159,6 +170,8 @@ class iodos:
     del matrix
 
   def write_pdosfile(self):
+    if (not self.start):
+      return
     if not self._cont.run_pdos:
        return 0
     control=self._cont
@@ -166,7 +179,7 @@ class iodos:
     if dos.spin:
       matrix = np.hstack([dos.Xenergy.reshape([dos.nedos,1]),dos.perspecies[:,:,0],dos.perspecies[:,:,1]])
     else:
-      matrix = np.hstack([dos.Xenergy.reshape([dos.nedos,1]),dos.perspecies])
+      matrix = np.hstack([dos.Xenergy.reshape([dos.nedos,1]),dos.perspecies[:,:,0]])
     np.savetxt(control.name+'DOS-perspecies.gz',matrix,fmt='%15.8f')
     del matrix
     matrix = dos.Xenergy.reshape([dos.nedos,1])
@@ -177,6 +190,8 @@ class iodos:
     del matrix
 
   def write_peratom(self,atomi):
+    if (not self.start):
+      return
     if not self._cont.run_pdos:
        return 0
     control=self._cont
@@ -196,6 +211,8 @@ class iodos:
     self.dos.perspecies=None
 
   def read_pdos(self):
+    if (not self.start):
+      return
     if not self._cont.run_pdos:
        return 0
 
@@ -227,7 +244,7 @@ class iodos:
        dos.spin=False
        dos.ncols=ncols
        dos.nsites=ncols-1
-       self.tally=self.tally_nonspin
+       self.tally=self.tally_nospin
        nspin=1
     else:
         seld.end="weird DOSCAR, I cannot read it..."
@@ -258,7 +275,7 @@ class iodos:
       if dos.spin:
         dos.perspecies=np.zeros((dos.nedos,atom.ntype,nspin))
       else:
-        dos.perspecies=np.zeros((dos.nedos,atom.ntype))
+        dos.perspecies=np.zeros((dos.nedos,atom.ntype,1))
     if peratom:
       self.plot.atom_start()
       self.atom_start()
@@ -277,10 +294,10 @@ class iodos:
       if perspecies:
         if dos.spin:
           print "atomi",atomi,"species",species[atomi],"element",np.min(tot[:,0]),np.max(tot[:,0])
-          dos.perspecies[:,species[atomi],0] += tot[:,0] 
-          dos.perspecies[:,species[atomi],1] += tot[:,1] 
+          dos.perspecies[:,species[atomi],0] += tot[:,0]
+          dos.perspecies[:,species[atomi],1] += tot[:,1]
         else:
-          dos.perspecies[:,species[atomi]] += tot
+          dos.perspecies[:,species[atomi],0] += tot[:,0]
       if peratom:
         self.plot.atom_during(atomi)
         self.atom_during(atomi)
@@ -306,6 +323,8 @@ class iodos:
       pass
 
   def read_atomDOS(self):
+      if (not self.start):
+        return
       dos=self.dos
       atom=self.atom
       '''read in the dos data for each atom. I put it as a separate function, in case I have some separated data in the future '''

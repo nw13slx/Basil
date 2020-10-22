@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/bin/bash
 file=$1
 out=$2
 
@@ -13,15 +13,27 @@ natom=$(grep "block = coordinates records" $file|awk '{print $6}')
 grep -A$natom "block = coordinates records" $file|tail -n $natom >  ${tmp}_coord
 grep -A$natom "block = atom_charges records" $file|tail -n $natom >  ${tmp}_q
 
-awk '{print $2}' ${tmp}_coord |sort -g > ${tmp}_x
-xmin=$(head -n 1 ${tmp}_x|awk '{print $1-10}' )
-xmax=$(tail -n 1 ${tmp}_x|awk '{print $1+10}' )
-awk '{print $3}' ${tmp}_coord |sort -g > ${tmp}_x
-ymin=$(head -n 1 ${tmp}_x|awk '{print $1-10}' )
-ymax=$(tail -n 1 ${tmp}_x|awk '{print $1+10}' )
-awk '{print $4}' ${tmp}_coord|sort -g > ${tmp}_x
-zmin=$(head -n 1 ${tmp}_x|awk '{print $1-10}' )
-zmax=$(tail -n 1 ${tmp}_x|awk '{print $1+10}' )
+if grep -q "cell_vectors" $file; then
+  grep -A3 "cell_vectors" $file|tail -n 3 |awk -v a=0.52917721092 '{print $1*a,$2*a,$3*a}' > ${tmp}_cell
+  xmin=0
+  xmax=$(awk 'NR==1{print $1}' ${tmp}_cell)
+  ymin=0
+  ymax=$(awk 'NR==2{print $2}' ${tmp}_cell)
+  zmin=0
+  zmax=$(awk 'NR==3{print $3}' ${tmp}_cell)
+  rm ${tmp}_cell
+else
+  awk '{print $2}' ${tmp}_coord |sort -g > ${tmp}_x
+  xmin=$(head -n 1 ${tmp}_x|awk '{print $1-10}' )
+  xmax=$(tail -n 1 ${tmp}_x|awk '{print $1+10}' )
+  awk '{print $3}' ${tmp}_coord |sort -g > ${tmp}_x
+  ymin=$(head -n 1 ${tmp}_x|awk '{print $1-10}' )
+  ymax=$(tail -n 1 ${tmp}_x|awk '{print $1+10}' )
+  awk '{print $4}' ${tmp}_coord|sort -g > ${tmp}_x
+  zmin=$(head -n 1 ${tmp}_x|awk '{print $1-10}' )
+  zmax=$(tail -n 1 ${tmp}_x|awk '{print $1+10}' )
+  rm ${tmp}_x
+fi
 
 cat > $out <<EOF
 ITEM: TIMESTEP
@@ -35,6 +47,18 @@ $zmin $zmax
 ITEM: ATOMS id q type  x y z 
 EOF
 
-paste ${tmp}_q ${tmp}_coord |awk -v ang=0.52917721092 '{print $1, $2, $3*ang,$4*ang,$5*ang}'|cat -n>> $out
+#need to handle the shell
+#otherwise the charge on core atom is wrong
+if grep -q "shells" $file ;then
+  nshell=$(grep "block = shells records" $file|awk '{print $6}')
+  echo "shell" $nshell
+  grep -A$nshell "block = shells records" $file|tail -n $nshell|awk '{print $6,$5}'|sort -n >  ${tmp}_shell
+  awk '{if (NR==1) {p=-1} else{ p=s } s=$1; if (s>(p+1)) {for (i=1;i<(s-p);i++) {printf "%d %d\n",p+i,0;} printf "%d %20.8f\n",$1,$2} else {print $1,$2}}' ${tmp}_shell > ${tmp}_sq
+  paste ${tmp}_q ${tmp}_sq |awk '{printf "%20.8f\n",$1+$3}' >${tmp}_tq
+  mv ${tmp}_tq ${tmp}_q
+  rm ${tmp}_sq ${tmp}_shell
+fi
 
-rm ${tmp}_q ${tmp}_coord ${tmp}_x
+paste ${tmp}_q ${tmp}_coord |awk -v ang=0.52917721092 '{print $1, $2, $3*ang,$4*ang,$5*ang}'|cat -n >> $out
+
+rm ${tmp}_q ${tmp}_coord 

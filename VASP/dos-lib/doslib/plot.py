@@ -81,7 +81,12 @@ class plot:
         del y, line_label, line_color
 
   def tot_dos(self):
-      y=[self.dos.dos0[:,0],self.dos.dos0[:,1]]
+      dos=self.dos
+      print dos.spin
+      if dos.spin:
+        y=[self.dos.dos0[:,0],self.dos.dos0[:,1]]
+      else:
+        y=[self.dos.dos0]
       line_label=[None,None]
       line_color=['r','b']
       self.simple("DOS-tot",self.dos.Xenergy,y,self.dos.loc_down,self.dos.loc_up,line_color,line_label)
@@ -104,9 +109,9 @@ class plot:
     if (name=="DOS-tot"):
         self.dos0_extra()
     if (self.control.center_ef==True):
-      plt.xlabel("$E-E_\mathrm{VBM}$")  
+      plt.xlabel("$E-E_\mathrm{VBM}$")
     else:
-      plt.xlabel("$E$")  
+      plt.xlabel("$E$")
     fig.set_size_inches(3.34,2.5)
     plt.tight_layout()
     fig.savefig(self.control.name+name+".png",dpi=300)
@@ -120,10 +125,14 @@ class plot:
       pass
 
   def dos0_extra(self):
+    dos=self.dos
     dos0=self.dos.dos0
     ef=self.dos.Xenergy
     fermiN=self.dos.fermiN
     l_d= self.dos.loc_down
-    plt.fill_between(ef[l_d:fermiN], 0, dos0[l_d:fermiN,0],facecolor='red')
-    plt.fill_between(ef[l_d:fermiN], 0, dos0[l_d:fermiN,1],facecolor='blue')
+    if dos.spin :
+      plt.fill_between(ef[l_d:fermiN], 0, dos0[l_d:fermiN,0],facecolor='red')
+      plt.fill_between(ef[l_d:fermiN], 0, dos0[l_d:fermiN,1],facecolor='blue')
+    else:
+      plt.fill_between(ef[l_d:fermiN], 0, dos0[l_d:fermiN],facecolor='red')
 

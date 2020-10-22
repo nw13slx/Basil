@@ -9,7 +9,7 @@ basil_src=./
 mkdir -p $basil_bin
 
 current=$(pwd)
-for i in $(find $basil_src -type f -executable -print|grep -v ".git")
+for i in $(find $basil_src -type f -executable -print|grep -v ".git"|grep -v install)
 do
    cd $(dirname $i)
    realpath=$(pwd)/$(basename $i)
@@ -17,6 +17,8 @@ do
    if [ ! -f $basil_bin/$(basename $i) ]; then
      echo link $realpath $basil_bin/$(basename $i)
      ln -s $realpath $basil_bin/$(basename $i)
+   else
+     echo .. already installed $realpath 
    fi
 done
 cd $path/bin

@@ -1,0 +1,8 @@
+module load chemshell
+temp=$(date +%s)
+cat >temp$temp <<EOF
+write_xyz coords=$1 file=$2
+EOF
+chemsh.x temp$temp
+rm temp$temp
+module unload chemshell

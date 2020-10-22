@@ -1,0 +1,31 @@
+#!/bin/bash
+file=$1
+out=$2
+ang=0.52917721092 
+
+if [ ! -f $1 ]; then
+    echo "$1 does not exist"
+    exit
+fi
+
+tmp=$(date +%Y-%m-%d-%H-%M-%S)
+
+natom=$(grep "block = coordinates records" $file|awk '{print $6}')
+grep -A$natom "block = coordinates records" $file|tail -n $natom >  ${tmp}_coord
+grep -A$natom "block = atom_charges records" $file|tail -n $natom >  ${tmp}_q
+
+if grep -q "shells" $file ;then
+  nshell=$(grep "block = shells records" $file|awk '{print $6}')
+  echo "shell" $nshell
+  grep -A$nshell "block = shells records" $file|tail -n $nshell|awk '{print $6,$5,$2,$3,$4,$1}'|sort -n >  ${tmp}_shell
+  awk '{if (NR==1) {p=-1} else{ p=s } s=$1; if (s>(p+1)) {for (i=1;i<(s-p);i++) {printf "%d  %20.8f NA NA NA\n",p+i,0;} printf "%d %20.8f %20.8f %20.8f %20.8f\n",$1,$2,$3,$4,$5} else {print $1,$2,$3,$4,$5}}' ${tmp}_shell > ${tmp}_scoord
+  nscoord=$(wc -l ${tmp}_scoord|awk '{print $1}')
+  if [ $nscoord -lt $natom ]; then
+    echo "F 0 NA NA NA"|awk -v n=$natom -v ns=$nscoord '{for(i=0;i<(n-ns);i++)print}' >>${tmp}_scoord
+  fi
+  paste ${tmp}_coord ${tmp}_scoord | awk -v a=$ang '{if ($7!="NA") printf "%5s %5s %20.8f %20.8f %20.8f\n", $1,$5,($2-$7)*a,($3-$8)*a,($4-$9)*a}' >${tmp}_distance
+  mv ${tmp}_distance $out
+  rm ${tmp}_scoord ${tmp}_shell
+fi
+
+rm ${tmp}_coord ${tmp}_q

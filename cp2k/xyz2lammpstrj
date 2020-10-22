@@ -1,0 +1,27 @@
+xyz=$1
+lammpstrj=$2.lammpstrj
+x=$3
+y=$4
+z=$5
+
+if [ -f $lammpstrj ]; then
+  rm $lammpstrj
+fi
+
+natoms=$(head -n 1 $xyz|awk '{print $1}')
+frame=$(wc -l $xyz|awk -vn=$natoms '{print $1/(n+2)}') 
+for i in `seq $frame`
+do
+  cat >>$lammpstrj <<EOF
+ITEM: TIMESTEP
+$i
+ITEM: NUMBER OF ATOMS
+$natoms
+ITEM: BOX BOUNDS pp pp ff
+0.0000000000000000e+00 $x
+0.0000000000000000e+00 $y
+0.0000000000000000e+00 $z
+ITEM: ATOMS type x y z
+EOF
+  awk -v i=$i -v n=$natoms 'NR>(i-1)*(n+2)+2 && NR<=i*(n+2)' $xyz |awk -vx=$x -vy=$y -vz=$z '{xx=$2%x; yy=$3%y;zz=$4%z;if (xx<0) xx+=x; if (yy<0) yy+=y; if (zz<0) zz+=z; print $1,xx,yy,zz}'>> $lammpstrj
+done
